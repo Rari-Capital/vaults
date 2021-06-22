@@ -1,0 +1,9 @@
+@ensdomains/=./lib/
+@openzeppelin/=lib/openzeppelin-contracts/
+@uniswap/v2-core=lib/uniswap-v2-core/
+@uniswap/lib/=lib/uniswap-lib/
+radicle-contracts/=lib/radicle-contracts/contracts/
+ds-test/=lib/ds-test/src/
+ds-test=lib/ds-test/src/index.sol
+ds-math/=lib/ds-math/src/
+ds-math=lib/ds-math/src/index.sol
