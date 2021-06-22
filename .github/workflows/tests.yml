@@ -1,9 +1,9 @@
-name: "Tests"
-on:
-  pull_request:
-  push:
+name: Tests
+
+on: [push, pull_request]
+
 jobs:
-  build:
+  tests:
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -14,8 +14,10 @@ jobs:
             os_attr: linux
       fail-fast: false
     runs-on: ${{ matrix.os }}
+
     steps:
       - uses: actions/checkout@v2
+
       - name: Checkout submodules
         run: git submodule update --init --recursive
 
