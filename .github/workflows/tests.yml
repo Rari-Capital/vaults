@@ -13,8 +13,6 @@ jobs:
         run: git submodule update --init --recursive
 
       - uses: cachix/install-nix-action@v13
-        with:
-          skip_adding_nixpkgs_channel: false
 
       - uses: cachix/cachix-action@v10
         with:
