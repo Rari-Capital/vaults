@@ -13,6 +13,8 @@ jobs:
         run: git submodule update --init --recursive
 
       - uses: cachix/install-nix-action@v13
+        with:
+          skip_adding_nixpkgs_channel: false
 
       - name: Intall dapptools
         run: curl https://dapp.tools/install | sh
