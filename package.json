@@ -1,0 +1,16 @@
+{
+  "name": "@rari-capital/vaults",
+  "version": "1.0.0",
+  "description": "Gas efficient yield aggregator to earn yield on any asset using Fuse.",
+  "files": [
+    "src/**/*.sol"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Rari-Capital/vaults.git"
+  },
+  "devDependencies": {
+    "prettier": "^2.3.1",
+    "prettier-plugin-solidity": "^1.0.0-beta.13"
+  }
+}
