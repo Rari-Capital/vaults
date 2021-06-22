@@ -13,7 +13,6 @@ contract VaultsTest is DSTest {
   }
 
   function testFail_basic_sanity() public {
-    emit log("BRO HELP");
     assertTrue(false);
   }
 
