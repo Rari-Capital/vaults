@@ -2,6 +2,18 @@
 
 🧙‍♂️ Gas efficient yield aggregator to earn yield on any asset using Fuse 🧙‍♂️
 
+## Table of contents
+
+- [Installation](#installation)
+  - [Nix](#first-install-nix)
+  - [DappTools](#then-install-dapptools)
+  - [Solc-Static](#finally-install-solc-static-076)
+- [Developing](#developing)
+  - [Compiling](#compiling)
+  - [Testing](#testing)
+  - [Debugging](#debugging)
+- [Issues](https://github.com/rari-capital/vaults/projects/1)
+
 ## Installation
 
 #### First, install Nix:
@@ -34,20 +46,20 @@ This allows `dapp` to compile this project with the correct solc version.
 
 **Below is a brief summary of a few common commands you may need to contribute to this project.** If you are not already comfortable with the dapptools suite, [read the dapptools docs to learn more.](https://github.com/dapphub/dapptools/tree/master/src/dapp)
 
+#### Compiling
+
 ```sh
 dapp build
 ```
 
-Compiles the project.
+#### Testing
 
 ```sh
 dapp test
 ```
 
-Runs the project's tests.
+#### Debugging
 
 ```sh
 dapp debug
 ```
-
-Debug a specific test.
