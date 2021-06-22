@@ -32,7 +32,7 @@ This allows `dapp` to compile this project with the correct solc version.
 
 ## Developing
 
-Below is a brief summary of a few common commands you may wish to use while developing for this project. [Read the dapptools docs to learn more about `dapp`'s capabilities!](https://github.com/dapphub/dapptools/tree/master/src/dapp)
+Below is a brief summary of a few common commands you may wish to use when contributing to this project. [Read the dapptools docs to learn more about `dapp`'s capabilities!](https://github.com/dapphub/dapptools/tree/master/src/dapp)
 
 ```sh
 dapp build
