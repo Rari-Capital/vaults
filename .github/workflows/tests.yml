@@ -32,4 +32,4 @@ jobs:
           signingKey: ""
 
       - name: Run tests
-        run: nix-shell --pure --command "dapp test"
+        run: nix-shell --pure --run 'dapp test'
