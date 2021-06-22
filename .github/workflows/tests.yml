@@ -16,10 +16,12 @@ jobs:
         with:
           skip_adding_nixpkgs_channel: false
 
-      - name: Intall dapptools
-        run: curl https://dapp.tools/install | sh
+      - uses: cachix/cachix-action@v10
+        with:
+          name: dapp
+          skipPush: true
 
-      - name: Install solc
+      - name: Install solc 0.7.6
         run: nix-env -f https://github.com/dapphub/dapptools/archive/master.tar.gz -iA solc-static-versions.solc_0_7_6
 
       - name: Run tests
