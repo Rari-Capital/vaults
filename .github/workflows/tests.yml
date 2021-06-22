@@ -13,14 +13,9 @@ jobs:
         run: git submodule update --init --recursive
 
       - uses: cachix/install-nix-action@v13
-        with:
-          skip_adding_nixpkgs_channel: false
 
-      - uses: cachix/cachix-action@v10
-        with:
-          name: dapp
-          skipPush: true
-          signingKey: ""
+      - name: Intall dapptools
+        run: curl https://dapp.tools/install | sh
 
       - name: Install solc
         run: nix-env -f https://github.com/dapphub/dapptools/archive/master.tar.gz -iA solc-static-versions.solc_0_7_6
