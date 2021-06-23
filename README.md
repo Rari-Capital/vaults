@@ -5,9 +5,8 @@
 ## Table of contents
 
 - [Installation](#installation)
-  - [Nix](#first-install-nix)
-  - [DappTools](#then-install-dapptools)
-  - [Solc-Static](#finally-install-solc-static-076)
+  - [Toolset](#toolset)
+  - [Project Setup](#project-setup)
 - [Developing](#developing)
   - [Compiling](#compiling)
   - [Testing](#testing)
@@ -16,7 +15,9 @@
 
 ## Installation
 
-#### First, install Nix:
+### Toolset
+
+- First, install Nix:
 
 ```sh
 # User must be in sudoers
@@ -26,21 +27,32 @@ curl -L https://nixos.org/nix/install | sh
 . "$HOME/.nix-profile/etc/profile.d/nix.sh"
 ```
 
-#### Then, install dapptools:
+- Then, install dapptools:
 
 ```sh
 curl https://dapp.tools/install | sh
 ```
 
-This configures the dapphub binary cache and installs the `dapp`, `solc`, `seth` and `hevm` executables.
-
-#### Finally, install solc-static 0.7.6:
+- Finally, install solc-static 0.7.6:
 
 ```sh
 nix-env -f https://github.com/dapphub/dapptools/archive/master.tar.gz -iA solc-static-versions.solc_0_7_6
 ```
 
-This allows `dapp` to compile this project with the correct solc version.
+### Project Setup
+
+- First, clone the repo locally:
+
+```sh
+git clone https://github.com/rari-capital/vaults
+cd vaults
+```
+
+- Then install all dependencies:
+
+```
+dapp update
+```
 
 ## Developing
 
