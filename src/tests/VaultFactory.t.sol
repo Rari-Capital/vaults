@@ -6,9 +6,9 @@ import "ds-test/test.sol";
 import "../VaultFactory.sol";
 
 contract VaultsTest is DSTest {
-  VaultFactory vaultFactory;
+    VaultFactory vaultFactory;
 
-  function setUp() public {
-    vaultFactory = new VaultFactory();
-  }
+    function setUp() public {
+        vaultFactory = new VaultFactory();
+    }
 }
