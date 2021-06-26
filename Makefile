@@ -3,7 +3,9 @@ export DAPP_BUILD_OPTIMIZE=1
 export DAPP_BUILD_OPTIMIZE_RUNS=1000000000
 
 # Install, update, build and test everything.
-all: install update build test
+all: solc install update build test
+# Install proper solc version.
+solc:; nix-env -f https://github.com/dapphub/dapptools/archive/master.tar.gz -iA solc-static-versions.solc_0_8_6
 # Install npm dependencies.
 install:; npm install 
 # Install dapp dependencies.

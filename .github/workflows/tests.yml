@@ -14,8 +14,5 @@ jobs:
         with:
           name: dapp
 
-      - name: Install solc 0.8.6
-        run: nix-env -f https://github.com/dapphub/dapptools/archive/master.tar.gz -iA solc-static-versions.solc_0_8_6
-
-      - name: Run tests
+      - name: Build and run tests
         run: nix-shell --run 'make'

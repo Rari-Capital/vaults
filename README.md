@@ -33,12 +33,6 @@ curl -L https://nixos.org/nix/install | sh
 curl https://dapp.tools/install | sh
 ```
 
-- Finally, install solc-static 0.8.6:
-
-```sh
-nix-env -f https://github.com/dapphub/dapptools/archive/master.tar.gz -iA solc-static-versions.solc_0_8_6
-```
-
 ### Project Setup
 
 - First, clone the repo locally:
