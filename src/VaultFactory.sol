@@ -10,13 +10,11 @@ import "./Vault.sol";
 contract VaultFactory {
     /// @notice Deploy a new Vault contract.
     /// @param token Address of the ERC20 token that the Vault will earn yield on.
-    /// @return The Vault contract.
-    function deploy(ERC20 token) external returns (Vault) {
+    /// @return vault The Vault contract.
+    function deploy(ERC20 token) external returns (Vault vault) {
         // Generate a 32 byte salt for the create2 deployment.
         bytes32 salt = keccak256(abi.encode(token));
         // Use the create2 opcode to deploy the Vault contract.
-        Vault vault = new Vault{salt: salt}(token);
-
-        return vault;
+        vault = new Vault{salt: salt}(token);
     }
 }
