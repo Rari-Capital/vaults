@@ -5,7 +5,6 @@ export DAPP_LINK_TEST_LIBRARIES=0
 export DAPP_TEST_FUZZ_RUNS=100
 export DAPP_TEST_SOLVER=z3
 
-
 # Install, update, build and test everything.
 all: solc install update build test
 # Install proper solc version.
