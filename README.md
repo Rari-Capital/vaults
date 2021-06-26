@@ -11,7 +11,6 @@
   - [Compiling](#compiling)
   - [Testing](#testing)
   - [Debugging](#debugging)
-- [Issues](https://github.com/rari-capital/vaults/projects/1)
 
 ## Installation
 
