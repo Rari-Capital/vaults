@@ -69,7 +69,7 @@ Compiles the project.
 #### Testing
 
 ```sh
-make test # or 'dapp test'
+make test # or 'dapp test --verbosity 1'
 ```
 
 Test the project and only log verbose info for failed tests.
