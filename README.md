@@ -19,7 +19,7 @@
 
 - First, install Nix:
 
-```sh
+```
 # User must be in sudoers
 curl -L https://nixos.org/nix/install | sh
 
@@ -29,7 +29,7 @@ curl -L https://nixos.org/nix/install | sh
 
 - Then, install dapptools:
 
-```sh
+```
 curl https://dapp.tools/install | sh
 ```
 
@@ -54,7 +54,7 @@ make
 
 #### Compiling
 
-```sh
+```
 make build # or 'dapp build'
 ```
 
@@ -62,7 +62,7 @@ Compiles the project.
 
 #### Testing
 
-```sh
+```
 make test # or 'dapp test --verbosity 1'
 ```
 
@@ -72,14 +72,14 @@ Test the project and only log verbose info for failed tests.
 
 Test the project and log verbose info for everything.
 
-```sh
+```
 make vtest # or 'dapp test --verbosity 3'
 ```
 
 #### Debugging
 
-```sh
-mak debug # or 'dapp debug'
+```
+make debug # or 'dapp debug'
 ```
 
 Run a test using the HEVM interactive debugger.
