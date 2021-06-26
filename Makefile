@@ -15,6 +15,6 @@ build:; dapp build
 test:; dapp test --verbosity 1
 # Test the project and log verbose info for everything.
 vtest:; dapp test --verbosity 3
-# Debug the project.
+# Run a test using the HEVM interactive debugger.
 debug:; dapp debug
 
