@@ -55,7 +55,7 @@ make
 #### Compiling
 
 ```sh
-make build # or 'dapp build'
+make build
 ```
 
 Compiles the project.
@@ -63,7 +63,7 @@ Compiles the project.
 #### Testing
 
 ```sh
-make test # or 'dapp test --verbosity 1'
+make test
 ```
 
 Test the project and only log verbose info for failed tests.
@@ -73,13 +73,13 @@ Test the project and only log verbose info for failed tests.
 Test the project and log verbose info for everything.
 
 ```sh
-make vtest # or 'dapp test --verbosity 3'
+make vtest
 ```
 
 #### Debugging
 
 ```sh
-make debug # or 'dapp debug'
+make debug
 ```
 
 Run a test using the HEVM interactive debugger.
