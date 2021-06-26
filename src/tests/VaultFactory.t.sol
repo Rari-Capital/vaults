@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.6;
 
-import "lib/ds-test/src/test.sol";
+import "ds-test/test.sol";
 
-import "./Vaults.sol";
+import "../VaultFactory.sol";
 
 contract VaultsTest is DSTest {
-  Vaults vaults;
+  VaultFactory vaultFactory;
 
   function setUp() public {
-    vaults = new Vaults();
+    vaultFactory = new VaultFactory();
   }
 
   function testFail_basic_sanity() public {
