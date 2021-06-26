@@ -18,7 +18,9 @@ contract VaultFactoryTest is DSTest {
 
     function test_deploy_vault() public {
         Vault vault = vaultFactory.deploy(underlying);
+
         assertTrue(address(vault) != address(0));
+        assertEq(address(vault.underlying()), address(underlying));
     }
 
     function testFail_does_not_allow_duplicate_vault() public {
