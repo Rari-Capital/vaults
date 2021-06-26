@@ -48,10 +48,10 @@ git clone https://github.com/rari-capital/vaults
 cd vaults
 ```
 
-- Then install all dependencies:
+- Then setup the project:
 
 ```
-dapp update
+make
 ```
 
 ## Developing
@@ -61,8 +61,10 @@ dapp update
 #### Compiling
 
 ```sh
-make # or 'dapp build'
+make build # or 'dapp build'
 ```
+
+Compiles the project.
 
 #### Testing
 
@@ -70,8 +72,20 @@ make # or 'dapp build'
 make test # or 'dapp test'
 ```
 
+Test the project and only log verbose info for failed tests.
+
+#### Verbose Testing
+
+Test the project and log verbose info for everything.
+
+```sh
+make vtest # or 'dapp test --verbosity 3'
+```
+
 #### Debugging
 
 ```sh
 mak debug # or 'dapp debug'
 ```
+
+Run a test using the HEVM interactive debugger.
