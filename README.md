@@ -61,17 +61,17 @@ dapp update
 #### Compiling
 
 ```sh
-dapp build
+make # or 'dapp build'
 ```
 
 #### Testing
 
 ```sh
-dapp test
+make test # or 'dapp test'
 ```
 
 #### Debugging
 
 ```sh
-dapp debug
+mak debug # or 'dapp debug'
 ```
