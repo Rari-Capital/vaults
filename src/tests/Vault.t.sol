@@ -3,20 +3,28 @@ pragma solidity 0.8.6;
 
 import "ds-test/test.sol";
 
-import "./Vault.sol";
+import "../Vault.sol";
 
 contract VaultsTest is DSTest {
   Vault vault;
+  ERC20 testUnderlyingToken;
 
   function setUp() public {
-    vault = new Vault();
+    testUnderlyingToken = new ERC20("Dai Stablecoin", "DAI");
+    vault = new Vault(testUnderlyingToken);
   }
 
-  function testFail_basic_sanity() public {
-    assertTrue(false);
-  }
+  function test_properly_init_erc20() public {
+    assertEq(address(vault.underlying()), address(testUnderlyingToken));
 
-  function test_basic_sanity() public {
-    assertTrue(true);
+    assertEq(
+      vault.name(),
+      StringConcat.concat("Fuse ", testUnderlyingToken.name(), " Vault")
+    );
+
+    assertEq(
+      vault.symbol(),
+      StringConcat.concat("fv", testUnderlyingToken.symbol())
+    );
   }
 }
