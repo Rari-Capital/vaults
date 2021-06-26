@@ -20,4 +20,4 @@ jobs:
         run: nix-env -f https://github.com/dapphub/dapptools/archive/master.tar.gz -iA solc-static-versions.solc_0_8_6
 
       - name: Run tests
-        run: nix-shell --pure --run 'make && make test' # We only run update because we may not have
+        run: nix-shell --pure --run 'make test' # We only run update because we may not have
