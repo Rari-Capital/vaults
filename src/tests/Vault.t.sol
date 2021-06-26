@@ -24,7 +24,7 @@ contract VaultsTest is DSTest {
         assertEq(vault.symbol(), StringConcat.concat("fv", underlying.symbol()));
     }
 
-    function prove_deposit_withdraw(uint256 amount) public {
+    function test_deposit_withdraw(uint256 amount) public {
         underlying.mintIfNeeded(address(this), amount);
         underlying.approve(address(vault), amount);
 
