@@ -79,7 +79,7 @@ make vtest # or 'dapp test --verbosity 3'
 #### Debugging
 
 ```sh
-mak debug # or 'dapp debug'
+make debug # or 'dapp debug'
 ```
 
 Run a test using the HEVM interactive debugger.
