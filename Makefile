@@ -22,4 +22,3 @@ test:; dapp test --verbosity 1
 vtest:; dapp test --verbosity 3
 # Run a test using the HEVM interactive debugger.
 debug:; dapp debug
-
