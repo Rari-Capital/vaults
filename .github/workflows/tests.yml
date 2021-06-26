@@ -9,11 +9,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
-        with:
-          node-version: "14"
-
       - uses: cachix/install-nix-action@v13
-
       - uses: cachix/cachix-action@v10
         with:
           name: dapp
