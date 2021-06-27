@@ -31,7 +31,7 @@ contract Vault is ERC20 {
         // Transfer in underlying tokens from the sender.
         underlying.transferFrom(msg.sender, address(this), amount);
 
-        //Get the token exchangeRate and underlying decimals
+        // Get the token exchangeRate and underlying decimals
         uint256 exchangeRate = exchangeRateCurrent();
         uint256 decimals = underlying.decimals();
 

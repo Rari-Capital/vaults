@@ -36,16 +36,21 @@ contract VaultsTest is DSTest {
         assertEq(vault.totalUnderlying(), vault.balanceOf(address(this)));
     }
 
-    function test_exchange_rate_increases() public {
-        uint256 amount = 1e19;
-        underlying.mintIfNeeded(address(this), 2 * amount);
+    function test_exchange_rate_increases(uint256 amount) public {
+        // If the number is too large we can't test with it.
+        if (amount > (type(uint256).max / 100)) {
+            return;
+        }
+
+        underlying.mintIfNeeded(address(this), amount * 2);
         underlying.approve(address(vault), amount);
 
         // Deposit into the vault, minting fvTokens.
         vault.deposit(amount);
+
         // Send tokens into the vault, artificially increasing the exchangeRate.
         underlying.transfer(address(vault), amount);
 
-        assertEq(vault.exchangeRateCurrent(), 2e18);
+        assertEq(vault.exchangeRateCurrent(), amount * 2);
     }
 }
