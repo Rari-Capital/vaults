@@ -52,7 +52,7 @@ make
 
 **Below is a brief summary of a few common commands you may need to contribute to this project.** If you are not already comfortable with the dapptools suite, [read the dapptools docs to learn more.](https://github.com/dapphub/dapptools/tree/master/src/dapp)
 
-#### Compiling
+### Compiling
 
 ```sh
 make build
@@ -60,7 +60,7 @@ make build
 
 Compiles the project.
 
-#### Testing
+### Testing
 
 ```sh
 make test
@@ -68,15 +68,24 @@ make test
 
 Test the project and only log verbose info for failed tests.
 
-#### Verbose Testing
-
-Test the project and log verbose info for everything.
+### Verbose Testing
 
 ```sh
 make vtest
 ```
 
-#### Debugging
+Test the project and show ds-test logs for everything.
+
+### Very Verbose Testing
+
+```sh
+make vvtest
+```
+
+Test the project and log full verbose info for everything.
+
+
+### Debugging
 
 ```sh
 make debug
