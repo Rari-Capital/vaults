@@ -2,17 +2,6 @@
 
 🧙‍♂️ Gas efficient yield aggregator to earn yield on any asset using Fuse 🧙‍♂️
 
-## Table of contents
-
-- [Installation](#installation)
-  - [Toolset](#toolset)
-  - [Project Setup](#project-setup)
-- [Developing](#developing)
-  - [Compiling](#compiling)
-  - [Testing](#testing)
-  - [Debugging](#debugging)
-- [Issues](https://github.com/rari-capital/vaults/projects/1)
-
 ## Installation
 
 ### Toolset
@@ -83,7 +72,6 @@ make vvtest
 ```
 
 Test the project and log full verbose info for everything.
-
 
 ### Debugging
 
