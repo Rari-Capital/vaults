@@ -51,7 +51,7 @@ contract Vault is ERC20 {
 
     /// @notice Returns the current fvToken exchange rate, scaled by 1e18.
     function exchangeRateCurrent() public view returns (uint256) {
-        //Total fvToken supply and vault's total balance in underlying tokens.
+        // Total fvToken supply and vault's total balance in underlying tokens.
         uint256 supply = totalSupply();
         uint256 balance = totalUnderlying();
         // If either the supply or balance is 0, return 1.

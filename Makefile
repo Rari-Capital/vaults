@@ -24,3 +24,5 @@ vtest:; dapp test --verbosity 2
 vvtest:; dapp test --verbosity 3
 # Run a test using the HEVM interactive debugger.
 debug:; dapp debug
+# Replay a failing property based test in the debugger.
+replay:; dapp debug --replay '$(TARGET)'

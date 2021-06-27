@@ -83,3 +83,11 @@ make debug
 ```
 
 Run a test using the HEVM interactive debugger.
+
+### Replaying
+
+```sh
+make replay TARGET='("test_exchange_rate_increases(uint256)","0x0000000000000000000000000000000000000000000000000000000000000001")'
+```
+
+Replay a specific testcase in the debugger.
