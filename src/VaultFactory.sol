@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import "./external/ERC20.sol";
-import "./Vault.sol";
+import {ERC20} from "./external/ERC20.sol";
+import {Vault} from "./Vault.sol";
 
 /// @title VaultFactory
 /// @author TransmissionsDev + JetJadeja

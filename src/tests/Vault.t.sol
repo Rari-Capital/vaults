@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import "ds-test/test.sol";
+import {DSTest} from "ds-test/test.sol";
+import {ERC20} from "./mocks/MockERC20.sol";
 
-import "./mocks/MockERC20.sol";
-
-import "../Vault.sol";
+import {Vault} from "../Vault.sol";
 
 contract VaultsTest is DSTest {
     Vault vault;
