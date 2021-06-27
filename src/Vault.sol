@@ -43,4 +43,19 @@ contract Vault is ERC20 {
         // Transfer underlying tokens to the sender.
         underlying.transfer(msg.sender, amount);
     }
+
+    ///@return the current fvToken exchange rate, scaled by 1e18.
+    function exchangeRateCurrent() public view returns (uint256) {
+        uint256 supply = totalSupply(); // Total fvToken supply.
+        uint256 balance = totalUnderlying(); // The vault's total balance in underlying tokens.
+        if (supply == 0 || balance == 0) return 1e18; // If either the supply or balance is 0, return 1.
+
+        uint256 decimals = underlying.decimals();
+        return (balance * 1e36) / (10**decimals * supply); // Calculate the exchange rate, scaled by 1e18.
+    }
+
+    ///@return the total underlying balance.
+    function totalUnderlying() public view returns (uint256) {
+        return underlying.balanceOf(address(this));
+    }
 }
