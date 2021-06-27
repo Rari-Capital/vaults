@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import {Vault} from "../Vault.sol";
-import {DSTest} from "ds-test/test.sol";
+import "ds-test/test.sol";
+
 import {MockERC20} from "./mocks/MockERC20.sol";
 import {StringConcat} from "../libraries/StringConcat.sol";
+
+import {Vault} from "../Vault.sol";
 
 contract VaultsTest is DSTest {
     Vault vault;
@@ -23,22 +25,6 @@ contract VaultsTest is DSTest {
         assertEq(vault.symbol(), StringConcat.concat("fv", underlying.symbol()));
     }
 
-    // function prove_deposit_withdraw(uint256 amount) public {
-    //     underlying.mintIfNeeded(address(this), amount);
-    //     underlying.approve(address(vault), amount);
-
-    //     assertEq(underlying.balanceOf(address(this)), amount);
-    //     assertEq(vault.balanceOf(address(this)), 0);
-    //     vault.deposit(amount);
-
-    //     assertEq(underlying.balanceOf(address(this)), 0);
-    //     assertEq(vault.balanceOf(address(this)), amount);
-
-    //     vault.withdraw(amount);
-    //     assertEq(underlying.balanceOf(address(this)), amount);
-    //     assertEq(vault.balanceOf(address(this)), 0);
-    // }
-
     function test_exchange_rate_is_initially_one() public {
         // 10 tokens
         uint256 amount = 1e19;
@@ -55,9 +41,10 @@ contract VaultsTest is DSTest {
         uint256 amount = 1e19;
         underlying.mintIfNeeded(address(this), 2 * amount);
         underlying.approve(address(vault), amount);
+
         // Deposit into the vault, minting fvTokens.
         vault.deposit(amount);
-        // Send tokens into the vault, artificially increasing the exchangeRate
+        // Send tokens into the vault, artificially increasing the exchangeRate.
         underlying.transfer(address(vault), amount);
 
         assertEq(vault.exchangeRateCurrent(), 2e18);

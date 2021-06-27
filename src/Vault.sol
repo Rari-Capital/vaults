@@ -4,8 +4,6 @@ pragma solidity ^0.8.0;
 import {ERC20} from "./external/ERC20.sol";
 import {StringConcat} from "./libraries/StringConcat.sol";
 
-import "ds-test/test.sol";
-
 /// @title Fuse Vault/fvToken
 /// @author TransmissionsDev + JetJadeja
 /// @notice Yield bearing token that enables users to swap their
@@ -51,7 +49,7 @@ contract Vault is ERC20 {
         underlying.transfer(msg.sender, amount);
     }
 
-    ///@return the current fvToken exchange rate, scaled by 1e18.
+    /// @notice Returns the current fvToken exchange rate, scaled by 1e18.
     function exchangeRateCurrent() public view returns (uint256) {
         //Total fvToken supply and vault's total balance in underlying tokens.
         uint256 supply = totalSupply();
@@ -63,7 +61,7 @@ contract Vault is ERC20 {
         return (balance * 1e36) / (10**decimals * supply);
     }
 
-    ///@return the total underlying balance.
+    /// @return Returns total underlying balance.
     function totalUnderlying() public view returns (uint256) {
         return underlying.balanceOf(address(this));
     }
