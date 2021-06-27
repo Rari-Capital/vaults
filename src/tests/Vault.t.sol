@@ -26,6 +26,8 @@ contract VaultsTest is DSTestPlus {
     }
 
     function test_exchange_rate_is_initially_one(uint256 amount) public {
+        if (amount > 1e30 || amount < 0) return;
+
         underlying.mintIfNeeded(self, amount);
         underlying.approve(address(vault), amount);
         // Deposit into the vault, minting fvTokens.
@@ -35,6 +37,8 @@ contract VaultsTest is DSTestPlus {
     }
 
     function test_exchange_rate_increases(uint256 amount) public {
+        if (amount > 1e30 || amount < 1) return;
+
         // If the number is too large we can't test with it.
         if (amount > (type(uint256).max / 100)) {
             return;
@@ -42,13 +46,11 @@ contract VaultsTest is DSTestPlus {
 
         underlying.mintIfNeeded(self, amount * 2);
         underlying.approve(address(vault), amount);
-
         // Deposit into the vault, minting fvTokens.
         vault.deposit(amount);
-
         // Send tokens into the vault, artificially increasing the exchangeRate.
         underlying.transfer(address(vault), amount);
 
-        assertEq(vault.exchangeRateCurrent(), amount * 2);
+        assertEq(vault.exchangeRateCurrent(), 2e18);
     }
 }
