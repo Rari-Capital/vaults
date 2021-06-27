@@ -2,7 +2,7 @@
 export DAPP_BUILD_OPTIMIZE=1
 export DAPP_BUILD_OPTIMIZE_RUNS=1000000000
 export DAPP_LINK_TEST_LIBRARIES=0
-export DAPP_TEST_FUZZ_RUNS=100
+export DAPP_TEST_FUZZ_RUNS=1000
 export DAPP_TEST_SOLVER=z3
 
 # Install, update, build and test everything.
