@@ -24,19 +24,43 @@ contract VaultsTest is DSTest {
         assertEq(vault.symbol(), StringConcat.concat("fv", underlying.symbol()));
     }
 
-    function test_deposit_withdraw(uint256 amount) public {
+    // function prove_deposit_withdraw(uint256 amount) public {
+    //     underlying.mintIfNeeded(address(this), amount);
+    //     underlying.approve(address(vault), amount);
+
+    //     assertEq(underlying.balanceOf(address(this)), amount);
+    //     assertEq(vault.balanceOf(address(this)), 0);
+    //     vault.deposit(amount);
+
+    //     assertEq(underlying.balanceOf(address(this)), 0);
+    //     assertEq(vault.balanceOf(address(this)), amount);
+
+    //     vault.withdraw(amount);
+    //     assertEq(underlying.balanceOf(address(this)), amount);
+    //     assertEq(vault.balanceOf(address(this)), 0);
+    // }
+
+    function test_exchange_rate_is_initially_one() public {
+        // 10 tokens
+        uint256 amount = 1e19;
         underlying.mintIfNeeded(address(this), amount);
         underlying.approve(address(vault), amount);
-
-        assertEq(underlying.balanceOf(address(this)), amount);
-        assertEq(vault.balanceOf(address(this)), 0);
+        // Deposit into the vault, minting fvTokens.
         vault.deposit(amount);
 
-        assertEq(underlying.balanceOf(address(this)), 0);
-        assertEq(vault.balanceOf(address(this)), amount);
+        assertEq(vault.totalUnderlying(), vault.balanceOf(address(this)));
+        assertGt(vault.totalUnderlying(), 0);
+    }
 
-        vault.withdraw(amount);
-        assertEq(underlying.balanceOf(address(this)), amount);
-        assertEq(vault.balanceOf(address(this)), 0);
+    function test_exchange_rate_increases() public {
+        uint256 amount = 1e19;
+        underlying.mintIfNeeded(address(this), 2 * amount);
+        underlying.approve(address(vault), amount);
+        // Deposit into the vault, minting fvTokens.
+        vault.deposit(amount);
+        // Send tokens into the vault, artificially increasing the exchangeRate
+        underlying.transfer(address(vault), amount);
+
+        assertEq(vault.exchangeRateCurrent(), 2e18);
     }
 }
