@@ -9,6 +9,7 @@ import {Vault} from "./Vault.sol";
 /// @notice Factory contract, deploying proxy implementations.
 contract VaultFactory {
     /// @notice Deploy a new Vault contract.
+    /// @notice This will revert if a vault with the token has already been created.
     /// @param token Address of the ERC20 token that the Vault will earn yield on.
     /// @return vault The newly deployed Vault contract.
     function deploy(ERC20 token) external returns (Vault vault) {

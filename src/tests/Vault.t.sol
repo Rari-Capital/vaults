@@ -34,7 +34,6 @@ contract VaultsTest is DSTest {
         vault.deposit(amount);
 
         assertEq(vault.totalUnderlying(), vault.balanceOf(address(this)));
-        assertGt(vault.totalUnderlying(), 0);
     }
 
     function test_exchange_rate_increases() public {

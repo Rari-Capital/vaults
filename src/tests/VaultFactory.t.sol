@@ -13,14 +13,12 @@ contract VaultFactoryTest is DSTest {
     MockERC20 underlying;
 
     function setUp() public {
-        vaultFactory = new VaultFactory();
         underlying = new MockERC20();
+        vaultFactory = new VaultFactory();
     }
 
     function test_deploy_vault() public {
         Vault vault = vaultFactory.deploy(underlying);
-
-        assertTrue(address(vault) != address(0));
         assertEq(address(vault.underlying()), address(underlying));
     }
 
