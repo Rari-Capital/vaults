@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import "ds-test/test.sol";
+import {DSTestPlus} from "./utils/DSTestPlus.sol";
 
 import {MockERC20} from "./mocks/MockERC20.sol";
 import {StringConcat} from "../libraries/StringConcat.sol";
 
 import {Vault} from "../Vault.sol";
 
-contract VaultsTest is DSTest {
+contract VaultsTest is DSTestPlus {
     Vault vault;
     MockERC20 underlying;
 
@@ -18,22 +18,20 @@ contract VaultsTest is DSTest {
     }
 
     function test_properly_init_erc20() public {
-        assertEq(address(vault.underlying()), address(underlying));
+        assertErc20Eq(vault.underlying(), underlying);
 
         assertEq(vault.name(), StringConcat.concat("Fuse ", underlying.name(), " Vault"));
 
         assertEq(vault.symbol(), StringConcat.concat("fv", underlying.symbol()));
     }
 
-    function test_exchange_rate_is_initially_one() public {
-        // 10 tokens
-        uint256 amount = 1e19;
-        underlying.mintIfNeeded(address(this), amount);
+    function test_exchange_rate_is_initially_one(uint256 amount) public {
+        underlying.mintIfNeeded(self, amount);
         underlying.approve(address(vault), amount);
         // Deposit into the vault, minting fvTokens.
         vault.deposit(amount);
 
-        assertEq(vault.totalUnderlying(), vault.balanceOf(address(this)));
+        assertEq(vault.totalUnderlying(), vault.balanceOf(self));
     }
 
     function test_exchange_rate_increases(uint256 amount) public {
@@ -42,7 +40,7 @@ contract VaultsTest is DSTest {
             return;
         }
 
-        underlying.mintIfNeeded(address(this), amount * 2);
+        underlying.mintIfNeeded(self, amount * 2);
         underlying.approve(address(vault), amount);
 
         // Deposit into the vault, minting fvTokens.
