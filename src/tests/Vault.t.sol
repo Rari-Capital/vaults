@@ -26,7 +26,8 @@ contract VaultsTest is DSTestPlus {
     }
 
     function test_exchange_rate_is_initially_one(uint256 amount) public {
-        if (amount > (type(uint256).max / 1e18) || amount == 0) return;
+        // If the number is too large we can't test with it.
+        if (amount > (type(uint256).max / 1e18)) return;
 
         underlying.mintIfNeeded(self, amount);
         underlying.approve(address(vault), amount);
@@ -37,12 +38,8 @@ contract VaultsTest is DSTestPlus {
     }
 
     function test_exchange_rate_increases(uint256 amount) public {
+        // If the number is too large or 0 we can't test with it.
         if (amount > (type(uint256).max / 1e37) || amount == 0) return;
-
-        // If the number is too large we can't test with it.
-        if (amount > (type(uint256).max / 100)) {
-            return;
-        }
 
         underlying.mintIfNeeded(self, amount * 2);
         underlying.approve(address(vault), amount);

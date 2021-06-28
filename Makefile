@@ -2,15 +2,20 @@
 export DAPP_BUILD_OPTIMIZE=1
 export DAPP_BUILD_OPTIMIZE_RUNS=1000000000
 export DAPP_LINK_TEST_LIBRARIES=0
-export DAPP_TEST_FUZZ_RUNS=1000
 export DAPP_TEST_SOLVER=z3
+# If in CI we want to fuzz for a long time.
+ifeq ($(CI), true)
+  export DAPP_TEST_FUZZ_RUNS=1000000
+else
+  export DAPP_TEST_FUZZ_RUNS=1000
+endif
 
 # Install, update, build and test everything.
 all: solc install update build test
 # Install proper solc version.
 solc:; nix-env -f https://github.com/dapphub/dapptools/archive/master.tar.gz -iA solc-static-versions.solc_0_8_6
 # Install npm dependencies.
-install:; npm install 
+install:; npm install
 # Install dapp dependencies.
 update:; dapp update
 
