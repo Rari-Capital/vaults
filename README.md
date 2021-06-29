@@ -44,7 +44,7 @@ make
 ### Compiling
 
 ```sh
-make build
+dapp build
 ```
 
 Compiles the project.
@@ -52,7 +52,7 @@ Compiles the project.
 ### Testing
 
 ```sh
-make test
+dapp test
 ```
 
 Test the project and only log verbose info for failed tests.
@@ -60,7 +60,7 @@ Test the project and only log verbose info for failed tests.
 ### Verbose Testing
 
 ```sh
-make vtest
+dapp test --verbosity 2
 ```
 
 Test the project and show ds-test logs for everything.
@@ -68,7 +68,7 @@ Test the project and show ds-test logs for everything.
 ### Very Verbose Testing
 
 ```sh
-make vvtest
+dapp test --verbosity 3
 ```
 
 Test the project and log full verbose info for everything.
@@ -76,7 +76,7 @@ Test the project and log full verbose info for everything.
 ### Debugging
 
 ```sh
-make debug
+dapp debug
 ```
 
 Run a test using the HEVM interactive debugger.
@@ -84,7 +84,7 @@ Run a test using the HEVM interactive debugger.
 ### Replaying
 
 ```sh
-make replay TARGET='("test_exchange_rate_increases(uint256)","0x0000000000000000000000000000000000000000000000000000000000000001")'
+dapp debug --replay '("test_exchange_rate_increases(uint256)","0x0000000000000000000000000000000000000000000000000000000000000001")'
 ```
 
 Replay a specific testcase in the debugger.
