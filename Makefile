@@ -4,7 +4,7 @@ export DAPP_BUILD_OPTIMIZE_RUNS=1000000000
 export DAPP_LINK_TEST_LIBRARIES=0
 export DAPP_TEST_SOLVER=z3
 ifeq ($(CI), true)
-  export DAPP_TEST_FUZZ_RUNS=500000 # In CI we want to fuzz for a long time.
+  export DAPP_TEST_FUZZ_RUNS=1000000 # In CI we want to fuzz for a long time.
 else
   export DAPP_TEST_FUZZ_RUNS=1000 # When developing we only want to fuzz briefly. 
 endif
