@@ -59,7 +59,7 @@ contract Vault is ERC20 {
     }
 
     function harvest() external {
-        require(block.timestamp >= nextHarvest());
+        require(block.number >= nextHarvest());
 
         uint256 newUnderlying;
 
@@ -82,12 +82,12 @@ contract Vault is ERC20 {
         totalUnderlying = newUnderlying;
 
         // Set the lastHarvestBlock to this block, as we just triggered a harvest.
-        lastHarvestBlock = block.timestamp;
+        lastHarvestBlock = block.number;
     }
 
     function calculateLockedProfit() public view returns (uint256) {
         uint256 maxLockedProfit = totalLockedProfit;
-        uint256 unlockedProfit = (maxLockedProfit * block.timestamp) / nextHarvest();
+        uint256 unlockedProfit = (maxLockedProfit * block.number) / nextHarvest();
         return maxLockedProfit - unlockedProfit;
     }
 
