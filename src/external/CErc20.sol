@@ -2,11 +2,11 @@
 pragma solidity 0.8.6;
 
 /**
- * @title Compound's CToken Contract
- * @notice Abstract base for CTokens
+ * @title Compound's CErc20 Contract
+ * @notice Abstract base for CErc20
  * @author Compound
  */
-interface CToken {
+interface CErc20 {
     function admin() external view returns (address);
 
     function adminHasRights() external view returns (bool);
@@ -52,4 +52,6 @@ interface CToken {
     function redeem(uint256 redeemTokens) external returns (uint256);
 
     function redeemUnderlying(uint256 redeemAmount) external returns (uint256);
+
+    function mint(uint256 mintAmount) external returns (uint256);
 }
