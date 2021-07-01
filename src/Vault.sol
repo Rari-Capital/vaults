@@ -57,7 +57,7 @@ contract Vault is ERC20 {
     /// @notice Deposits an underlying token and mints fvTokens.
     /// @param amount The amount of the underlying token to deposit.
     function deposit(uint256 amount) external {
-        //Get the token exchangeRate and underlying decimals
+        // Get the token exchangeRate and underlying decimals.
         uint256 exchangeRate = exchangeRateCurrent();
         uint256 decimals = underlying.decimals();
 
@@ -68,6 +68,7 @@ contract Vault is ERC20 {
 
     /// @notice Burns fvTokens and sends underlying tokens to the sender.
     /// @param amount The amount of fvTokens to burn.
+    // TODO: withdraw -> withdrawUnderlying
     function withdraw(uint256 amount) external {
         uint256 exchangeRate = exchangeRateCurrent();
         uint256 decimals = underlying.decimals();
@@ -102,21 +103,21 @@ contract Vault is ERC20 {
             newUnderlying += pool.balanceOfUnderlying(address(this));
         }
 
+        // Update totalUnderlying to use the freshly computed underlying amount.
+        totalUnderlying = newUnderlying;
+
         // Locked profit is the delta between the underlying amount we
         // had last harvest and the newly calculated underlying amount.
         totalLockedProfit = newUnderlying - totalUnderlying;
-
-        // Update totalUnderlying to use the freshly computed underlying amount.
-        totalUnderlying = newUnderlying;
 
         // Set the lastHarvestBlock to this block, as we just triggered a harvest.
         lastHarvestBlock = block.number;
     }
 
     function calculateLockedProfit() public view returns (uint256) {
-        uint256 maxLockedProfit = totalLockedProfit;
-        uint256 unlockedProfit = (maxLockedProfit * block.number) / nextHarvest();
-        return maxLockedProfit - unlockedProfit;
+        // TODO: CAP at 1 if block numger exceeds next harvest
+        uint256 unlockedProfit = (totalLockedProfit * block.number) / nextHarvest();
+        return totalLockedProfit - unlockedProfit;
     }
 
     function calculateTotalFreeUnderlying() public view returns (uint256) {
