@@ -16,8 +16,8 @@ jobs:
 
       - name: Build and run tests briefly
         if: ${{ github.ref != 'refs/heads/main' && github.base_ref != 'main' }} # Only run brief fuzz if we're not pushing to master or making a PR going to master.
-        run: nix-shell --run 'make'
+        run: nix-shell --run 'CI=false make'
 
       - name: Build and run tests deeply
         if: ${{ github.ref == 'refs/heads/main' || github.base_ref == 'main' }} # Only run deep fuzz if we're pushing to master or making a PR going to master.
-        run: nix-shell --run 'DAPP_TEST_FUZZ_RUNS=1000000 make'
+        run: nix-shell --run 'make'
