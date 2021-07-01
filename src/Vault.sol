@@ -80,6 +80,22 @@ contract Vault is ERC20 {
     }
 
     /*///////////////////////////////////////////////////////////////
+                         SHARE PRICE FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Returns the current fvToken exchange rate, scaled by 1e18.
+    function exchangeRateCurrent() public view returns (uint256) {
+        // Total fvToken supply and vault's total balance in underlying tokens.
+        uint256 supply = totalSupply();
+        uint256 balance = calculateTotalFreeUnderlying();
+        // If either the supply or balance is 0, return 1.
+        if (supply == 0 || balance == 0) return 1e18;
+
+        uint256 decimals = underlying.decimals();
+        return (balance * 1e36) / (10**decimals * supply);
+    }
+
+    /*///////////////////////////////////////////////////////////////
                            HARVEST FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
@@ -181,21 +197,5 @@ contract Vault is ERC20 {
 
         // Withdraw from the pool.
         pool.redeem(cTokenAmount);
-    }
-
-    /*///////////////////////////////////////////////////////////////
-                         SHARE PRICE FUNCTIONS
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Returns the current fvToken exchange rate, scaled by 1e18.
-    function exchangeRateCurrent() public view returns (uint256) {
-        // Total fvToken supply and vault's total balance in underlying tokens.
-        uint256 supply = totalSupply();
-        uint256 balance = calculateTotalFreeUnderlying();
-        // If either the supply or balance is 0, return 1.
-        if (supply == 0 || balance == 0) return 1e18;
-
-        uint256 decimals = underlying.decimals();
-        return (balance * 1e36) / (10**decimals * supply);
     }
 }
