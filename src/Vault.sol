@@ -66,10 +66,22 @@ contract Vault is ERC20 {
         _mint(msg.sender, (exchangeRate * amount) / 10**decimals);
     }
 
-    /// @notice Burns fvTokens and sends underlying tokens to the sender.
-    /// @param amount The amount of fvTokens to burn.
-    // TODO: withdraw -> withdrawUnderlying
+    /// @notice Burns fvTokens and sends underlying tokens to the caller.
+    /// @param amount The amount of underlying tokens to burn.
     function withdraw(uint256 amount) external {
+        uint256 exchangeRate = exchangeRateCurrent();
+        uint256 decimals = underlying.decimals();
+
+        // Burn fvTokens.
+        _burn(msg.sender, amount);
+
+        // Transfer tokens to the caller.
+        underlying.transfer(msg.sender, (amount * 10**decimals) / exchangeRate);
+    }
+
+    /// @notice Burns fvTokens and sends underlying tokens to the caller.
+    /// @param amount The amount of underlying tokens to withdraw.
+    function withdrawUnderlying(uint256 amount) external {
         uint256 exchangeRate = exchangeRateCurrent();
         uint256 decimals = underlying.decimals();
 
