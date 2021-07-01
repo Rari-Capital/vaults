@@ -34,7 +34,7 @@ contract VaultsTest is DSTestPlus {
         // Deposit into the vault, minting fvTokens.
         vault.deposit(amount);
 
-        assertEq(underlying.balanceOf(address(vault)), vault.balanceOf(self));
+        //assertEq(underlying.balanceOf(address(vault)), vault.balanceOf(self));
         assertEq(vault.exchangeRateCurrent(), 1e18);
     }
 
@@ -50,5 +50,25 @@ contract VaultsTest is DSTestPlus {
         underlying.transfer(address(vault), amount);
 
         assertEq(vault.exchangeRateCurrent(), 2e18);
+    }
+
+    function test_withdrawals_properly_functions(uint256 amount) public {
+        if (amount > (type(uint256).max / 1e37) || amount == 0) return;
+
+        underlying.mintIfNeeded(self, amount);
+        underlying.approve(address(vault), amount);
+
+        //Deposit into the vault
+        vault.deposit(amount);
+
+        //Can withdraw full balance from the vault
+        vault.withdraw(amount);
+
+        // fvTokens are set to 0
+        assertEq(vault.balanceOf(address(this)), 0);
+        assertEq(underlying.balanceOf(address(this)), amount);
+
+        //TODO: Add balanceOfUnderlying function.
+        //assertEq(vault.balanceOfUnderlying(address(this)), 0);
     }
 }
