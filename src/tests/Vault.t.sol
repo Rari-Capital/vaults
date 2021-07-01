@@ -27,7 +27,7 @@ contract VaultsTest is DSTestPlus {
 
     function test_exchange_rate_is_initially_one(uint256 amount) public {
         // If the number is too large we can't test with it.
-        if (amount > (type(uint256).max / 1e18)) return;
+        if (amount > type(uint256).max / 1e36) return;
 
         underlying.mintIfNeeded(self, amount);
         underlying.approve(address(vault), amount);
@@ -35,6 +35,7 @@ contract VaultsTest is DSTestPlus {
         vault.deposit(amount);
 
         assertEq(underlying.balanceOf(address(vault)), vault.balanceOf(self));
+        assertEq(vault.exchangeRateCurrent(), 1e18);
     }
 
     function test_exchange_rate_increases(uint256 amount) public {
