@@ -73,7 +73,7 @@ contract Vault is ERC20 {
         uint256 exchangeRate = exchangeRateCurrent();
         uint256 decimals = underlying.decimals();
 
-        _burn(msg.sender, (amount * 1e36) / (10**decimals / exchangeRate));
+        _burn(msg.sender, (amount * 1e36) / (exchangeRate * 10**decimals));
 
         // Transfer underlying tokens to the sender.
         underlying.transfer(msg.sender, amount);
