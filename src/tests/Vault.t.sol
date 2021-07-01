@@ -34,7 +34,7 @@ contract VaultsTest is DSTestPlus {
         // Deposit into the vault, minting fvTokens.
         vault.deposit(amount);
 
-        assertEq(vault.totalUnderlying(), vault.balanceOf(self));
+        assertEq(underlying.balanceOf(address(vault)), vault.balanceOf(self));
     }
 
     function test_exchange_rate_increases(uint256 amount) public {
