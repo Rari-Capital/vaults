@@ -51,6 +51,37 @@ contract Vault is ERC20 {
     uint256 public totalUnderlying;
 
     /*///////////////////////////////////////////////////////////////
+                         USER ACTION FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Deposits an underlying token and mints fvTokens.
+    /// @param amount The amount of the underlying token to deposit.
+    function deposit(uint256 amount) external {
+        // Transfer in underlying tokens from the sender.
+        underlying.transferFrom(msg.sender, address(this), amount);
+
+        //Get the token exchangeRate and underlying decimals
+        uint256 exchangeRate = exchangeRateCurrent();
+        uint256 decimals = underlying.decimals();
+
+        _mint(msg.sender, (exchangeRate * amount) / 10**decimals);
+        totalUnderlying += amount;
+    }
+
+    /// @notice Burns fvTokens and sends underlying tokens to the sender.
+    /// @param amount The amount of fvTokens to burn.
+    function withdraw(uint256 amount) external {
+        uint256 exchangeRate = exchangeRateCurrent();
+        uint256 decimals = underlying.decimals();
+
+        _burn(msg.sender, (amount * 1e36) / (10**decimals / exchangeRate));
+        totalUnderlying -= amount;
+
+        // Transfer underlying tokens to the sender.
+        underlying.transfer(msg.sender, amount);
+    }
+
+    /*///////////////////////////////////////////////////////////////
                            HARVEST FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
@@ -149,5 +180,21 @@ contract Vault is ERC20 {
 
         // Withdraw from the pool.
         pool.redeem(cTokenAmount);
+    }
+
+    /*///////////////////////////////////////////////////////////////
+                         SHARE PRICE FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Returns the current fvToken exchange rate, scaled by 1e18.
+    function exchangeRateCurrent() public view returns (uint256) {
+        // Total fvToken supply and vault's total balance in underlying tokens.
+        uint256 supply = totalSupply();
+        uint256 balance = calculateTotalFreeUnderlying();
+        // If either the supply or balance is 0, return 1.
+        if (supply == 0 || balance == 0) return 1e18;
+
+        uint256 decimals = underlying.decimals();
+        return (balance * 1e36) / (10**decimals * supply);
     }
 }
