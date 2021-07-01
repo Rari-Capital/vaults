@@ -57,15 +57,13 @@ contract Vault is ERC20 {
     /// @notice Deposits an underlying token and mints fvTokens.
     /// @param amount The amount of the underlying token to deposit.
     function deposit(uint256 amount) external {
-        // Transfer in underlying tokens from the sender.
-        underlying.transferFrom(msg.sender, address(this), amount);
-
         //Get the token exchangeRate and underlying decimals
         uint256 exchangeRate = exchangeRateCurrent();
         uint256 decimals = underlying.decimals();
 
+        // Transfer in underlying tokens from the sender.
+        underlying.transferFrom(msg.sender, address(this), amount);
         _mint(msg.sender, (exchangeRate * amount) / 10**decimals);
-        totalUnderlying += amount;
     }
 
     /// @notice Burns fvTokens and sends underlying tokens to the sender.
@@ -75,7 +73,6 @@ contract Vault is ERC20 {
         uint256 decimals = underlying.decimals();
 
         _burn(msg.sender, (amount * 1e36) / (10**decimals / exchangeRate));
-        totalUnderlying -= amount;
 
         // Transfer underlying tokens to the sender.
         underlying.transfer(msg.sender, amount);
@@ -123,7 +120,7 @@ contract Vault is ERC20 {
     }
 
     function calculateTotalFreeUnderlying() public view returns (uint256) {
-        return totalUnderlying - calculateLockedProfit();
+        return (totalUnderlying + underlying.balanceOf(address(this))) - calculateLockedProfit();
     }
 
     /*///////////////////////////////////////////////////////////////
