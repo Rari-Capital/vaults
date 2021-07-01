@@ -127,6 +127,7 @@ contract Vault is ERC20 {
                            REBALANCE FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
+    /// @dev Given a cToken, return a bool indicating whether the vault holds it.
     function haveDepositedInto(CErc20 pool) internal view returns (bool) {
         // TODO: Optimizations:
         // - Store depositedPools in memory?
@@ -141,6 +142,7 @@ contract Vault is ERC20 {
         return false;
     }
 
+    /// @dev Deposit into a cErc20 contract
     function enterPool(CErc20 pool, uint256 underlyingAmount) external {
         // If we have not already deposited into the pool:
         if (!haveDepositedInto(pool)) {
@@ -155,6 +157,7 @@ contract Vault is ERC20 {
         pool.mint(underlyingAmount);
     }
 
+    /// @dev Withdraw funds from a cToken contracts
     function exitPool(CErc20 pool, uint256 cTokenAmount) external {
         // If we're withdrawing our full balance:
         uint256 cTokenBalance = pool.balanceOf(address(this));
