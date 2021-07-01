@@ -8,8 +8,19 @@ import {Vault} from "./Vault.sol";
 /// @author TransmissionsDev + JetJadeja
 /// @notice Factory contract, deploying proxy implementations.
 contract VaultFactory {
-    /// @notice Maps underlying ERC20s to a yield generating Vault (if it exists).
-    mapping(ERC20 => Vault) public getVaultFromUnderlying;
+    /// @notice Computes a Vault's address from its underlying token.
+    /// @dev The Vault returned may not have been deployed yet.
+    /// @param underlying The underlying ERC20 token the Vault earns yield on.
+    /// @return The Vault that supports this underlying token.
+    function getVaultFromUnderlying(ERC20 underlying) public view returns (Vault) {
+        bytes memory bytecode = abi.encodePacked(type(Vault).creationCode, abi.encode(underlying));
+
+        bytes32 hash = keccak256(
+            abi.encodePacked(bytes1(0xff), address(this), keccak256(abi.encode(underlying)), keccak256(bytecode))
+        );
+
+        return Vault(address(uint160(uint256(hash))));
+    }
 
     /// @notice Deploy a new Vault contract.
     /// @notice This will revert if a vault with the token has already been created.
@@ -20,7 +31,5 @@ contract VaultFactory {
         bytes32 salt = keccak256(abi.encode(underlying));
         // Use the create2 opcode to deploy the Vault contract.
         vault = new Vault{salt: salt}(underlying);
-        // Store the underlying's new vault address.
-        getVaultFromUnderlying[underlying] = vault;
     }
 }
