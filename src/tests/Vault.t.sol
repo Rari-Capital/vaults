@@ -52,7 +52,7 @@ contract VaultsTest is DSTestPlus {
         assertEq(vault.exchangeRateCurrent(), 2e18);
     }
 
-    function test_withdrawals_properly_functions(uint256 amount) public {
+    function test_underlying_withdrawals_function_properly(uint256 amount) public {
         if (amount > (type(uint256).max / 1e37) || amount == 0) return;
 
         underlying.mintIfNeeded(self, amount);
@@ -62,7 +62,7 @@ contract VaultsTest is DSTestPlus {
         vault.deposit(amount);
 
         //Can withdraw full balance from the vault
-        vault.withdraw(amount);
+        vault.withdrawUnderlying(amount);
 
         // fvTokens are set to 0
         assertEq(vault.balanceOf(address(this)), 0);
