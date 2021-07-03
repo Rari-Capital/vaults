@@ -23,7 +23,7 @@ contract VaultFactoryTest is DSTestPlus {
         assertVaultEq(vaultFactory.getVaultFromUnderlying(underlying), vault);
     }
 
-    function testFail_does_not_allow_duplicate_vault() public {
+    function testFail_does_not_allow_duplicate_vaults() public {
         test_deploy_vault();
         test_deploy_vault();
     }
