@@ -9,4 +9,4 @@ update:; dapp update
 # Compiles the project.
 build:; dapp build
 # Test the project.
-test:; dapp test
+test:; DAPP_SKIP_BUILD=1 dapp test
