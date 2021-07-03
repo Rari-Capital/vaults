@@ -26,8 +26,10 @@ contract Vault is ERC20 {
         ERC20(
             // ex: Fuse DAI Vault
             StringConcat.concat("Fuse ", _underlying.name(), " Vault"),
-            // fvDAI
-            StringConcat.concat("fv", _underlying.symbol())
+            // ex: fvDAI
+            StringConcat.concat("fv", _underlying.symbol()),
+            // ex: 18
+            _underlying.decimals()
         )
     {
         underlying = _underlying;
@@ -57,9 +59,7 @@ contract Vault is ERC20 {
     /// @notice Deposits an underlying token and mints fvTokens.
     /// @param amount The amount of the underlying token to deposit.
     function deposit(uint256 amount) external {
-        // Get the token exchangeRate and underlying decimals.
         uint256 exchangeRate = exchangeRateCurrent();
-        uint256 decimals = underlying.decimals();
 
         // Transfer in underlying tokens from the sender.
         underlying.transferFrom(msg.sender, address(this), amount);
@@ -70,7 +70,6 @@ contract Vault is ERC20 {
     /// @param amount The amount of underlying tokens to burn.
     function withdraw(uint256 amount) external {
         uint256 exchangeRate = exchangeRateCurrent();
-        uint256 decimals = underlying.decimals();
 
         // Burn fvTokens.
         _burn(msg.sender, amount);
@@ -83,7 +82,6 @@ contract Vault is ERC20 {
     /// @param amount The amount of underlying tokens to withdraw.
     function withdrawUnderlying(uint256 amount) external {
         uint256 exchangeRate = exchangeRateCurrent();
-        uint256 decimals = underlying.decimals();
 
         _burn(msg.sender, (amount * 1e36) / (exchangeRate * 10**decimals));
 
@@ -103,7 +101,6 @@ contract Vault is ERC20 {
         // If either the supply or balance is 0, return 1.
         if (supply == 0 || balance == 0) return 1e18;
 
-        uint256 decimals = underlying.decimals();
         return (balance * 1e36) / (10**decimals * supply);
     }
 
