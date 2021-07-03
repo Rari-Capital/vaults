@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
-import "../interfaces/IERC20.sol";
 
-contract ERC20 is IERC20 {
+contract ERC20 {
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+
     uint256 internal _totalSupply;
 
     mapping(address => uint256) internal _balanceOf;
@@ -22,23 +24,23 @@ contract ERC20 is IERC20 {
         decimals = decimals_;
     }
 
-    function totalSupply() public view virtual override returns (uint256) {
+    function totalSupply() public view returns (uint256) {
         return _totalSupply;
     }
 
-    function balanceOf(address guy) public view virtual override returns (uint256) {
+    function balanceOf(address guy) public view virtual returns (uint256) {
         return _balanceOf[guy];
     }
 
-    function allowance(address owner, address spender) public view virtual override returns (uint256) {
+    function allowance(address owner, address spender) public view virtual returns (uint256) {
         return _allowance[owner][spender];
     }
 
-    function approve(address spender, uint256 wad) public virtual override returns (bool) {
+    function approve(address spender, uint256 wad) public virtual returns (bool) {
         return _approve(msg.sender, spender, wad);
     }
 
-    function transfer(address dst, uint256 wad) public virtual override returns (bool) {
+    function transfer(address dst, uint256 wad) public virtual returns (bool) {
         return _transfer(msg.sender, dst, wad);
     }
 
@@ -46,7 +48,7 @@ contract ERC20 is IERC20 {
         address src,
         address dst,
         uint256 wad
-    ) public virtual override returns (bool) {
+    ) public virtual returns (bool) {
         uint256 allowed = _allowance[src][msg.sender];
         if (src != msg.sender && allowed != type(uint256).max) {
             require(allowed >= wad, "ERC20: Insufficient approval");

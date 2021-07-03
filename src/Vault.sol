@@ -1,15 +1,19 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
+import {StringConcat} from "./libraries/StringConcat.sol";
+
 import {ERC20} from "./external/ERC20.sol";
 import {CErc20} from "./external/CErc20.sol";
-import {StringConcat} from "./libraries/StringConcat.sol";
+import {SafeERC20} from "./external/SafeERC20.sol";
 
 /// @title Fuse Vault/fvToken
 /// @author TransmissionsDev + JetJadeja
 /// @notice Yield bearing token that enables users to swap their
 /// underlying asset for fvTokens to instantly begin earning yield.
 contract Vault is ERC20 {
+    using SafeERC20 for ERC20;
+
     /*///////////////////////////////////////////////////////////////
                                 CONSTANTS
     //////////////////////////////////////////////////////////////*/
@@ -62,7 +66,7 @@ contract Vault is ERC20 {
         uint256 exchangeRate = exchangeRateCurrent();
 
         // Transfer in underlying tokens from the sender.
-        underlying.transferFrom(msg.sender, address(this), amount);
+        underlying.safeTransferFrom(msg.sender, address(this), amount);
         _mint(msg.sender, (exchangeRate * amount) / 10**decimals);
     }
 
@@ -75,7 +79,7 @@ contract Vault is ERC20 {
         _burn(msg.sender, amount);
 
         // Transfer tokens to the caller.
-        underlying.transfer(msg.sender, (amount * 10**decimals) / exchangeRate);
+        underlying.safeTransfer(msg.sender, (amount * 10**decimals) / exchangeRate);
     }
 
     /// @notice Burns fvTokens and sends underlying tokens to the caller.
@@ -86,7 +90,7 @@ contract Vault is ERC20 {
         _burn(msg.sender, (amount * 1e36) / (exchangeRate * 10**decimals));
 
         // Transfer underlying tokens to the sender.
-        underlying.transfer(msg.sender, amount);
+        underlying.safeTransfer(msg.sender, amount);
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -180,7 +184,7 @@ contract Vault is ERC20 {
         }
 
         // Approve the underlying to the pool for minting.
-        underlying.approve(address(pool), underlyingAmount);
+        underlying.safeApprove(address(pool), underlyingAmount);
 
         // Deposit into the pool and receive cTokens.
         pool.mint(underlyingAmount);
