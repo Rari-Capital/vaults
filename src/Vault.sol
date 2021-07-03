@@ -41,14 +41,14 @@ contract Vault is ERC20 {
     CErc20[] public depositedPools;
 
     /// @notice The most recent block where a harvest occured.
-    uint256 public lastHarvestBlock;
+    uint256 public lastHarvest;
 
-    /// @notice The amount of "locked" profit acrrued last harvest.
-    uint256 public totalLockedProfit;
+    /// @notice The max amount of "locked" profit acrrued last harvest.
+    uint256 public maxLockedProfit;
 
-    /// @notice The total amount of underlying the vault holds (calculated last harvest).
-    /// @dev Includes `totalLockedProfit`.
-    uint256 public totalUnderlying;
+    /// @notice The total amount of underlying held in deposits (calculated last harvest).
+    /// @dev Includes `maxLockedProfit`.
+    uint256 public totalDeposited;
 
     /*///////////////////////////////////////////////////////////////
                          USER ACTION FUNCTIONS
@@ -112,13 +112,13 @@ contract Vault is ERC20 {
     //////////////////////////////////////////////////////////////*/
 
     function nextHarvest() public view returns (uint256) {
-        return MIN_HARVEST_DELAY_BLOCKS + lastHarvestBlock;
+        return MIN_HARVEST_DELAY_BLOCKS + lastHarvest;
     }
 
     function harvest() external {
         require(block.number >= nextHarvest());
 
-        uint256 newUnderlying;
+        uint256 depositBalance;
 
         // TODO: Optimizations:
         // - Store depositedPools in memory?
@@ -128,28 +128,31 @@ contract Vault is ERC20 {
             CErc20 pool = depositedPools[i];
 
             // Add this pool's balance to the total.
-            newUnderlying += pool.balanceOfUnderlying(address(this));
+            depositBalance += pool.balanceOfUnderlying(address(this));
         }
-
-        // Update totalUnderlying to use the freshly computed underlying amount.
-        totalUnderlying = newUnderlying;
 
         // Locked profit is the delta between the underlying amount we
         // had last harvest and the newly calculated underlying amount.
-        totalLockedProfit = newUnderlying - totalUnderlying;
+        maxLockedProfit = depositBalance - totalDeposited;
 
-        // Set the lastHarvestBlock to this block, as we just triggered a harvest.
-        lastHarvestBlock = block.number;
+        // Update totalDeposited to use the freshly computed underlying amount.
+        totalDeposited = depositBalance;
+
+        // Set the lastHarvest to this block, as we just triggered a harvest.
+        lastHarvest = block.number;
     }
 
-    function calculateLockedProfit() public view returns (uint256) {
+    function calculateUnlockedProfit() public view returns (uint256) {
         // TODO: CAP at 1 if block numger exceeds next harvest
-        uint256 unlockedProfit = (totalLockedProfit * block.number) / nextHarvest();
-        return totalLockedProfit - unlockedProfit;
+        uint256 unlockedProfit = block.number >= lastHarvest
+            ? maxLockedProfit
+            : (maxLockedProfit * (block.number - lastHarvest)) / (nextHarvest() - lastHarvest);
+        // TODO: is there a cleaner way to do this?
+        return maxLockedProfit - unlockedProfit;
     }
 
     function calculateTotalFreeUnderlying() public view returns (uint256) {
-        return (totalUnderlying + underlying.balanceOf(address(this))) - calculateLockedProfit();
+        return totalDeposited - calculateUnlockedProfit() + underlying.balanceOf(address(this));
     }
 
     /*///////////////////////////////////////////////////////////////
