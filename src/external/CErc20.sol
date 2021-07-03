@@ -1,11 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.6;
 
-/**
- * @title Compound's CErc20 Contract
- * @notice Abstract base for CErc20
- * @author Compound
- */
 interface CErc20 {
     function admin() external view returns (address);
 
