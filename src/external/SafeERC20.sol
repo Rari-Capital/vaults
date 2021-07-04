@@ -37,6 +37,7 @@ library SafeERC20 {
         }
     }
 
+    // TODO: Optimize: remove this function and inline it into the above? would that save bytes copy gas?
     function functionCall(address target, bytes memory data) internal returns (bytes memory) {
         uint256 size;
         assembly {
