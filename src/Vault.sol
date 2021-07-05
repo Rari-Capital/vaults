@@ -5,7 +5,6 @@ import {ERC20} from "./external/ERC20.sol";
 import {CErc20} from "./external/CErc20.sol";
 
 import {LowGasSafeERC20} from "./libraries/LowGasSafeERC20.sol";
-import {StringConcatenation} from "./libraries/StringConcatenation.sol";
 
 /// @title Fuse Vault/fvToken
 /// @author TransmissionsDev + JetJadeja
@@ -29,9 +28,9 @@ contract Vault is ERC20 {
     constructor(ERC20 _underlying)
         ERC20(
             // ex: Fuse DAI Vault
-            StringConcatenation.concat("Fuse ", _underlying.name(), " Vault"),
+            string(abi.encodePacked("Fuse ", _underlying.name(), " Vault")),
             // ex: fvDAI
-            StringConcatenation.concat("fv", _underlying.symbol()),
+            string(abi.encodePacked("fv", _underlying.symbol())),
             // ex: 18
             _underlying.decimals()
         )
