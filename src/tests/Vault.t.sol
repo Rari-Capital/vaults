@@ -23,9 +23,7 @@ contract VaultsTest is DSTestPlus {
         assertEq(vault.symbol(), string(abi.encodePacked("fv", underlying.symbol())));
     }
 
-    function test_exchange_rate_is_initially_one() public {
-        uint256 amount = 1e18;
-
+    function test_exchange_rate_is_initially_one(uint256 amount) public {
         // If the number is too large we can't test with it.
         if (amount > type(uint256).max / 1e36) return;
 
@@ -38,9 +36,7 @@ contract VaultsTest is DSTestPlus {
         assertEq(vault.exchangeRateCurrent(), 1e18);
     }
 
-    function test_exchange_rate_increases() public {
-        uint256 amount = 1e18;
-
+    function test_exchange_rate_increases(uint256 amount) public {
         // If the number is too large or 0 we can't test with it.
         if (amount > (type(uint256).max / 1e37) || amount == 0) return;
 
@@ -58,9 +54,7 @@ contract VaultsTest is DSTestPlus {
         assertEq(vault.exchangeRateCurrent(), 2e18);
     }
 
-    function test_underlying_withdrawals_function_properly() public {
-        uint256 amount = 1e18;
-
+    function test_underlying_withdrawals_function_properly(uint256 amount) public {
         // If the number is too large we can't test with it.
         if (amount > (type(uint256).max / 1e37)) return;
 
