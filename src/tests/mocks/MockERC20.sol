@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import "../../external/ERC20.sol";
 
 contract MockERC20 is ERC20("Mock Token", "MOCK", 18) {
-    function mintIfNeeded(address guy, uint256 amount) external {
+    function mint(address guy, uint256 amount) external {
         uint256 currentBal = balanceOf(guy);
         // If the guy does not have enough to cover this amount:
         if (amount > currentBal) {
