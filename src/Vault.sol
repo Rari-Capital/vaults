@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import {StringConcat} from "./libraries/StringConcat.sol";
-
 import {ERC20} from "./external/ERC20.sol";
 import {CErc20} from "./external/CErc20.sol";
-import {SafeERC20} from "./external/SafeERC20.sol";
+
+import {LowGasSafeERC20} from "./libraries/LowGasSafeERC20.sol";
+import {StringConcatenation} from "./libraries/StringConcatenation.sol";
 
 /// @title Fuse Vault/fvToken
 /// @author TransmissionsDev + JetJadeja
 /// @notice Yield bearing token that enables users to swap their
 /// underlying asset for fvTokens to instantly begin earning yield.
 contract Vault is ERC20 {
-    using SafeERC20 for ERC20;
+    using LowGasSafeERC20 for ERC20;
 
     /*///////////////////////////////////////////////////////////////
                                 CONSTANTS
@@ -29,9 +29,9 @@ contract Vault is ERC20 {
     constructor(ERC20 _underlying)
         ERC20(
             // ex: Fuse DAI Vault
-            StringConcat.concat("Fuse ", _underlying.name(), " Vault"),
+            StringConcatenation.concat("Fuse ", _underlying.name(), " Vault"),
             // ex: fvDAI
-            StringConcat.concat("fv", _underlying.symbol()),
+            StringConcatenation.concat("fv", _underlying.symbol()),
             // ex: 18
             _underlying.decimals()
         )
@@ -65,9 +65,10 @@ contract Vault is ERC20 {
     function deposit(uint256 amount) external {
         uint256 exchangeRate = exchangeRateCurrent();
 
+        _mint(msg.sender, (exchangeRate * amount) / 10**decimals);
+
         // Transfer in underlying tokens from the sender.
         underlying.safeTransferFrom(msg.sender, address(this), amount);
-        _mint(msg.sender, (exchangeRate * amount) / 10**decimals);
     }
 
     /// @notice Burns fvTokens and sends underlying tokens to the caller.

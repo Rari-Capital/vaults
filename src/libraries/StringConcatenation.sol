@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 /// @title String concatenation library.
 /// @author TransmissionsDev
 /// @dev Uses abi.encodePacked, be aware of SWC-133.
-library StringConcat {
+library StringConcatenation {
     /// @notice Concatenates arg1, arg2, and arg3 in that order.
     function concat(
         string memory arg1,

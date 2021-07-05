@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./ERC20.sol";
+import "../external/ERC20.sol";
 
-library SafeERC20 {
+/// @title Low gas safe ERC20 interaction library.
+/// @author TransmissionsDev
+/// @dev Only supports safeTransfer and safeTransferFrom.
+library LowGasSafeERC20 {
     function safeTransfer(
         ERC20 token,
         address to,
@@ -14,6 +17,7 @@ library SafeERC20 {
             abi.encodeWithSelector(token.transfer.selector, to, value)
         );
 
+        // TODO: does it use that much gas if we make this a seperate function to be clean?
         if (returndata.length > 0) {
             // Return data is optional
             require(abi.decode(returndata, (bool)), "SafeERC20: ERC20 operation did not succeed");
@@ -31,6 +35,7 @@ library SafeERC20 {
             abi.encodeWithSelector(token.transferFrom.selector, from, to, value)
         );
 
+        // TODO: does it use that much gas if we make this a seperate function to be clean?
         if (returndata.length > 0) {
             // Return data is optional
             require(abi.decode(returndata, (bool)), "SafeERC20: ERC20 operation did not succeed");

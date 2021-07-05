@@ -4,7 +4,8 @@ pragma solidity ^0.8.0;
 import {DSTestPlus} from "./utils/DSTestPlus.sol";
 
 import {MockERC20} from "./mocks/MockERC20.sol";
-import {StringConcat} from "../libraries/StringConcat.sol";
+
+import {StringConcatenation} from "../libraries/StringConcatenation.sol";
 
 import {Vault} from "../Vault.sol";
 
@@ -20,8 +21,8 @@ contract VaultsTest is DSTestPlus {
     function test_properly_init_erc20() public {
         assertErc20Eq(vault.underlying(), underlying);
 
-        assertEq(vault.name(), StringConcat.concat("Fuse ", underlying.name(), " Vault"));
-        assertEq(vault.symbol(), StringConcat.concat("fv", underlying.symbol()));
+        assertEq(vault.name(), StringConcatenation.concat("Fuse ", underlying.name(), " Vault"));
+        assertEq(vault.symbol(), StringConcatenation.concat("fv", underlying.symbol()));
     }
 
     function test_exchange_rate_is_initially_one(uint256 amount) public {
