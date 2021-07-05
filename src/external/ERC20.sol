@@ -11,13 +11,13 @@ contract ERC20 {
     mapping(address => mapping(address => uint256)) internal _allowance;
 
     string public symbol;
-    uint256 public immutable decimals;
+    uint8 public immutable decimals;
     string public name;
 
     constructor(
         string memory name_,
         string memory symbol_,
-        uint256 decimals_
+        uint8 decimals_
     ) {
         name = name_;
         symbol = symbol_;
