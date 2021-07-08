@@ -33,7 +33,7 @@ contract VaultsTest is DSTestPlus {
         // Deposit into the vault, minting fvTokens.
         vault.deposit(amount);
 
-        assertEq(vault.exchangeRateCurrent(), 1e18);
+        assertEq(vault.exchangeRateCurrent(), 10**underlying.decimals());
     }
 
     function test_exchange_rate_increases(uint256 amount) public {
@@ -46,12 +46,12 @@ contract VaultsTest is DSTestPlus {
         // Deposit into the vault, minting fvTokens.
         vault.deposit(amount);
 
-        assertEq(vault.exchangeRateCurrent(), 1e18);
+        assertEq(vault.exchangeRateCurrent(), 10**underlying.decimals());
 
         // Send tokens into the vault, artificially increasing the exchangeRate.
         underlying.transfer(address(vault), amount);
 
-        assertEq(vault.exchangeRateCurrent(), 2e18);
+        assertEq(vault.exchangeRateCurrent(), 2 * 10**underlying.decimals());
     }
 
     function test_underlying_withdrawals_function_properly(uint256 amount) public {
