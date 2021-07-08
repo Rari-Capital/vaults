@@ -86,7 +86,7 @@ contract Vault is ERC20 {
     function withdrawUnderlying(uint256 amount) external {
         uint256 exchangeRate = exchangeRateCurrent();
 
-        _burn(msg.sender, (amount * 1e36) / (exchangeRate * 10**decimals));
+        _burn(msg.sender, (amount * 10**decimals) / exchangeRate);
 
         // Transfer underlying tokens to the sender.
         underlying.safeTransfer(msg.sender, amount);
