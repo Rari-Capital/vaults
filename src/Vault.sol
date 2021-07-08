@@ -104,7 +104,7 @@ contract Vault is ERC20 {
 
         // If either the supply or balance is 0, return 1.
         if (supply == 0 || balance == 0) return 10**decimals;
-        return (balance * 1e18) / supply;
+        return (balance * 10**decimals) / supply;
     }
 
     /*///////////////////////////////////////////////////////////////
