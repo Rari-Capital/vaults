@@ -63,7 +63,6 @@ contract Vault is ERC20 {
     /// @param amount The amount of the underlying token to deposit.
     function deposit(uint256 amount) external {
         uint256 exchangeRate = exchangeRateCurrent();
-
         _mint(msg.sender, (exchangeRate * amount) / 10**decimals);
 
         // Transfer in underlying tokens from the sender.
@@ -102,10 +101,10 @@ contract Vault is ERC20 {
         // Total fvToken supply and vault's total balance in underlying tokens.
         uint256 supply = totalSupply();
         uint256 balance = calculateTotalFreeUnderlying();
-        // If either the supply or balance is 0, return 1.
-        if (supply == 0 || balance == 0) return 1e18;
 
-        return (balance * 1e36) / (10**decimals * supply);
+        // If either the supply or balance is 0, return 1.
+        if (supply == 0 || balance == 0) return 10**decimals;
+        return (balance * 1e18) / supply;
     }
 
     /*///////////////////////////////////////////////////////////////
