@@ -81,6 +81,9 @@ contract Vault is ERC20 {
         // Burn fvTokens.
         _burn(msg.sender, withdrawalAmount);
 
+        // Withdraw tokens from Fuse.
+        withdrawFromPools(withdrawalAmount);
+
         // Transfer tokens to the caller.
         underlying.safeTransfer(msg.sender, withdrawalAmount);
     }
@@ -92,6 +95,9 @@ contract Vault is ERC20 {
 
         // Burn fvTokens.
         _burn(msg.sender, (exchangeRate * amount) / 10**decimals);
+
+        // Withdraw tokens from Fuse.
+        withdrawFromPools(amount);
 
         // Transfer underlying tokens to the sender.
         underlying.safeTransfer(msg.sender, amount);
