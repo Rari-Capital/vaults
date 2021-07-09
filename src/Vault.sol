@@ -45,7 +45,7 @@ contract Vault is ERC20 {
     /// @notice An array of cTokens the Vault holds.
     CErc20[] public depositedPools;
 
-    /// @notice An ordered array of cTokens representing the withdrawal queue
+    /// @notice An ordered array of cTokens representing the withdrawal queue.
     CErc20[] public withdrawalQueue;
 
     /// @notice The most recent block where a harvest occured.
@@ -122,7 +122,7 @@ contract Vault is ERC20 {
                          WITHDRAWAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    ///@dev Withdraw from pools
+    ///@dev Withdraw from pools.
     function withdrawFromPools(uint256 amount) internal {
         // If float is greater than withdrawal amount, use those funds instead of withdrawing from Fuse
         if (amount <= underlying.balanceOf(address(this))) return;
