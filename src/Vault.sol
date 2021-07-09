@@ -45,6 +45,9 @@ contract Vault is ERC20 {
     /// @notice An array of cTokens the Vault holds.
     CErc20[] public depositedPools;
 
+    /// @notice An ordered array of cTokens representing the withdrawal queue
+    CErc20[] public withdrawalQueue;
+
     /// @notice The most recent block where a harvest occured.
     uint256 public lastHarvest;
 
@@ -106,6 +109,10 @@ contract Vault is ERC20 {
         if (supply == 0 || balance == 0) return 10**decimals;
         return (balance * 10**decimals) / supply;
     }
+
+    /*///////////////////////////////////////////////////////////////
+                         WITHDRAWAL FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
 
     /*///////////////////////////////////////////////////////////////
                            HARVEST FUNCTIONS
@@ -212,5 +219,10 @@ contract Vault is ERC20 {
 
         // Withdraw from the pool.
         pool.redeem(cTokenAmount);
+    }
+
+    ///@dev Set a new withdrawal queue
+    function setWithdrawalQueue(CErc20[] memory _withdrawalQueue) external {
+        withdrawalQueue = _withdrawalQueue;
     }
 }
