@@ -248,7 +248,8 @@ contract Vault is ERC20 {
         pool.redeem(cTokenAmount);
     }
 
-    ///@dev Set a new withdrawal queue
+    ///@notice Allows the rebalancer to set a new withdrawal queue.
+    ///@dev The array is set from last to first (instead of first to last) to decreae gas usage.
     function setWithdrawalQueue(CErc20[] memory _withdrawalQueue) external {
         withdrawalQueue = _withdrawalQueue;
     }
