@@ -114,6 +114,25 @@ contract Vault is ERC20 {
                          WITHDRAWAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
+    ///@dev Withdraw from pools
+    function withdrawFromPools(uint256 amount) internal {
+        // If float is greater than withdrawal amount, use those funds instead of withdrawing from Fuse
+        if (amount <= underlying.balanceOf(address(this))) return;
+
+        // Gas saving.
+        CErc20[] memory queue = withdrawalQueue;
+        for (uint256 i = withdrawalQueue.length - 1; i < withdrawalQueue.length; i--) {
+            CErc20 cToken = queue[i];
+            uint256 balance = cToken.balanceOfUnderlying(address(this));
+            if (amount >= balance) {
+                cToken.redeemUnderlying(amount);
+            } else {
+                cToken.redeemUnderlying(balance);
+                amount -= balance;
+            }
+        }
+    }
+
     /*///////////////////////////////////////////////////////////////
                            HARVEST FUNCTIONS
     //////////////////////////////////////////////////////////////*/
