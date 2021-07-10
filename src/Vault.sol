@@ -122,16 +122,17 @@ contract Vault is ERC20 {
                          WITHDRAWAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    ///@dev Withdraw from pools.
+    /// @dev Withdraw an amount of underlying tokens from pools in the withdrawal queue if neccessary.
     function withdrawFromPools(uint256 amount) internal {
-        // If float is greater than withdrawal amount, use those funds instead of withdrawing from Fuse
+        // TODO: do we do this check outside of this function?
+        // If float is greater than withdrawal amount, use those funds instead of withdrawing from the queue.
         if (amount <= underlying.balanceOf(address(this))) return;
 
-        // Gas saving.
-        CErc20[] memory queue = withdrawalQueue;
         for (uint256 i = withdrawalQueue.length - 1; i < withdrawalQueue.length; i--) {
-            CErc20 cToken = queue[i];
+            CErc20 cToken = withdrawalQueue[i];
+            // TODO: do we need to do balance checking or can we just withdraw our amount and see if reverts idk
             uint256 balance = cToken.balanceOfUnderlying(address(this));
+            // TODO: i dont think this works.
             if (amount >= balance) {
                 cToken.redeemUnderlying(amount);
             } else {
@@ -193,7 +194,6 @@ contract Vault is ERC20 {
                            REBALANCE FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev Given a cToken, return a bool indicating whether the vault holds it.
     function haveDepositedInto(CErc20 pool) internal view returns (bool) {
         // TODO: Optimizations:
         // - Store depositedPools in memory?
@@ -208,7 +208,6 @@ contract Vault is ERC20 {
         return false;
     }
 
-    /// @dev Deposit into a cErc20 contract
     function enterPool(CErc20 pool, uint256 underlyingAmount) external {
         // If we have not already deposited into the pool:
         if (!haveDepositedInto(pool)) {
@@ -223,7 +222,6 @@ contract Vault is ERC20 {
         pool.mint(underlyingAmount);
     }
 
-    /// @dev Withdraw funds from a cToken contracts
     function exitPool(CErc20 pool, uint256 cTokenAmount) external {
         // If we're withdrawing our full balance:
         uint256 cTokenBalance = pool.balanceOf(address(this));
@@ -248,9 +246,10 @@ contract Vault is ERC20 {
         pool.redeem(cTokenAmount);
     }
 
-    ///@notice Allows the rebalancer to set a new withdrawal queue.
-    ///@dev The array is set from last to first (instead of first to last) to decreae gas usage.
-    function setWithdrawalQueue(CErc20[] memory _withdrawalQueue) external {
-        withdrawalQueue = _withdrawalQueue;
+    /// @notice Allows the rebalancer to set a new withdrawal queue.
+    /// @dev The queue should be in ascending order of priority.
+    /// @param newQueue The updated queue (ordered in ascending order of priority).
+    function setWithdrawalQueue(CErc20[] memory newQueue) external {
+        withdrawalQueue = newQueue;
     }
 }
