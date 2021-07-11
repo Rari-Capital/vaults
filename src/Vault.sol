@@ -124,7 +124,7 @@ contract Vault is ERC20 {
 
     /// @dev Withdraw an amount of underlying tokens from pools in the withdrawal queue if neccessary.
     function withdrawFromPools(uint256 amount) internal {
-        // TODO: do we do this check outside of this function?
+        // TODO: can we do this check outside of this function?
         // If float is greater than withdrawal amount, use those funds instead of withdrawing from the queue.
         if (amount <= underlying.balanceOf(address(this))) return;
 
