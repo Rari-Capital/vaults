@@ -63,13 +63,13 @@ contract Vault is ERC20 {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Deposits an underlying token and mints fvTokens.
-    /// @param amount The amount of the underlying token to deposit.
-    function deposit(uint256 amount) external {
+    /// @param underlyingAmount The amount of the underlying token to deposit.
+    function deposit(uint256 underlyingAmount) external {
         uint256 exchangeRate = exchangeRateCurrent();
-        _mint(msg.sender, (exchangeRate * amount) / 10**decimals);
+        _mint(msg.sender, (exchangeRate * underlyingAmount) / 10**decimals);
 
         // Transfer in underlying tokens from the sender.
-        underlying.safeTransferFrom(msg.sender, address(this), amount);
+        underlying.safeTransferFrom(msg.sender, address(this), underlyingAmount);
     }
 
     /// @notice Burns fvTokens and sends underlying tokens to the caller.
@@ -81,26 +81,26 @@ contract Vault is ERC20 {
         // Burn fvTokens.
         _burn(msg.sender, withdrawalAmount);
 
-        // Withdraw tokens from Fuse.
-        withdrawFromPools(withdrawalAmount);
+        // Gather tokens from Fuse.
+        gatherFromPools(withdrawalAmount);
 
         // Transfer tokens to the caller.
         underlying.safeTransfer(msg.sender, withdrawalAmount);
     }
 
     /// @notice Burns fvTokens and sends underlying tokens to the caller.
-    /// @param amount The amount of underlying tokens to withdraw.
-    function withdrawUnderlying(uint256 amount) external {
+    /// @param underlyingAmount The amount of underlying tokens to withdraw.
+    function withdrawUnderlying(uint256 underlyingAmount) external {
         uint256 exchangeRate = exchangeRateCurrent();
 
         // Burn fvTokens.
-        _burn(msg.sender, (exchangeRate * amount) / 10**decimals);
+        _burn(msg.sender, (exchangeRate * underlyingAmount) / 10**decimals);
 
-        // Withdraw tokens from Fuse.
-        withdrawFromPools(amount);
+        // Gather tokens from Fuse.
+        gatherFromPools(underlyingAmount);
 
         // Transfer underlying tokens to the sender.
-        underlying.safeTransfer(msg.sender, amount);
+        underlying.safeTransfer(msg.sender, underlyingAmount);
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -123,21 +123,21 @@ contract Vault is ERC20 {
     //////////////////////////////////////////////////////////////*/
 
     /// @dev Withdraw an amount of underlying tokens from pools in the withdrawal queue if neccessary.
-    function withdrawFromPools(uint256 amount) internal {
+    function gatherFromPools(uint256 underlyingAmount) internal {
         // TODO: can we do this check outside of this function?
         // If float is greater than withdrawal amount, use those funds instead of withdrawing from the queue.
-        if (amount <= underlying.balanceOf(address(this))) return;
+        if (underlyingAmount <= underlying.balanceOf(address(this))) return;
 
         for (uint256 i = withdrawalQueue.length - 1; i < withdrawalQueue.length; i--) {
             CErc20 cToken = withdrawalQueue[i];
             // TODO: do we need to do balance checking or can we just withdraw our amount and see if reverts idk
             uint256 balance = cToken.balanceOfUnderlying(address(this));
             // TODO: i dont think this works.
-            if (amount >= balance) {
-                cToken.redeemUnderlying(amount);
+            if (underlyingAmount >= balance) {
+                cToken.redeemUnderlying(underlyingAmount);
             } else {
                 cToken.redeemUnderlying(balance);
-                amount -= balance;
+                underlyingAmount -= balance;
             }
         }
     }
