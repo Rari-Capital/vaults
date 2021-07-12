@@ -82,7 +82,7 @@ contract Vault is ERC20 {
         _burn(msg.sender, withdrawalAmount);
 
         // Gather tokens from Fuse.
-        gatherFromPools(withdrawalAmount);
+        pullIntoFloat(withdrawalAmount);
 
         // Transfer tokens to the caller.
         underlying.safeTransfer(msg.sender, withdrawalAmount);
@@ -97,7 +97,7 @@ contract Vault is ERC20 {
         _burn(msg.sender, (exchangeRate * underlyingAmount) / 10**decimals);
 
         // Gather tokens from Fuse.
-        gatherFromPools(underlyingAmount);
+        pullIntoFloat(underlyingAmount);
 
         // Transfer underlying tokens to the sender.
         underlying.safeTransfer(msg.sender, underlyingAmount);
@@ -123,7 +123,7 @@ contract Vault is ERC20 {
     //////////////////////////////////////////////////////////////*/
 
     /// @dev Withdraw an amount of underlying tokens from pools in the withdrawal queue if neccessary.
-    function gatherFromPools(uint256 underlyingAmount) internal {
+    function pullIntoFloat(uint256 underlyingAmount) internal {
         // TODO: can we do this check outside of this function?
         // If float is greater than withdrawal amount, use those funds instead of withdrawing from the queue.
         if (underlyingAmount <= underlying.balanceOf(address(this))) return;
