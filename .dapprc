@@ -16,10 +16,12 @@ else
   export DAPP_TEST_FUZZ_RUNS=1000 # When developing we only want to fuzz briefly. 
 fi
 
-. .env # Load in the .env file's env vars locally (they need to be re-exported to show up to dapptools if they don't use the export keyword)
 
-export HEVM_RPC=yes
-export ETH_RPC_URL=$ETH_RPC_URL
+
+[[ $(pwd) != ~ && -e .env ]] && . .env # Load in the .env file's env vars locally.
+
+export HEVM_RPC=yes # Enable RPC testing.
+export ETH_RPC_URL=$ETH_RPC_URL # Re-export from .env in case they didn't use the export keyword.
 
 if [[ $ETH_RPC_URL != https* ]] # If the ETH_RPC_URL doesn't start with https, alert the user:
 then

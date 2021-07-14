@@ -17,14 +17,14 @@ jobs:
       - name: Install dependencies
         run: nix-shell --run 'make'
 
-      - name: Build and run tests briefly
+      - name: Run tests briefly
         if: ${{ github.ref != 'refs/heads/main' && github.base_ref != 'main' }} # Only run brief fuzz if we're not pushing to master or making a PR going to master.
         run: nix-shell --run 'dapp test'
         env:
           ETH_RPC_URL: ${{ secrets.ETH_RPC_URL }}
           CI: false
 
-      - name: Build and run tests deeply
+      - name: Run tests deeply
         if: ${{ github.ref == 'refs/heads/main' || github.base_ref == 'main' }} # Only run deep fuzz if we're pushing to master or making a PR going to master.
         run: nix-shell --run 'dapp test'
         env:
