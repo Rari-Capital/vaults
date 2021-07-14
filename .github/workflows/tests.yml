@@ -21,4 +21,4 @@ jobs:
         run: nix-shell --run 'dapp test'
         env:
           ETH_RPC_URL: ${{ secrets.ETH_RPC_URL }}
-          CI: ${{ ((github.ref != 'refs/heads/main' && github.base_ref != 'main') && "true") || "false" }}
+          CI: ${{ ((github.ref != 'refs/heads/main' && github.base_ref != 'main') && true) || false }}
