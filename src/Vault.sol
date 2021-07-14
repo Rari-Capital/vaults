@@ -81,8 +81,8 @@ contract Vault is ERC20 {
         // Burn fvTokens.
         _burn(msg.sender, amount);
 
-        // Gather tokens from Fuse.
-        pullIntoFloat(withdrawalAmount);
+        // Gather tokens from Fuse if needed.
+        if (underlying.balanceOf(address(this)) < withdrawalAmount) pullIntoFloat(withdrawalAmount);
 
         // Transfer tokens to the caller.
         underlying.safeTransfer(msg.sender, withdrawalAmount);
@@ -97,7 +97,7 @@ contract Vault is ERC20 {
         _burn(msg.sender, (exchangeRate * underlyingAmount) / 10**decimals);
 
         // Gather tokens from Fuse.
-        pullIntoFloat(underlyingAmount);
+        if (underlying.balanceOf(address(this)) < underlyingAmount) pullIntoFloat(underlyingAmount);
 
         // Transfer underlying tokens to the sender.
         underlying.safeTransfer(msg.sender, underlyingAmount);
@@ -124,10 +124,6 @@ contract Vault is ERC20 {
 
     /// @dev Withdraw an amount of underlying tokens from pools in the withdrawal queue if neccessary.
     function pullIntoFloat(uint256 underlyingAmount) internal {
-        // TODO: can we do this check outside of this function?
-        // If float is greater than withdrawal amount, use those funds instead of withdrawing from the queue.
-        if (underlyingAmount <= underlying.balanceOf(address(this))) return;
-
         for (uint256 i = withdrawalQueue.length - 1; i < withdrawalQueue.length; i--) {
             CErc20 cToken = withdrawalQueue[i];
             // TODO: do we need to do balance checking or can we just withdraw our amount and see if reverts idk
