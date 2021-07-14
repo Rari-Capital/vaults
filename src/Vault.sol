@@ -79,7 +79,7 @@ contract Vault is ERC20 {
         uint256 withdrawalAmount = (amount * 10**decimals) / exchangeRate;
 
         // Burn fvTokens.
-        _burn(msg.sender, withdrawalAmount);
+        _burn(msg.sender, amount);
 
         // Gather tokens from Fuse.
         pullIntoFloat(withdrawalAmount);
