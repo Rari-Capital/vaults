@@ -16,8 +16,6 @@ else
   export DAPP_TEST_FUZZ_RUNS=1000 # When developing we only want to fuzz briefly. 
 fi
 
-
-
 [[ $(pwd) != ~ && -e .env ]] && . .env # Load in the .env file's env vars locally.
 
 export HEVM_RPC=yes # Enable RPC testing.
