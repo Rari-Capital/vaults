@@ -20,5 +20,7 @@ jobs:
       - name: Run tests
         run: nix-shell --run 'dapp test'
         env:
+          # Load in ETH_RPC_URL from Github secrets:
           ETH_RPC_URL: ${{ secrets.ETH_RPC_URL }}
-          CI: ${{ ((github.ref != 'refs/heads/main' && github.base_ref != 'main') && true) || false }}
+          # Only fuzz heavily (CI mode) if we're pushing to main or this is a PR to main:
+          CI: ${{ github.ref == 'refs/heads/main' || github.base_ref == 'main' }}
