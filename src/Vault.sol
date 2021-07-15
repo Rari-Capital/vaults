@@ -235,24 +235,19 @@ contract Vault is ERC20 {
         totalDeposited += underlyingAmount;
     }
 
-    function exitPool(CErc20 pool, uint256 cTokenAmount) external {
-        // If we're withdrawing our full balance:
+    function exitPool(uint256 poolIndex, uint256 cTokenAmount) external {
+        // Get the pool from the depositedPools array.
+        CErc20 pool = depositedPools[poolIndex];
         uint256 cTokenBalance = pool.balanceOf(address(this));
+
+        // If we're withdrawing our full balance:
         if (cTokenBalance == cTokenAmount) {
             // TODO: Optimizations:
             // - Store depositedPools in memory?
             // - Store length on stack?
             // Remove the pool we're withdrawing from:
-            for (uint256 i = 0; i < depositedPools.length; i++) {
-                // Once we find the pool that we're removing:
-                if (depositedPools[i] == pool) {
-                    // Move the last item in the array to the index we want to delete.
-                    depositedPools[i] = depositedPools[depositedPools.length - 1];
-
-                    // Remove the last index of the array.
-                    depositedPools.pop();
-                }
-            }
+            depositedPools[poolIndex] = depositedPools[depositedPools.length - 1];
+            depositedPools.pop();
         }
 
         // Convert the cTokenAmount to the underlying amount.
