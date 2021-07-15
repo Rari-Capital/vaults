@@ -142,6 +142,9 @@ contract Vault is ERC20 {
                 underlyingAmount -= balance;
             }
         }
+
+        // Update the totalDeposited value to account for the new amount.
+        totalDeposited -= underlyingAmount;
     }
 
     /*///////////////////////////////////////////////////////////////
