@@ -1,3 +1,7 @@
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NO_COLOR='\033[0m'
+
 export DAPP_SOLC_VERSION=0.8.6
 export DAPP_BUILD_OPTIMIZE=1
 export DAPP_BUILD_OPTIMIZE_RUNS=1000000000
@@ -11,3 +15,14 @@ then
 else
   export DAPP_TEST_FUZZ_RUNS=1000 # When developing we only want to fuzz briefly. 
 fi
+
+[[ $(pwd) != ~ && -e .env ]] && . .env # Load in the .env file's env vars locally.
+
+export HEVM_RPC=yes # Enable RPC testing.
+export ETH_RPC_URL=$ETH_RPC_URL # Re-export from .env in case they didn't use the export keyword.
+
+if [[ $ETH_RPC_URL != https* ]] # If the ETH_RPC_URL doesn't start with https, alert the user:
+then
+    echo -e "${RED}You need to create an ${GREEN}.env${RED} file that sets ${GREEN}ETH_RPC_URL${RED} to a valid Etheruem RPC URL to start testing.${NO_COLOR}"
+fi
+
