@@ -27,4 +27,3 @@ if [[ $ETH_RPC_URL != https* ]] # If the ETH_RPC_URL doesn't start with https, a
 then
     echo -e "${RED}You need to create an ${GREEN}.env${RED} file that sets ${GREEN}ETH_RPC_URL${RED} to a valid Etheruem RPC URL to start testing.${NO_COLOR}"
 fi
-
