@@ -42,7 +42,7 @@ make
 ```sh
 # Inside .env
 
-ETH_RPC_URL=https://eth-mainnet.alchemyapi.io/v2/RpSdEGXsSjWZK1Jzf9JGXM4nl4ki8rEc
+ETH_RPC_URL=https://eth-mainnet.alchemyapi.io/v2/YOUR_ALCHEMY_KEY_HERE
 ```
 
 ## Developing
