@@ -10,6 +10,8 @@ interface CErc20 {
 
     function symbol() external view returns (string memory);
 
+    function decimals() external view returns (uint256);
+
     function comptroller() external view returns (address);
 
     function adminFeeMantissa() external view returns (uint256);
