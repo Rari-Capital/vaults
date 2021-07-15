@@ -58,6 +58,9 @@ contract Vault is ERC20 {
     /// @dev Includes `maxLockedProfit`.
     uint256 public totalDeposited;
 
+    /// @notice A percent value representing part of the total underlying to keep in the vault.
+    uint256 public floatSize = 0.01e18;
+
     /*///////////////////////////////////////////////////////////////
                          USER ACTION FUNCTIONS
     //////////////////////////////////////////////////////////////*/
@@ -124,13 +127,15 @@ contract Vault is ERC20 {
 
     /// @dev Withdraw an amount of underlying tokens from pools in the withdrawal queue if neccessary.
     function pullIntoFloat(uint256 underlyingAmount) internal {
+        uint256 updatedFloat = (underlyingAmount * floatSize) / 1e18;
         for (uint256 i = withdrawalQueue.length - 1; i < withdrawalQueue.length; i--) {
             CErc20 cToken = withdrawalQueue[i];
             // TODO: do we need to do balance checking or can we just withdraw our amount and see if reverts idk
             uint256 balance = cToken.balanceOfUnderlying(address(this));
             // TODO: i dont think this works.
-            if (underlyingAmount >= balance) {
-                cToken.redeemUnderlying(underlyingAmount);
+            if (underlyingAmount >= balance + updatedFloat) {
+                cToken.redeemUnderlying(underlyingAmount + updatedFloat);
+                break;
             } else {
                 cToken.redeemUnderlying(balance);
                 underlyingAmount -= balance;
@@ -216,6 +221,9 @@ contract Vault is ERC20 {
 
         // Deposit into the pool and receive cTokens.
         pool.mint(underlyingAmount);
+
+        // Increase the totalDeposited amount to account for new deposits
+        totalDeposited += underlyingAmount;
     }
 
     function exitPool(CErc20 pool, uint256 cTokenAmount) external {
@@ -240,6 +248,13 @@ contract Vault is ERC20 {
 
         // Withdraw from the pool.
         pool.redeem(cTokenAmount);
+    }
+
+    /// @notice Allows governance to set a new float size.
+    ///@dev The new float size is a percentage value scaled by 1e18.
+    ///@param newFloatSize The new float size.
+    function setFloatSize(uint256 newFloatSize) public {
+        floatSize = newFloatSize;
     }
 
     /// @notice Allows the rebalancer to set a new withdrawal queue.
