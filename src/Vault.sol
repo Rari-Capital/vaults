@@ -18,6 +18,8 @@ contract Vault is ERC20 {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice The minimum delay in blocks between each harvest.
+    /// todo: this should be changeable and we should support harvesting early
+    /// maybe just rename to target harvest blocks or something.
     uint256 public constant MIN_HARVEST_DELAY_BLOCKS = 1661;
 
     /// @notice The underlying token for the vault.
@@ -37,6 +39,22 @@ contract Vault is ERC20 {
     {
         underlying = _underlying;
     }
+
+    /*///////////////////////////////////////////////////////////////
+                                 EVENTS
+    //////////////////////////////////////////////////////////////*/
+
+    /// todo: comment these lol
+
+    event Deposit(address depositor, uint256 underlyingAmount);
+
+    event Withdraw(address withdrawee, uint256 underlyingAmount);
+
+    event Harvest(address harvester, uint256 maxLockedProfit);
+
+    event EnterPool(CErc20 pool, uint256 underlyingAmount);
+
+    event ExitPool(CErc20 pool, uint256 cTokenAmount);
 
     /*///////////////////////////////////////////////////////////////
                              VAULT STORAGE
@@ -74,22 +92,26 @@ contract Vault is ERC20 {
 
         // Transfer in underlying tokens from the sender.
         underlying.safeTransferFrom(msg.sender, address(this), underlyingAmount);
+
+        emit Deposit(msg.sender, underlyingAmount);
     }
 
     /// @notice Burns fvTokens and sends underlying tokens to the caller.
-    /// @param amount The amount of underlying tokens to burn.
+    /// @param amount The amount of vault shares to redeem.
     function withdraw(uint256 amount) external {
         uint256 exchangeRate = exchangeRateCurrent();
-        uint256 withdrawalAmount = (amount * 10**decimals) / exchangeRate;
+        uint256 underlyingAmount = (amount * 10**decimals) / exchangeRate;
 
         // Burn fvTokens.
         _burn(msg.sender, amount);
 
         // Gather tokens from Fuse if needed.
-        if (underlying.balanceOf(address(this)) < withdrawalAmount) pullIntoFloat(withdrawalAmount);
+        if (underlying.balanceOf(address(this)) < underlyingAmount) pullIntoFloat(underlyingAmount);
 
         // Transfer tokens to the caller.
-        underlying.safeTransfer(msg.sender, withdrawalAmount);
+        underlying.safeTransfer(msg.sender, underlyingAmount);
+
+        emit Withdraw(msg.sender, underlyingAmount);
     }
 
     /// @notice Burns fvTokens and sends underlying tokens to the caller.
@@ -105,6 +127,8 @@ contract Vault is ERC20 {
 
         // Transfer underlying tokens to the sender.
         underlying.safeTransfer(msg.sender, underlyingAmount);
+
+        emit Withdraw(msg.sender, underlyingAmount);
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -185,6 +209,8 @@ contract Vault is ERC20 {
 
         // Set the lastHarvest to this block, as we just triggered a harvest.
         lastHarvest = block.number;
+
+        emit Harvest(msg.sender, maxLockedProfit);
     }
 
     function calculateUnlockedProfit() public view returns (uint256) {
@@ -233,6 +259,8 @@ contract Vault is ERC20 {
 
         // Increase the totalDeposited amount to account for new deposits
         totalDeposited += underlyingAmount;
+
+        emit EnterPool(pool, underlyingAmount);
     }
 
     function exitPool(uint256 poolIndex, uint256 cTokenAmount) external {
@@ -260,6 +288,8 @@ contract Vault is ERC20 {
 
         // Withdraw from the pool.
         pool.redeem(cTokenAmount);
+
+        emit ExitPool(pool, underlyingAmount);
     }
 
     /// @notice Allows governance to set a new float size.
