@@ -14,10 +14,13 @@ jobs:
         with:
           name: dapp
 
-      - name: Build and run tests briefly
-        if: ${{ github.ref != 'refs/heads/main' && github.base_ref != 'main' }} # Only run brief fuzz if we're not pushing to master or making a PR going to master.
-        run: nix-shell --run 'CI=false make'
-
-      - name: Build and run tests deeply
-        if: ${{ github.ref == 'refs/heads/main' || github.base_ref == 'main' }} # Only run deep fuzz if we're pushing to master or making a PR going to master.
+      - name: Install dependencies
         run: nix-shell --run 'make'
+
+      - name: Run tests
+        run: nix-shell --run 'dapp test'
+        env:
+          # Load in ETH_RPC_URL from Github secrets:
+          ETH_RPC_URL: ${{ secrets.ETH_RPC_URL }}
+          # Only fuzz deeply if we're pushing to main or this is a PR to main:
+          DEEP_FUZZ: ${{ github.ref == 'refs/heads/main' || github.base_ref == 'main' }}

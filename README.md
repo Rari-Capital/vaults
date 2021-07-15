@@ -1,6 +1,6 @@
 # vaults
 
-🧙‍♂️ Gas efficient yield aggregator to earn yield on any asset using Fuse 🧙‍♂️
+Gas efficient yield aggregator to earn yield on any asset using Fuse.
 
 ## Installation
 
@@ -31,10 +31,18 @@ git clone https://github.com/rari-capital/vaults
 cd vaults
 ```
 
-- Then setup the project:
+- Then, install the project's dependencies:
 
 ```sh
 make
+```
+
+- Finally, rename `.env.example` to `.env` and set `ETH_RPC_URL` to a valid Ethereum RPC URL:
+
+```sh
+# Inside .env
+
+ETH_RPC_URL=https://eth-mainnet.alchemyapi.io/v2/YOUR_ALCHEMY_KEY_HERE
 ```
 
 ## Developing

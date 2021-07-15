@@ -125,7 +125,8 @@ contract Vault is ERC20 {
                          WITHDRAWAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev Withdraw an amount of underlying tokens from pools in the withdrawal queue if neccessary.
+    /// @dev Withdraw an amount of underlying tokens from pools in the withdrawal queue.
+    /// @param underlyingAmount The amount of the underlying asset to pull into float.
     function pullIntoFloat(uint256 underlyingAmount) internal {
         uint256 updatedFloat = (underlyingAmount * floatSize) / 1e18;
         for (uint256 i = withdrawalQueue.length - 1; i < withdrawalQueue.length; i--) {

@@ -2,7 +2,7 @@ let
   pkgs = import (builtins.fetchGit rec {
     name = "dapptools-${rev}";
     url = https://github.com/dapphub/dapptools;
-    rev = "c20ca2d12b8df01a54665ce24a54957c5e94894c";
+    rev = "5d2e0dd355893a2eaff11d5e08aa75fdbfba50b7";
   }) {};
 
 in
