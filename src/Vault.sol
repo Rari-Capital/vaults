@@ -279,6 +279,7 @@ contract Vault is ERC20 {
         }
 
         // Convert the cTokenAmount to the underlying amount.
+        // todo: diff the amount we get from redeem instead of this.
         uint256 cTokenExchangeRate = pool.exchangeRateStored();
         uint256 oneCTokenInUnderlying = cTokenExchangeRate / 10**(decimals - pool.decimals());
         uint256 underlyingAmount = (oneCTokenInUnderlying * cTokenAmount) / 1e18;
