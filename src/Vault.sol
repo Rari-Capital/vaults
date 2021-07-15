@@ -168,6 +168,10 @@ contract Vault is ERC20 {
             depositBalance += pool.balanceOfUnderlying(address(this));
         }
 
+        // If the current float size is less than the ideal, increase the float value.
+        uint256 updatedFloat = (depositBalance * floatSize) / 1e18;
+        if (updatedFloat > floatSize) pullIntoFloat(updatedFloat);
+
         // Locked profit is the delta between the underlying amount we
         // had last harvest and the newly calculated underlying amount.
         maxLockedProfit = depositBalance - totalDeposited;
