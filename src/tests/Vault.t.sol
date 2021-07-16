@@ -2,15 +2,17 @@
 pragma solidity ^0.8.0;
 
 import {DSTestPlus} from "./utils/DSTestPlus.sol";
-import {ERC20} from "../external/ERC20.sol";
+
+import {MockERC20} from "./mocks/MockERC20.sol";
+
 import {Vault} from "../Vault.sol";
 
 contract VaultsTest is DSTestPlus {
     Vault vault;
-    ERC20 underlying;
+    MockERC20 underlying;
 
     function setUp() public {
-        underlying = ERC20(0x6B175474E89094C44Da98b954EedeAC495271d0F);
+        underlying = new MockERC20();
         vault = new Vault(underlying);
     }
 
@@ -24,6 +26,8 @@ contract VaultsTest is DSTestPlus {
     function test_exchange_rate_is_initially_one(uint256 amount) public {
         // If the number is too large we can't test with it.
         if (amount > type(uint256).max / 1e36) return;
+
+        underlying.mint(self, amount);
         underlying.approve(address(vault), amount);
 
         // Deposit into the vault, minting fvTokens.
@@ -36,6 +40,7 @@ contract VaultsTest is DSTestPlus {
         // If the number is too large or 0 we can't test with it.
         if (amount > (type(uint256).max / 1e37) || amount == 0) return;
 
+        underlying.mint(self, amount * 2);
         underlying.approve(address(vault), amount);
 
         // Deposit into the vault, minting fvTokens.
@@ -53,6 +58,7 @@ contract VaultsTest is DSTestPlus {
         // If the number is too large we can't test with it.
         if (amount > (type(uint256).max / 1e37)) return;
 
+        underlying.mint(self, amount);
         underlying.approve(address(vault), amount);
 
         // Deposit into the vault.
