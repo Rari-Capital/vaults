@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.0;
+pragma solidity 0.8.6;
 
 import {ERC20} from "./external/ERC20.sol";
 import {Vault} from "./Vault.sol";
@@ -55,7 +55,7 @@ contract VaultFactory {
             abi.encodePacked(bytes1(0xff), address(this), keccak256(abi.encode(underlying)), keccak256(bytecode))
         );
 
-        // Turn the create2 hash into the vault adddress.
+        // Turn the create2 hash into the vault address.
         return Vault(address(uint160(uint256(hash))));
     }
 

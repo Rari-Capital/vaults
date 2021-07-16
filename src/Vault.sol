@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.0;
+pragma solidity 0.8.6;
 
 import {ERC20} from "./external/ERC20.sol";
 import {CErc20} from "./external/CErc20.sol";
@@ -44,30 +44,30 @@ contract Vault is ERC20 {
                                  EVENTS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Emitted after a succesful deposit.
-    /// @param depositor The address of the account that deposited.
-    /// @param underlyingAmount the amount of underlying token that were deposited.
-    event Deposit(address depositor, uint256 underlyingAmount);
+    /// @notice Emitted after a successful deposit.
+    /// @param user The address of the account that deposited into the vault.
+    /// @param underlyingAmount The amount of underlying tokens that were deposited.
+    event Deposit(address user, uint256 underlyingAmount);
 
-    /// @notice Emitted after a succesful withdrawal.
-    /// @param withdrawee The address of the account that withdrew.
-    /// @param underlyingAmount the amount of underlying token that were withdrew.
-    event Withdraw(address withdrawee, uint256 underlyingAmount);
+    /// @notice Emitted after a successful withdrawal.
+    /// @param user The address of the account that withdrew from the vault.
+    /// @param underlyingAmount The amount of underlying tokens that were withdrawn.
+    event Withdraw(address user, uint256 underlyingAmount);
 
-    /// @notice Emitted after a succesful harvest.
+    /// @notice Emitted after a successful harvest.
     /// @param harvester The address of the account that initiated the harvest.
-    /// @param maxLockedProfit The maximum amount of locked profit acrrued during the harvest.
+    /// @param maxLockedProfit The maximum amount of locked profit accrued during the harvest.
     event Harvest(address harvester, uint256 maxLockedProfit);
 
     /// @notice Emitted after the vault deposits into a cToken contract.
     /// @param pool The address of the cToken contract.
-    /// @param underlyingAmount The amount of underlying token that were deposited.
+    /// @param underlyingAmount The amount of underlying tokens that were deposited.
     event EnterPool(CErc20 pool, uint256 underlyingAmount);
 
     /// @notice Emitted after the vault withdraws funds from a cToken contract.
     /// @param pool The address of the cToken contract.
-    /// @param cTokenAmount The amount of cTokens that were burned.
-    event ExitPool(CErc20 pool, uint256 cTokenAmount);
+    /// @param underlyingAmount The amount of underlying tokens that were withdrawn.
+    event ExitPool(CErc20 pool, uint256 underlyingAmount);
 
     /*///////////////////////////////////////////////////////////////
                              VAULT STORAGE
@@ -81,10 +81,10 @@ contract Vault is ERC20 {
 
     // todo: can we pack all this shit into a struct or just have it packed in storage by using smaller int amounts?
 
-    /// @notice The most recent block where a harvest occured.
+    /// @notice The most recent block where a harvest occurred.
     uint256 public lastHarvest;
 
-    /// @notice The max amount of "locked" profit acrrued last harvest.
+    /// @notice The max amount of "locked" profit accrued last harvest.
     uint256 public maxLockedProfit;
 
     /// @notice The total amount of underlying held in deposits (calculated last harvest).
@@ -120,7 +120,7 @@ contract Vault is ERC20 {
         // Burn fvTokens.
         _burn(msg.sender, amount);
 
-        // Pull extra tokens into float from Fuse if neccessary.
+        // Pull extra tokens into float from Fuse if necessary.
         if (getFloat() < underlyingAmount) pullIntoFloat(underlyingAmount);
 
         // Transfer tokens to the caller.
@@ -137,7 +137,7 @@ contract Vault is ERC20 {
         // Burn fvTokens.
         _burn(msg.sender, (exchangeRate * underlyingAmount) / 10**decimals);
 
-        // Pull extra tokens into float from Fuse if neccessary.
+        // Pull extra tokens into float from Fuse if necessary.
         if (getFloat() < underlyingAmount) pullIntoFloat(underlyingAmount);
 
         // Transfer underlying tokens to the sender.
@@ -175,15 +175,18 @@ contract Vault is ERC20 {
             uint256 balance = cToken.balanceOfUnderlying(address(this));
             // TODO: i dont think this works.
             if (underlyingAmount >= balance + updatedFloat) {
+                // todo: refactor this to use exitPool?
                 cToken.redeemUnderlying(underlyingAmount + updatedFloat);
                 break;
             } else {
+                // todo: refactor this to use exitPool?
                 cToken.redeemUnderlying(balance);
                 underlyingAmount -= balance;
             }
         }
 
         // Update the totalDeposited value to account for the new amount.
+        // todo: refactor this to use exitPool?
         totalDeposited -= underlyingAmount;
     }
 
@@ -229,7 +232,7 @@ contract Vault is ERC20 {
     }
 
     function calculateUnlockedProfit() public view returns (uint256) {
-        // TODO: CAP at 1 if block numger exceeds next harvest
+        // TODO: CAP at 1 if block number exceeds next harvest
         uint256 unlockedProfit = block.number >= lastHarvest
             ? maxLockedProfit
             : (maxLockedProfit * (block.number - lastHarvest)) / (nextHarvest() - lastHarvest);
@@ -304,17 +307,19 @@ contract Vault is ERC20 {
         pool.redeem(cTokenAmount);
 
         // Calculate the amount of underlying that we received.
-        uint256 redeemedUnderlying = getFloat() - preRedeemFloat;
+        uint256 underlyingReceived = getFloat() - preRedeemFloat;
 
-        // Subract the totalDeposit by the underlying amount.
-        totalDeposited -= redeemedUnderlying;
+        // Reduce totalDeposited by the underlying amount received.
+        totalDeposited -= underlyingReceived;
+
+        emit ExitPool(pool, underlyingReceived);
     }
 
     /// @notice Allows governance to set a new float size.
     /// @dev The new float size is a percentage mantissa scaled by 1e18.
-    /// @param newTargteFloatPercent The new target float size.percent
-    function setTargetFloatPercent(uint256 newTargteFloatPercent) external {
-        targetFloatPercent = newTargteFloatPercent;
+    /// @param newTargetFloatPercent The new target float size.percent
+    function setTargetFloatPercent(uint256 newTargetFloatPercent) external {
+        targetFloatPercent = newTargetFloatPercent;
     }
 
     /// @notice Allows the rebalancer to set a new withdrawal queue.
