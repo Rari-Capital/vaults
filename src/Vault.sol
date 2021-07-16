@@ -44,16 +44,29 @@ contract Vault is ERC20 {
                                  EVENTS
     //////////////////////////////////////////////////////////////*/
 
-    /// todo: comment these lol
-
+    /// @notice Emitted after a succesful deposit.
+    /// @param depositor The address of the account that deposited.
+    /// @param underlyingAmount the amount of underlying token that were deposited.
     event Deposit(address depositor, uint256 underlyingAmount);
 
+    /// @notice Emitted after a succesful withdrawal.
+    /// @param withdrawee The address of the account that withdrew.
+    /// @param underlyingAmount the amount of underlying token that were withdrew.
     event Withdraw(address withdrawee, uint256 underlyingAmount);
 
+    /// @notice Emitted after a succesful harvest.
+    /// @param harvester The address of the account that initiated the harvest.
+    /// @param maxLockedProfit The maximum amount of locked profit acrrued during the harvest.
     event Harvest(address harvester, uint256 maxLockedProfit);
 
+    /// @notice Emitted after the vault deposits into a cToken contract.
+    /// @param pool The address of the cToken contract.
+    /// @param underlyingAmount The amount of underlying token that were deposited.
     event EnterPool(CErc20 pool, uint256 underlyingAmount);
 
+    /// @notice Emitted after the vault withdraws funds from a cToken contract.
+    /// @param pool The address of the cToken contract.
+    /// @param cTokenAmount The amount of cTokens that were burned.
     event ExitPool(CErc20 pool, uint256 cTokenAmount);
 
     /*///////////////////////////////////////////////////////////////
