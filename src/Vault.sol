@@ -280,11 +280,14 @@ contract Vault is ERC20 {
             depositedPools.pop();
         }
 
+        // Store the underlying balance.
+        uint256 underlyingBalance = underlying.balanceOf(address(this));
+
         // Withdraw from the pool.
         pool.redeem(cTokenAmount);
 
         // Calculate the amount of underlying that we have redeemed.
-        uint256 underlyingAmount = cTokenBalance - pool.balanceOfUnderlying(address(this));
+        uint256 underlyingAmount = underlying.balanceOf(address(this)) - underlyingBalance;
 
         // Subract the totalDeposit by the underlying amount.
         totalDeposited -= underlyingAmount;
