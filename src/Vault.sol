@@ -120,8 +120,8 @@ contract Vault is ERC20 {
         // Burn fvTokens.
         _burn(msg.sender, amount);
 
-        // Gather tokens from Fuse if needed.
-        if (underlying.balanceOf(address(this)) < underlyingAmount) pullIntoFloat(underlyingAmount);
+        // Pull extra tokens into float from Fuse if neccessary.
+        if (getFloat() < underlyingAmount) pullIntoFloat(underlyingAmount);
 
         // Transfer tokens to the caller.
         underlying.safeTransfer(msg.sender, underlyingAmount);
@@ -137,8 +137,8 @@ contract Vault is ERC20 {
         // Burn fvTokens.
         _burn(msg.sender, (exchangeRate * underlyingAmount) / 10**decimals);
 
-        // Gather tokens from Fuse.
-        if (underlying.balanceOf(address(this)) < underlyingAmount) pullIntoFloat(underlyingAmount);
+        // Pull extra tokens into float from Fuse if neccessary.
+        if (getFloat() < underlyingAmount) pullIntoFloat(underlyingAmount);
 
         // Transfer underlying tokens to the sender.
         underlying.safeTransfer(msg.sender, underlyingAmount);
@@ -237,8 +237,12 @@ contract Vault is ERC20 {
         return maxLockedProfit - unlockedProfit;
     }
 
+    function getFloat() public view returns (uint256) {
+        return underlying.balanceOf(address(this));
+    }
+
     function calculateTotalFreeUnderlying() public view returns (uint256) {
-        return totalDeposited - calculateUnlockedProfit() + underlying.balanceOf(address(this));
+        return totalDeposited - calculateUnlockedProfit() + getFloat();
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -293,17 +297,17 @@ contract Vault is ERC20 {
             depositedPools.pop();
         }
 
-        // Store the underlying balance.
-        uint256 underlyingBalance = underlying.balanceOf(address(this));
+        // Checkpoint our underlying balance before we withdraw.
+        uint256 preRedeemFloat = getFloat();
 
         // Withdraw from the pool.
         pool.redeem(cTokenAmount);
 
-        // Calculate the amount of underlying that we have redeemed.
-        uint256 underlyingAmount = underlying.balanceOf(address(this)) - underlyingBalance;
+        // Calculate the amount of underlying that we received.
+        uint256 redeemedUnderlying = getFloat() - preRedeemFloat;
 
         // Subract the totalDeposit by the underlying amount.
-        totalDeposited -= underlyingAmount;
+        totalDeposited -= redeemedUnderlying;
     }
 
     /// @notice Allows governance to set a new float size.
