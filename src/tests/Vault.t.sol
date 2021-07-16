@@ -56,7 +56,7 @@ contract VaultsTest is DSTestPlus {
 
     function test_underlying_withdrawals_function_properly(uint256 amount) public {
         // If the number is too large we can't test with it.
-        if (amount > (type(uint256).max / 1e37)) return;
+        if (amount > (type(uint256).max / 1e37) || amount == 0) return;
 
         underlying.mint(self, amount);
         underlying.approve(address(vault), amount);
@@ -72,5 +72,27 @@ contract VaultsTest is DSTestPlus {
         assertEq(underlying.balanceOf(address(this)), amount);
 
         // TODO: Add balanceOfUnderlying function.
+    }
+
+    function test_withdrawals_function_properly(uint256 amount) public {
+        if (amount > (type(uint256).max / 1e37) || amount == 0) return;
+
+        underlying.mint(self, amount * 2);
+
+        // Artificially inflate the exchange rate.
+        underlying.transfer(address(vault), amount);
+
+        // Deposit into the vault.
+        underlying.approve(address(vault), amount);
+        vault.deposit(amount);
+
+        // Withdraw full balance of fvTokens.
+        vault.withdraw(vault.balanceOf(address(this)));
+
+        // Assert that all fvTokens have been burned.
+        assertEq(vault.totalSupply(), 0);
+
+        // Assert that the full underlying balance has been returned.
+        assertEq(underlying.balanceOf(address(this)), 2 * amount);
     }
 }
