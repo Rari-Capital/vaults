@@ -66,6 +66,8 @@ contract Vault is ERC20 {
     /// @notice An ordered array of cTokens representing the withdrawal queue.
     CErc20[] public withdrawalQueue;
 
+    // todo: can we pack all this shit into a struct or just have it packed in storage by using smaller int amounts?
+
     /// @notice The most recent block where a harvest occured.
     uint256 public lastHarvest;
 
