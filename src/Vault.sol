@@ -90,7 +90,7 @@ contract Vault is ERC20 {
     /// @param underlyingAmount The amount of the underlying token to deposit.
     function deposit(uint256 underlyingAmount) external {
         uint256 exchangeRate = exchangeRateCurrent();
-        _mint(msg.sender, (exchangeRate * underlyingAmount) / 10**decimals);
+        _mint(msg.sender, (underlyingAmount * 10**decimals) / exchangeRate);
 
         // Transfer in underlying tokens from the sender.
         underlying.safeTransferFrom(msg.sender, address(this), underlyingAmount);
@@ -102,7 +102,7 @@ contract Vault is ERC20 {
     /// @param amount The amount of vault shares to redeem.
     function withdraw(uint256 amount) external {
         uint256 exchangeRate = exchangeRateCurrent();
-        uint256 underlyingAmount = (amount * 10**decimals) / exchangeRate;
+        uint256 underlyingAmount = (exchangeRate * amount) / 10**decimals;
 
         // Burn fvTokens.
         _burn(msg.sender, amount);
