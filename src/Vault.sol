@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.0;
+pragma solidity 0.8.6;
 
 import {ERC20} from "./external/ERC20.sol";
 import {CErc20} from "./external/CErc20.sol";
@@ -18,6 +18,8 @@ contract Vault is ERC20 {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice The minimum delay in blocks between each harvest.
+    /// todo: this should be changeable and we should support harvesting early
+    /// maybe just rename to target harvest blocks or something.
     uint256 public constant MIN_HARVEST_DELAY_BLOCKS = 1661;
 
     /// @notice The underlying token for the vault.
@@ -39,6 +41,35 @@ contract Vault is ERC20 {
     }
 
     /*///////////////////////////////////////////////////////////////
+                                 EVENTS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Emitted after a successful deposit.
+    /// @param user The address of the account that deposited into the vault.
+    /// @param underlyingAmount The amount of underlying tokens that were deposited.
+    event Deposit(address user, uint256 underlyingAmount);
+
+    /// @notice Emitted after a successful withdrawal.
+    /// @param user The address of the account that withdrew from the vault.
+    /// @param underlyingAmount The amount of underlying tokens that were withdrawn.
+    event Withdraw(address user, uint256 underlyingAmount);
+
+    /// @notice Emitted after a successful harvest.
+    /// @param harvester The address of the account that initiated the harvest.
+    /// @param maxLockedProfit The maximum amount of locked profit accrued during the harvest.
+    event Harvest(address harvester, uint256 maxLockedProfit);
+
+    /// @notice Emitted after the vault deposits into a cToken contract.
+    /// @param pool The address of the cToken contract.
+    /// @param underlyingAmount The amount of underlying tokens that were deposited.
+    event EnterPool(CErc20 pool, uint256 underlyingAmount);
+
+    /// @notice Emitted after the vault withdraws funds from a cToken contract.
+    /// @param pool The address of the cToken contract.
+    /// @param underlyingAmount The amount of underlying tokens that were withdrawn.
+    event ExitPool(CErc20 pool, uint256 underlyingAmount);
+
+    /*///////////////////////////////////////////////////////////////
                              VAULT STORAGE
     //////////////////////////////////////////////////////////////*/
 
@@ -48,15 +79,21 @@ contract Vault is ERC20 {
     /// @notice An ordered array of cTokens representing the withdrawal queue.
     CErc20[] public withdrawalQueue;
 
-    /// @notice The most recent block where a harvest occured.
+    // todo: can we pack all this shit into a struct or just have it packed in storage by using smaller int amounts?
+
+    /// @notice The most recent block where a harvest occurred.
     uint256 public lastHarvest;
 
-    /// @notice The max amount of "locked" profit acrrued last harvest.
+    /// @notice The max amount of "locked" profit accrued last harvest.
     uint256 public maxLockedProfit;
 
     /// @notice The total amount of underlying held in deposits (calculated last harvest).
     /// @dev Includes `maxLockedProfit`.
     uint256 public totalDeposited;
+
+    /// @notice A percent value representing part of the total underlying to keep in the vault.
+    /// @dev A mantissa where 1e18 represents 100% and 0e18 represents 0%.
+    uint256 public targetFloatPercent = 0.01e18;
 
     /*///////////////////////////////////////////////////////////////
                          USER ACTION FUNCTIONS
@@ -66,26 +103,30 @@ contract Vault is ERC20 {
     /// @param underlyingAmount The amount of the underlying token to deposit.
     function deposit(uint256 underlyingAmount) external {
         uint256 exchangeRate = exchangeRateCurrent();
-        _mint(msg.sender, (exchangeRate * underlyingAmount) / 10**decimals);
+        _mint(msg.sender, (underlyingAmount * 10**decimals) / exchangeRate);
 
         // Transfer in underlying tokens from the sender.
         underlying.safeTransferFrom(msg.sender, address(this), underlyingAmount);
+
+        emit Deposit(msg.sender, underlyingAmount);
     }
 
     /// @notice Burns fvTokens and sends underlying tokens to the caller.
-    /// @param amount The amount of underlying tokens to burn.
+    /// @param amount The amount of vault shares to redeem.
     function withdraw(uint256 amount) external {
         uint256 exchangeRate = exchangeRateCurrent();
-        uint256 withdrawalAmount = (amount * 10**decimals) / exchangeRate;
+        uint256 underlyingAmount = (exchangeRate * amount) / 10**decimals;
 
         // Burn fvTokens.
         _burn(msg.sender, amount);
 
-        // Gather tokens from Fuse if needed.
-        if (underlying.balanceOf(address(this)) < withdrawalAmount) pullIntoFloat(withdrawalAmount);
+        // Pull extra tokens into float from Fuse if necessary.
+        if (getFloat() < underlyingAmount) pullIntoFloat(underlyingAmount);
 
         // Transfer tokens to the caller.
-        underlying.safeTransfer(msg.sender, withdrawalAmount);
+        underlying.safeTransfer(msg.sender, underlyingAmount);
+
+        emit Withdraw(msg.sender, underlyingAmount);
     }
 
     /// @notice Burns fvTokens and sends underlying tokens to the caller.
@@ -96,11 +137,13 @@ contract Vault is ERC20 {
         // Burn fvTokens.
         _burn(msg.sender, (exchangeRate * underlyingAmount) / 10**decimals);
 
-        // Gather tokens from Fuse.
-        if (underlying.balanceOf(address(this)) < underlyingAmount) pullIntoFloat(underlyingAmount);
+        // Pull extra tokens into float from Fuse if necessary.
+        if (getFloat() < underlyingAmount) pullIntoFloat(underlyingAmount);
 
         // Transfer underlying tokens to the sender.
         underlying.safeTransfer(msg.sender, underlyingAmount);
+
+        emit Withdraw(msg.sender, underlyingAmount);
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -122,20 +165,29 @@ contract Vault is ERC20 {
                          WITHDRAWAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev Withdraw an amount of underlying tokens from pools in the withdrawal queue if neccessary.
+    /// @dev Withdraw an amount of underlying tokens from pools in the withdrawal queue.
+    /// @param underlyingAmount The amount of the underlying asset to pull into float.
     function pullIntoFloat(uint256 underlyingAmount) internal {
+        uint256 updatedFloat = (underlyingAmount * targetFloatPercent) / 1e18;
         for (uint256 i = withdrawalQueue.length - 1; i < withdrawalQueue.length; i--) {
             CErc20 cToken = withdrawalQueue[i];
             // TODO: do we need to do balance checking or can we just withdraw our amount and see if reverts idk
             uint256 balance = cToken.balanceOfUnderlying(address(this));
             // TODO: i dont think this works.
-            if (underlyingAmount >= balance) {
-                cToken.redeemUnderlying(underlyingAmount);
+            if (underlyingAmount >= balance + updatedFloat) {
+                // todo: refactor this to use exitPool?
+                cToken.redeemUnderlying(underlyingAmount + updatedFloat);
+                break;
             } else {
+                // todo: refactor this to use exitPool?
                 cToken.redeemUnderlying(balance);
                 underlyingAmount -= balance;
             }
         }
+
+        // Update the totalDeposited value to account for the new amount.
+        // todo: refactor this to use exitPool?
+        totalDeposited -= underlyingAmount;
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -162,6 +214,10 @@ contract Vault is ERC20 {
             depositBalance += pool.balanceOfUnderlying(address(this));
         }
 
+        // If the current float size is less than the ideal, increase the float value.
+        uint256 updatedFloat = (depositBalance * targetFloatPercent) / 1e18;
+        if (updatedFloat > targetFloatPercent) pullIntoFloat(updatedFloat);
+
         // Locked profit is the delta between the underlying amount we
         // had last harvest and the newly calculated underlying amount.
         maxLockedProfit = depositBalance - totalDeposited;
@@ -171,10 +227,12 @@ contract Vault is ERC20 {
 
         // Set the lastHarvest to this block, as we just triggered a harvest.
         lastHarvest = block.number;
+
+        emit Harvest(msg.sender, maxLockedProfit);
     }
 
     function calculateUnlockedProfit() public view returns (uint256) {
-        // TODO: CAP at 1 if block numger exceeds next harvest
+        // TODO: CAP at 1 if block number exceeds next harvest
         uint256 unlockedProfit = block.number >= lastHarvest
             ? maxLockedProfit
             : (maxLockedProfit * (block.number - lastHarvest)) / (nextHarvest() - lastHarvest);
@@ -182,8 +240,12 @@ contract Vault is ERC20 {
         return maxLockedProfit - unlockedProfit;
     }
 
+    function getFloat() public view returns (uint256) {
+        return underlying.balanceOf(address(this));
+    }
+
     function calculateTotalFreeUnderlying() public view returns (uint256) {
-        return totalDeposited - calculateUnlockedProfit() + underlying.balanceOf(address(this));
+        return totalDeposited - calculateUnlockedProfit() + getFloat();
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -216,30 +278,48 @@ contract Vault is ERC20 {
 
         // Deposit into the pool and receive cTokens.
         pool.mint(underlyingAmount);
+
+        // Increase the totalDeposited amount to account for new deposits
+        totalDeposited += underlyingAmount;
+
+        emit EnterPool(pool, underlyingAmount);
     }
 
-    function exitPool(CErc20 pool, uint256 cTokenAmount) external {
-        // If we're withdrawing our full balance:
+    function exitPool(uint256 poolIndex, uint256 cTokenAmount) external {
+        // Get the pool from the depositedPools array.
+        CErc20 pool = depositedPools[poolIndex];
         uint256 cTokenBalance = pool.balanceOf(address(this));
+
+        // If we're withdrawing our full balance:
         if (cTokenBalance == cTokenAmount) {
             // TODO: Optimizations:
             // - Store depositedPools in memory?
             // - Store length on stack?
             // Remove the pool we're withdrawing from:
-            for (uint256 i = 0; i < depositedPools.length; i++) {
-                // Once we find the pool that we're removing:
-                if (depositedPools[i] == pool) {
-                    // Move the last item in the array to the index we want to delete.
-                    depositedPools[i] = depositedPools[depositedPools.length - 1];
-
-                    // Remove the last index of the array.
-                    depositedPools.pop();
-                }
-            }
+            depositedPools[poolIndex] = depositedPools[depositedPools.length - 1];
+            depositedPools.pop();
         }
+
+        // Checkpoint our underlying balance before we withdraw.
+        uint256 preRedeemFloat = getFloat();
 
         // Withdraw from the pool.
         pool.redeem(cTokenAmount);
+
+        // Calculate the amount of underlying that we received.
+        uint256 underlyingReceived = getFloat() - preRedeemFloat;
+
+        // Reduce totalDeposited by the underlying amount received.
+        totalDeposited -= underlyingReceived;
+
+        emit ExitPool(pool, underlyingReceived);
+    }
+
+    /// @notice Allows governance to set a new float size.
+    /// @dev The new float size is a percentage mantissa scaled by 1e18.
+    /// @param newTargetFloatPercent The new target float size.percent
+    function setTargetFloatPercent(uint256 newTargetFloatPercent) external {
+        targetFloatPercent = newTargetFloatPercent;
     }
 
     /// @notice Allows the rebalancer to set a new withdrawal queue.

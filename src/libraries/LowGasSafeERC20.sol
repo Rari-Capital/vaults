@@ -1,5 +1,5 @@
-// SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity ^0.8.0;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.6;
 
 import "../external/ERC20.sol";
 
@@ -33,21 +33,21 @@ library LowGasSafeERC20 {
     /// @param data The call data (generated using abi.encode or one of its variants).
     function erc20SafeCall(ERC20 token, bytes memory data) internal {
         // We don't check that the contract has code because the vault already checks on deployment.
-        (bool success, bytes memory returndata) = address(token).call(data);
+        (bool success, bytes memory returnData) = address(token).call(data);
 
         if (success) {
-            // Return data is optional, but it returned it needs to be a postiive bool.
-            if (returndata.length > 0) {
-                require(abi.decode(returndata, (bool)), "ERC20_CALL_FAIL");
+            // Return data is optional, but it returned it needs to be a positive bool.
+            if (returnData.length > 0) {
+                require(abi.decode(returnData, (bool)), "ERC20_CALL_FAIL");
             }
         } else {
             // If the call didn't give a revert reason, revert right now.
-            require(returndata.length > 0, "ERC20_CALL_REVERT");
+            require(returnData.length > 0, "ERC20_CALL_REVERT");
 
             // Bubble up the revert reason if present.
             assembly {
-                let returndata_size := mload(returndata)
-                revert(add(32, returndata), returndata_size)
+                let returnDataSize := mload(returnData)
+                revert(add(32, returnData), returnDataSize)
             }
         }
     }

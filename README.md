@@ -37,14 +37,6 @@ cd vaults
 make
 ```
 
-- Finally, rename `.env.example` to `.env` and set `ETH_RPC_URL` to a valid Ethereum RPC URL:
-
-```sh
-# Inside .env
-
-ETH_RPC_URL=https://eth-mainnet.alchemyapi.io/v2/YOUR_ALCHEMY_KEY_HERE
-```
-
 ## Developing
 
 **Below is a brief summary of a few common commands you may need to contribute to this project.** If you are not already comfortable with the dapptools suite, [read the dapptools docs to learn more.](https://github.com/dapphub/dapptools/tree/master/src/dapp)
