@@ -5,4 +5,4 @@ solc:; nix-env -f https://github.com/dapphub/dapptools/archive/master.tar.gz -iA
 # Install npm dependencies.
 install:; npm install
 # Install dapp dependencies.
-update:; git submodule update --init --recursive
+update:; dapp update
