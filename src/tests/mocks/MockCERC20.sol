@@ -10,12 +10,13 @@ contract MockCERC20 is ERC20("Mock Token", "MOCK", 18) {
         underlying = _underlying;
     }
 
-    function mint(uint256 amount) external {
+    function mint(uint256 amount) external returns (uint256) {
         // Transfer underlying tokens to the cToken.
         underlying.transferFrom(msg.sender, address(this), amount);
-
         // Mint cTokens.
         _mint(msg.sender, amount);
+
+        return amount;
     }
 
     function balanceOfUnderlying() external view returns (uint256) {
