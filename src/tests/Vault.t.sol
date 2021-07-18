@@ -124,9 +124,17 @@ contract VaultsTest is DSTestPlus {
         assertEq(underlying.balanceOf(address(this)), 2 * amount);
     }
 
-    function test_enter_pool_functions_properly() public {
-        test_exchange_rate_is_initially_one(1e18);
-        emit log_uint(vault.totalSupply());
-        vault.enterPool(cToken, 1e18);
+    function test_enter_pool_functions_properly(uint256 amount) public {
+        if (amount > (type(uint256).max / 1e37) || amount == 0) return;
+
+        test_exchange_rate_is_initially_one(amount);
+        vault.enterPool(cToken, amount);
+    }
+
+    function test_exit_pool_functions_properly(uint256 amount) public {
+        if (amount > (type(uint256).max / 1e37) || amount == 0) return;
+
+        test_enter_pool_functions_properly(amount);
+        vault.exitPool(0, amount);
     }
 }
