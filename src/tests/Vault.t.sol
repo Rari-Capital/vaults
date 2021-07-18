@@ -123,4 +123,10 @@ contract VaultsTest is DSTestPlus {
         // Assert that the full underlying balance has been returned.
         assertEq(underlying.balanceOf(address(this)), 2 * amount);
     }
+
+    function test_enter_pool_functions_properly() public {
+        test_exchange_rate_is_initially_one(1e18);
+        emit log_uint(vault.totalSupply());
+        vault.enterPool(cToken, 1e18);
+    }
 }
