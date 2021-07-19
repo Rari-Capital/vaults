@@ -4,14 +4,14 @@ pragma solidity 0.8.6;
 import {ERC20} from "./external/ERC20.sol";
 import {CErc20} from "./external/CErc20.sol";
 
-import {LowGasSafeERC20} from "./libraries/LowGasSafeERC20.sol";
+import {SafeTransferHelper} from "./libraries/SafeTransferHelper.sol";
 
 /// @title Fuse Vault/fvToken
 /// @author TransmissionsDev + JetJadeja
 /// @notice Yield bearing token that enables users to swap their
 /// underlying asset for fvTokens to instantly begin earning yield.
 contract Vault is ERC20 {
-    using LowGasSafeERC20 for ERC20;
+    using SafeTransferHelper for ERC20;
 
     /*///////////////////////////////////////////////////////////////
                                 CONSTANTS

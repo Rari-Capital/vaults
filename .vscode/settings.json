@@ -4,8 +4,5 @@
   "solidity.compileUsingRemoteVersion": "v0.8.6",
   "files.associations": {
     ".dapprc": "shellscript"
-  },
-  "cSpell.enabled": true,
-  "cSpell.enableFiletypes": ["makefile", "nix", "shellscript", "solidity"],
-  "cSpell.words": ["Hevm", "Jadeja", "SPDX", "bytecode", "keccak", "rebalancer", "struct"]
+  }
 }
