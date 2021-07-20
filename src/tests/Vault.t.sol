@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.6;
 
-import {Vault} from "../Vault.sol";
-import {MockERC20} from "./mocks/MockERC20.sol";
-import {DSTestPlus} from "./utils/DSTestPlus.sol";
+import {MockERC20} from "solmate/tests/utils/MockERC20.sol";
 
+import {DSTestPlus} from "./utils/DSTestPlus.sol";
 import {MockCERC20} from "./mocks/MockCERC20.sol";
+
+import {Vault} from "../Vault.sol";
 import {CErc20} from "../external/CErc20.sol";
 
 contract VaultsTest is DSTestPlus {
@@ -14,13 +15,14 @@ contract VaultsTest is DSTestPlus {
     CErc20 cToken;
 
     function setUp() public {
-        underlying = new MockERC20();
+        underlying = new MockERC20("Mock Token", "TKN", 18);
         vault = new Vault(underlying);
+        // todo: can we make mockcerc20 just conform to cerc20 lol
         cToken = CErc20(address(new MockCERC20(underlying)));
     }
 
     function test_properly_init_erc20() public {
-        assertErc20Eq(vault.underlying(), underlying);
+        assertERC20Eq(vault.underlying(), underlying);
 
         assertEq(vault.name(), string(abi.encodePacked("Fuse ", underlying.name(), " Vault")));
         assertEq(vault.symbol(), string(abi.encodePacked("fv", underlying.symbol())));
@@ -96,8 +98,8 @@ contract VaultsTest is DSTestPlus {
         vault.withdrawUnderlying(amount);
 
         // fvTokens are set to 0.
-        assertEq(vault.balanceOf(address(this)), 0);
-        assertEq(underlying.balanceOf(address(this)), amount);
+        assertEq(vault.balanceOf(self), 0);
+        assertEq(underlying.balanceOf(self), amount);
 
         // TODO: Add balanceOfUnderlying function.
     }
@@ -115,13 +117,13 @@ contract VaultsTest is DSTestPlus {
         vault.deposit(amount);
 
         // Withdraw full balance of fvTokens.
-        vault.withdraw(vault.balanceOf(address(this)));
+        vault.withdraw(vault.balanceOf(self));
 
         // Assert that all fvTokens have been burned.
         assertEq(vault.totalSupply(), 0);
 
         // Assert that the full underlying balance has been returned.
-        assertEq(underlying.balanceOf(address(this)), 2 * amount);
+        assertEq(underlying.balanceOf(self), 2 * amount);
     }
 
     function test_enter_pool_functions_properly(uint256 amount) public {

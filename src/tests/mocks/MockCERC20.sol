@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.6;
 
-import "../../external/ERC20.sol";
+import {ERC20} from "solmate/erc20/ERC20.sol";
+
+import {CErc20} from "../../external/CErc20.sol";
 
 contract MockCERC20 is ERC20("Mock CERC20", "MCERC20", 18) {
     ERC20 immutable underlying;
@@ -23,10 +25,12 @@ contract MockCERC20 is ERC20("Mock CERC20", "MCERC20", 18) {
         underlying.transfer(msg.sender, redeemTokens);
         _burn(msg.sender, redeemTokens);
 
+        // TODO: We should prolly return actual error codes and not revert as per CERC20 spec
         return 0;
     }
 
     function balanceOfUnderlying(address account) external view returns (uint256) {
+        // TODO: this is not how balanceOfUnderlying works??
         return underlying.balanceOf(account);
     }
 }
