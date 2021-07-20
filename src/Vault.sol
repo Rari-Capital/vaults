@@ -195,7 +195,11 @@ contract Vault is ERC20 {
     //////////////////////////////////////////////////////////////*/
 
     function nextHarvest() public view returns (uint256) {
-        return MIN_HARVEST_DELAY_BLOCKS + lastHarvest;
+        // Gas saving.
+        uint256 _lastHarvest = lastHarvest;
+
+        if (_lastHarvest == 0) return block.number;
+        return MIN_HARVEST_DELAY_BLOCKS + _lastHarvest;
     }
 
     function harvest() external {
