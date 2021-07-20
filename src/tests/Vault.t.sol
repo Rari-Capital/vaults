@@ -137,4 +137,24 @@ contract VaultsTest is DSTestPlus {
         test_enter_pool_functions_properly(amount);
         vault.exitPool(0, amount);
     }
+
+    function test_harvest_functional_properly() public {
+        uint256 amount = 162931130;
+        if (amount > (type(uint256).max / 1e37) || amount == 0) return;
+
+        test_exchange_rate_is_initially_one(amount / 2);
+
+        for (uint256 i = 0; i < 10; i++) {
+            CErc20 mockCErc20 = CErc20(address(new MockCERC20(underlying)));
+
+            // Deposit 5% of the total supply into the vault.
+            // This ensure that by the end of the loop, 100% of the vault balance is deposited into various cTokens.
+            vault.enterPool(mockCErc20, amount / 20);
+
+            // Artificially inflate the CErc20 balance.
+            //underlying.transfer(address(mockCErc20), amount / 20);
+        }
+
+        vault.harvest();
+    }
 }
