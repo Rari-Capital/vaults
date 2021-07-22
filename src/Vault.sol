@@ -168,15 +168,14 @@ contract Vault is ERC20 {
     /// @dev Withdraw an amount of underlying tokens from pools in the withdrawal queue.
     /// @param underlyingAmount The amount of the underlying asset to pull into float.
     function pullIntoFloat(uint256 underlyingAmount) internal {
-        uint256 updatedFloat = (underlyingAmount * targetFloatPercent) / 1e18;
         for (uint256 i = withdrawalQueue.length - 1; i < withdrawalQueue.length; i--) {
             CErc20 cToken = withdrawalQueue[i];
             // TODO: do we need to do balance checking or can we just withdraw our amount and see if reverts idk
             uint256 balance = cToken.balanceOfUnderlying(address(this));
             // TODO: i dont think this works.
-            if (underlyingAmount >= balance + updatedFloat) {
+            if (balance >= underlyingAmount) {
                 // todo: refactor this to use exitPool?
-                cToken.redeemUnderlying(underlyingAmount + updatedFloat);
+                cToken.redeemUnderlying(underlyingAmount);
                 break;
             } else {
                 // todo: refactor this to use exitPool?
@@ -220,7 +219,7 @@ contract Vault is ERC20 {
 
         // If the current float size is less than the ideal, increase the float value.
         uint256 updatedFloat = (depositBalance * targetFloatPercent) / 1e18;
-        if (updatedFloat > targetFloatPercent) pullIntoFloat(updatedFloat);
+        if (updatedFloat > underlying.balanceOf(address(this))) pullIntoFloat(updatedFloat);
 
         // Locked profit is the delta between the underlying amount we
         // had last harvest and the newly calculated underlying amount.
@@ -282,7 +281,6 @@ contract Vault is ERC20 {
 
         // Deposit into the pool and receive cTokens.
         pool.mint(underlyingAmount);
-
         // Increase the totalDeposited amount to account for new deposits
         totalDeposited += underlyingAmount;
 
