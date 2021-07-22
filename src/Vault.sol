@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.6;
 
-import {ERC20} from "./external/ERC20.sol";
-import {CErc20} from "./external/CErc20.sol";
+import {SafeERC20} from "solmate/erc20/SafeERC20.sol";
+import {ERC20} from "solmate/erc20/ERC20.sol";
 
-import {SafeTransferHelper} from "./libraries/SafeTransferHelper.sol";
+import {CErc20} from "./external/CErc20.sol";
 
 /// @title Fuse Vault/fvToken
 /// @author TransmissionsDev + JetJadeja
 /// @notice Yield bearing token that enables users to swap their
 /// underlying asset for fvTokens to instantly begin earning yield.
 contract Vault is ERC20 {
-    using SafeTransferHelper for ERC20;
+    using SafeERC20 for ERC20;
 
     /*///////////////////////////////////////////////////////////////
                                 CONSTANTS
@@ -153,7 +153,7 @@ contract Vault is ERC20 {
     /// @notice Returns the current fvToken exchange rate, scaled by 1e18.
     function exchangeRateCurrent() public view returns (uint256) {
         // Total fvToken supply and vault's total balance in underlying tokens.
-        uint256 supply = totalSupply();
+        uint256 supply = totalSupply;
         uint256 balance = calculateTotalFreeUnderlying();
 
         // If either the supply or balance is 0, return 1.

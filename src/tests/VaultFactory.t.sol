@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.6;
 
-import {DSTestPlus} from "./utils/DSTestPlus.sol";
+import {MockERC20} from "solmate/tests/utils/MockERC20.sol";
 
-import {MockERC20} from "./mocks/MockERC20.sol";
+import {DSTestPlus} from "./utils/DSTestPlus.sol";
 
 import {Vault} from "../Vault.sol";
 import {VaultFactory} from "../VaultFactory.sol";
@@ -13,13 +13,13 @@ contract VaultFactoryTest is DSTestPlus {
     MockERC20 underlying;
 
     function setUp() public {
-        underlying = new MockERC20();
+        underlying = new MockERC20("Mock Token", "TKN", 18);
         vaultFactory = new VaultFactory();
     }
 
     function test_deploy_vault() public {
         Vault vault = vaultFactory.deploy(underlying);
-        assertErc20Eq(vault.underlying(), underlying);
+        assertERC20Eq(vault.underlying(), underlying);
         assertVaultEq(vaultFactory.getVaultFromUnderlying(underlying), vault);
     }
 
