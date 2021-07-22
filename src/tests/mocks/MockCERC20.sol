@@ -26,7 +26,14 @@ contract MockCERC20 is ERC20("Mock CERC20", "MCERC20", 18) {
         return 0;
     }
 
+    function redeemUnderlying(uint256 redeemTokens) external returns (uint256) {
+        underlying.transfer(msg.sender, redeemTokens);
+        _burn(msg.sender, redeemTokens);
+
+        return 0;
+    }
+
     function balanceOfUnderlying(address account) external view returns (uint256) {
-        return underlying.balanceOf(account);
+        return underlying.balanceOf(address(this));
     }
 }
