@@ -136,8 +136,7 @@ contract VaultsTest is DSTestPlus {
         vault.exitPool(0, amount);
     }
 
-    function test_harvest_functional_properly() public {
-        uint256 amount = 1e18;
+    function test_harvest_functional_properly(uint256 amount) public {
         if (amount > (type(uint256).max / 1e37) || amount == 0) return;
 
         test_exchange_rate_is_initially_one(amount / 2);
