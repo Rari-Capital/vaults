@@ -57,7 +57,7 @@ contract VaultFactory {
         );
 
         // Turn the create2 hash into the vault address.
-        return Vault(address(uint160(uint256(hash))));
+        return Vault(payable(address(uint160(uint256(hash)))));
     }
 
     /// @notice Returns if a vault at an address has been deployed yet.
