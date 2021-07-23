@@ -4,6 +4,7 @@ pragma solidity 0.8.6;
 import {SafeERC20} from "solmate/erc20/SafeERC20.sol";
 import {ERC20} from "solmate/erc20/ERC20.sol";
 
+import {Weth} from "./external/Weth.sol";
 import {CErc20} from "./external/CErc20.sol";
 
 /// @title Fuse Vault/fvToken
@@ -21,6 +22,9 @@ contract Vault is ERC20 {
     /// todo: this should be changeable and we should support harvesting early
     /// maybe just rename to target harvest blocks or something.
     uint256 public constant MIN_HARVEST_DELAY_BLOCKS = 1661;
+
+    /// @notice The address of the Wrapped Ether contract.
+    address constant WETH_CONTRACT = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
 
     /// @notice The underlying token for the vault.
     ERC20 public immutable underlying;
@@ -276,11 +280,18 @@ contract Vault is ERC20 {
             depositedPools.push(pool);
         }
 
-        // Approve the underlying to the pool for minting.
-        underlying.approve(address(pool), underlyingAmount);
+        // Identify whether the cToken
+        if (pool.isCEther()) {
+            Weth(address(underlying)).withdraw(underlyingAmount);
+            pool.mint{value: underlyingAmount}();
+        } else {
+            // Approve the underlying to the pool for minting.
+            underlying.approve(address(pool), underlyingAmount);
 
-        // Deposit into the pool and receive cTokens.
-        pool.mint(underlyingAmount);
+            // Deposit into the pool and receive cTokens.
+            pool.mint(underlyingAmount);
+        }
+
         // Increase the totalDeposited amount to account for new deposits
         totalDeposited += underlyingAmount;
 
@@ -305,8 +316,16 @@ contract Vault is ERC20 {
         // Checkpoint our underlying balance before we withdraw.
         uint256 preRedeemFloat = getFloat();
 
-        // Withdraw from the pool.
-        pool.redeem(cTokenAmount);
+        if (pool.isCEther()) {
+            uint256 balanceBefore = address(this).balance;
+            // Withdraw from the pool.
+            pool.redeem(cTokenAmount);
+            uint256 balanceAfter = address(this).balance;
+
+            Weth(address(underlying)).deposit{value: balanceAfter - balanceBefore}();
+        } else {
+            pool.redeem(cTokenAmount);
+        }
 
         // Calculate the amount of underlying that we received.
         uint256 underlyingReceived = getFloat() - preRedeemFloat;
@@ -330,4 +349,6 @@ contract Vault is ERC20 {
     function setWithdrawalQueue(CErc20[] memory newQueue) external {
         withdrawalQueue = newQueue;
     }
+
+    receive() external payable {}
 }
