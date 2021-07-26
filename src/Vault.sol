@@ -18,11 +18,6 @@ contract Vault is ERC20 {
                                 CONSTANTS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice The minimum delay in blocks between each harvest.
-    /// todo: this should be changeable and we should support harvesting early
-    /// maybe just rename to target harvest blocks or something.
-    uint256 public constant MIN_HARVEST_DELAY_BLOCKS = 1661;
-
     /// @notice The address of the Wrapped Ether contract.
     address constant WETH_CONTRACT = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
 
@@ -76,6 +71,11 @@ contract Vault is ERC20 {
     /*///////////////////////////////////////////////////////////////
                              VAULT STORAGE
     //////////////////////////////////////////////////////////////*/
+
+    /// @notice The minimum delay in blocks between each harvest.
+    /// todo: this should be changeable and we should support harvesting early
+    /// maybe just rename to target harvest blocks or something.
+    uint256 public minimumHarvestDelay = 1661;
 
     /// @notice An array of cTokens the Vault holds.
     CErc20[] public depositedPools;
@@ -203,7 +203,7 @@ contract Vault is ERC20 {
     function nextHarvest() public view returns (uint256) {
         // todo: why return block number can't it stay 0? idk
         if (lastHarvest == 0) return block.number;
-        return MIN_HARVEST_DELAY_BLOCKS + lastHarvest;
+        return minimumHarvestDelay + lastHarvest;
     }
 
     function harvest() external {
@@ -248,6 +248,10 @@ contract Vault is ERC20 {
         lastHarvest = block.number;
 
         emit Harvest(msg.sender, maxLockedProfit);
+    }
+
+    function setMinimumHarvestDelay(uint256 delay) public {
+        minimumHarvestDelay = delay;
     }
 
     function setFeePercentage(uint256 newFeePercentage) external {
