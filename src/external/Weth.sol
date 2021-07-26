@@ -5,4 +5,6 @@ interface WETH {
     function deposit() external payable;
 
     function withdraw(uint256) external;
+
+    function transfer(address, uint256) external;
 }
