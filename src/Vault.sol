@@ -99,6 +99,10 @@ contract Vault is ERC20 {
     /// @dev A mantissa where 1e18 represents 100% and 0e18 represents 0%.
     uint256 public targetFloatPercent = 0.01e18;
 
+    /// @notice A percent value value representing part of the total profit to take for fees.
+    /// @dev A mantissa where 1e18 represents 100% and 0e18 represents 0%.
+    uint256 public feePercentage = 0.02e18;
+
     /*///////////////////////////////////////////////////////////////
                          USER ACTION FUNCTIONS
     //////////////////////////////////////////////////////////////*/
@@ -234,6 +238,10 @@ contract Vault is ERC20 {
         lastHarvest = block.number;
 
         emit Harvest(msg.sender, maxLockedProfit);
+    }
+
+    function setFeePercentage(uint256 newFeePercentage) external {
+        feePercentage = newFeePercentage;
     }
 
     function calculateUnlockedProfit() public view returns (uint256) {
