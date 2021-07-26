@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.8.6;
 
-import {SafeERC20} from "solmate/erc20/SafeERC20.sol";
 import {ERC20} from "solmate/erc20/ERC20.sol";
+import {SafeERC20} from "solmate/erc20/SafeERC20.sol";
 
-import {Weth} from "./external/Weth.sol";
+import {WETH} from "./external/WETH.sol";
 import {CErc20} from "./external/CErc20.sol";
 
 /// @title Fuse Vault/fvToken
@@ -280,7 +280,7 @@ contract Vault is ERC20 {
 
         // Identify whether the cToken
         if (pool.isCEther()) {
-            Weth(address(underlying)).withdraw(underlyingAmount);
+            WETH(address(underlying)).withdraw(underlyingAmount);
             pool.mint{value: underlyingAmount}();
         } else {
             // Approve the underlying to the pool for minting.
@@ -320,7 +320,7 @@ contract Vault is ERC20 {
             pool.redeem(cTokenAmount);
             uint256 balanceAfter = address(this).balance;
 
-            Weth(address(underlying)).deposit{value: balanceAfter - balanceBefore}();
+            WETH(address(underlying)).deposit{value: balanceAfter - balanceBefore}();
         } else {
             pool.redeem(cTokenAmount);
         }
