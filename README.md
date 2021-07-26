@@ -16,7 +16,7 @@ curl -L https://nixos.org/nix/install | sh
 . "$HOME/.nix-profile/etc/profile.d/nix.sh"
 ```
 
-- Then, install dapptools:
+- Then, install DappTools:
 
 ```sh
 curl https://dapp.tools/install | sh
@@ -39,7 +39,7 @@ make
 
 ## Developing
 
-**Below is a brief summary of a few common commands you may need to contribute to this project.** If you are not already comfortable with the dapptools suite, [read the dapptools docs to learn more.](https://github.com/dapphub/dapptools/tree/master/src/dapp)
+**Below is a brief summary of a few common commands you may need to contribute to this project.** If you are not already comfortable with the DappTools suite, [read the dapptools docs to learn more.](https://github.com/dapphub/dapptools/tree/master/src/dapp)
 
 ### Compiling
 
