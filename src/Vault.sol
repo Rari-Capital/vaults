@@ -110,8 +110,7 @@ contract Vault is ERC20 {
     /// @notice Deposits an underlying token and mints fvTokens.
     /// @param underlyingAmount The amount of the underlying token to deposit.
     function deposit(uint256 underlyingAmount) external {
-        uint256 exchangeRate = exchangeRateCurrent();
-        _mint(msg.sender, (underlyingAmount * 10**decimals) / exchangeRate);
+        _mint(msg.sender, (underlyingAmount * 10**decimals) / exchangeRateCurrent());
 
         // Transfer in underlying tokens from the sender.
         underlying.safeTransferFrom(msg.sender, address(this), underlyingAmount);
@@ -227,9 +226,20 @@ contract Vault is ERC20 {
         uint256 updatedFloat = (depositBalance * targetFloatPercent) / 1e18;
         if (updatedFloat > underlying.balanceOf(address(this))) pullIntoFloat(updatedFloat);
 
+        // Subtract the current deposited balance from the one set during the last harvest.
+        uint256 profit = depositBalance - totalDeposited;
+
+        // Calculate the total fee taken from the profit.
+        uint256 fee = (profit * feePercentage) / 1e18;
+
+        // Transfer fvTokens (representing fees) to the rebalancer
+        if (fee > 0) {
+            _mint(msg.sender, (profit * 10**decimals) / exchangeRateCurrent());
+        }
+
         // Locked profit is the delta between the underlying amount we
         // had last harvest and the newly calculated underlying amount.
-        maxLockedProfit = depositBalance - totalDeposited;
+        maxLockedProfit = profit;
 
         // Update totalDeposited to use the freshly computed underlying amount.
         totalDeposited = depositBalance;
