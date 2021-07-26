@@ -284,7 +284,7 @@ contract Vault is ERC20 {
             pool.mint{value: underlyingAmount}();
         } else {
             // Approve the underlying to the pool for minting.
-            underlying.approve(address(pool), underlyingAmount);
+            underlying.safeApprove(address(pool), underlyingAmount);
 
             // Deposit into the pool and receive cTokens.
             pool.mint(underlyingAmount);
