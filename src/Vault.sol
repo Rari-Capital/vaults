@@ -260,9 +260,9 @@ contract Vault is ERC20 {
 
     function calculateUnlockedProfit() public view returns (uint256) {
         // TODO: CAP at 1 if block number exceeds next harvest
-        uint256 unlockedProfit = block.number >= lastHarvest
+        uint256 unlockedProfit = block.number <= lastHarvest
             ? maxLockedProfit
-            : (maxLockedProfit * (lastHarvest - block.number)) / (nextHarvest() - lastHarvest);
+            : (maxLockedProfit * (block.number - lastHarvest)) / (nextHarvest() - lastHarvest);
         // TODO: is there a cleaner way to do this?
         return maxLockedProfit - unlockedProfit;
     }
