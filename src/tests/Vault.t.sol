@@ -138,7 +138,8 @@ contract VaultsTest is DSTestPlus {
         vault.exitPool(0, amount);
     }
 
-    function test_harvest_functional_properly(uint256 amount) public {
+    function test_harvest_functional_properly() public {
+        uint256 amount = 1e18;
         if (amount > (type(uint256).max / 1e37) || amount == 0) return;
 
         test_exchange_rate_is_initially_one(amount / 2);
@@ -150,9 +151,17 @@ contract VaultsTest is DSTestPlus {
             // Deposit 5% of the total supply into the vault.
             // This ensure that by the end of the loop, 100% of the vault balance is deposited into various cTokens.
             vault.enterPool(mockCErc20, amount / 20);
+            underlying.mint(address(this), amount / 40);
+            underlying.transfer(address(mockCErc20), amount / 40);
         }
 
         vault.setWithdrawalQueue(withdrawQueue);
+
+        emit log_uint(vault.exchangeRateCurrent());
         vault.harvest();
+        emit log_uint(vault.exchangeRateCurrent());
+
+        hevm.roll(block.timestamp + vault.minimumHarvestDelay() - 100);
+        emit log_uint(vault.exchangeRateCurrent());
     }
 }
