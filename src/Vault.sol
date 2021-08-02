@@ -281,7 +281,7 @@ contract Vault is ERC20, DSTestPlus {
     }
 
     function calculateTotalFreeUnderlying() public view returns (uint256) {
-        return calculateUnlockedProfit() + getFloat() + totalDeposited;
+        return getFloat() + totalDeposited - calcualteLockedProfit();
     }
 
     /*///////////////////////////////////////////////////////////////
