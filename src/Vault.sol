@@ -7,11 +7,13 @@ import {SafeERC20} from "solmate/erc20/SafeERC20.sol";
 import {WETH} from "./external/WETH.sol";
 import {CErc20} from "./external/CErc20.sol";
 
+import {DSTestPlus} from "./tests/utils/DSTestPlus.sol";
+
 /// @title Fuse Vault/fvToken
 /// @author TransmissionsDev + JetJadeja
 /// @notice Yield bearing token that enables users to swap their
 /// underlying asset for fvTokens to instantly begin earning yield.
-contract Vault is ERC20 {
+contract Vault is ERC20, DSTestPlus {
     using SafeERC20 for ERC20;
 
     /*///////////////////////////////////////////////////////////////
@@ -222,27 +224,31 @@ contract Vault is ERC20 {
             depositBalance += pool.balanceOfUnderlying(address(this));
         }
 
+        // Subtract the current deposited balance from the one set during the last harvest.
+        uint256 profit = depositBalance - totalDeposited;
+
+        // Update totalDeposited to use the freshly computed underlying amount.
+        totalDeposited = depositBalance;
+
         // If the current float size is less than the ideal, increase the float value.
         uint256 updatedFloat = (depositBalance * targetFloatPercent) / 1e18;
         if (updatedFloat > underlying.balanceOf(address(this))) pullIntoFloat(updatedFloat);
-
-        // Subtract the current deposited balance from the one set during the last harvest.
-        uint256 profit = depositBalance - totalDeposited;
 
         // Calculate the total fee taken from the profit.
         uint256 fee = (profit * feePercentage) / 1e18;
 
         // Transfer fvTokens (representing fees) to the rebalancer
         if (fee > 0) {
+            emit log("");
+            emit log_uint(exchangeRateCurrent());
+
             _mint(msg.sender, (profit * 10**decimals) / exchangeRateCurrent());
+            emit log_uint(exchangeRateCurrent());
         }
 
         // Locked profit is the delta between the underlying amount we
         // had last harvest and the newly calculated underlying amount.
         maxLockedProfit = profit;
-
-        // Update totalDeposited to use the freshly computed underlying amount.
-        totalDeposited = depositBalance;
 
         // Set the lastHarvest to this block, as we just triggered a harvest.
         lastHarvest = block.number;
@@ -260,11 +266,10 @@ contract Vault is ERC20 {
 
     function calculateUnlockedProfit() public view returns (uint256) {
         // TODO: CAP at 1 if block number exceeds next harvest
-        uint256 unlockedProfit = block.number <= lastHarvest
-            ? maxLockedProfit
-            : (maxLockedProfit * (block.number - lastHarvest)) / (nextHarvest() - lastHarvest);
-        // TODO: is there a cleaner way to do this?
-        return maxLockedProfit - unlockedProfit;
+        return
+            block.number >= nextHarvest()
+                ? maxLockedProfit
+                : (maxLockedProfit * (block.number - lastHarvest)) / minimumHarvestDelay;
     }
 
     function getFloat() public view returns (uint256) {
@@ -272,7 +277,7 @@ contract Vault is ERC20 {
     }
 
     function calculateTotalFreeUnderlying() public view returns (uint256) {
-        return totalDeposited - calculateUnlockedProfit() + getFloat();
+        return calculateUnlockedProfit() + getFloat() + totalDeposited;
     }
 
     /*///////////////////////////////////////////////////////////////
