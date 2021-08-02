@@ -273,7 +273,10 @@ contract Vault is ERC20, DSTestPlus {
     }
 
     function calculateLockedProfit() public view returns (uint256) {
-        return totalDeposited - (calculateUnlockedProfit());
+        return
+            block.number >= nextHarvest()
+                ? 0
+                : maxLockedProfit - (maxLockedProfit * (block.number - lastHarvest)) / minimumHarvestDelay;
     }
 
     function getFloat() public view returns (uint256) {
