@@ -107,7 +107,7 @@ contract Vault is ERC20 {
                          USER ACTION FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Deposits an underlying token and mints fvTokens.
+    /// @notice Deposit the vault's underlying token to mint fvTokens.
     /// @param underlyingAmount The amount of the underlying token to deposit.
     function deposit(uint256 underlyingAmount) external {
         _mint(msg.sender, (underlyingAmount * 10**decimals) / exchangeRateCurrent());
@@ -119,16 +119,20 @@ contract Vault is ERC20 {
     }
 
     /// @notice Burns fvTokens and sends underlying tokens to the caller.
-    /// @param amount The amount of vault shares to redeem.
+    /// @param amount The amount of fvTokens to redeem for underlying tokens.
     function withdraw(uint256 amount) external {
+        // Query the vault's exchange rate.
         uint256 exchangeRate = exchangeRateCurrent();
+
+        // Convert the amount of fvTokens to underlying tokens.
+        // This can be done by multiplying the fvTokens by the exchange rate.
         uint256 underlyingAmount = (exchangeRate * amount) / 10**decimals;
 
-        // Burn fvTokens.
+        // Burn inputed fvTokens.
         _burn(msg.sender, amount);
 
-        // Pull extra tokens into float from Fuse if necessary.
-        if (getFloat() < underlyingAmount) pullIntoFloat(underlyingAmount);
+        // If the withdrawal amount is greater than the float, pull tokens from Fuse.
+        if (underlyingAmount > getFloat()) pullIntoFloat(underlyingAmount);
 
         // Transfer tokens to the caller.
         underlying.safeTransfer(msg.sender, underlyingAmount);
