@@ -7,13 +7,11 @@ import {SafeERC20} from "solmate/erc20/SafeERC20.sol";
 import {WETH} from "./external/WETH.sol";
 import {CErc20} from "./external/CErc20.sol";
 
-import {DSTestPlus} from "./tests/utils/DSTestPlus.sol";
-
 /// @title Fuse Vault/fvToken
 /// @author TransmissionsDev + JetJadeja
 /// @notice Yield bearing token that enables users to swap their
 /// underlying asset for fvTokens to instantly begin earning yield.
-contract Vault is ERC20, DSTestPlus {
+contract Vault is ERC20 {
     using SafeERC20 for ERC20;
 
     /*///////////////////////////////////////////////////////////////
@@ -160,7 +158,7 @@ contract Vault is ERC20, DSTestPlus {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Returns the current fvToken exchange rate, scaled by 1e18.
-    function exchangeRateCurrent() public view returns (uint256) {
+    function exchangeRateCurrent() public returns (uint256) {
         // Total fvToken supply and vault's total balance in underlying tokens.
         uint256 supply = totalSupply;
         uint256 balance = calculateTotalFreeUnderlying();
@@ -209,14 +207,20 @@ contract Vault is ERC20, DSTestPlus {
     }
 
     function harvest() external {
+        // Ensure that the harvest does not occur too early.
         require(block.number >= nextHarvest());
 
+        // Set the lastHarvest to this block, as the harvest has just been triggered.
+        lastHarvest = block.number;
+
+        // Calculate the vault's total balance in underlying tokens.
         uint256 depositBalance;
 
         // TODO: Optimizations:
         // - Store depositedPools in memory?
         // - Store length on stack?
-        // Loop over each pool to add to the total:
+
+        // Loop over each pool to add to the total balance.
         for (uint256 i = 0; i < depositedPools.length; i++) {
             CErc20 pool = depositedPools[i];
 
@@ -224,11 +228,14 @@ contract Vault is ERC20, DSTestPlus {
             depositBalance += pool.balanceOfUnderlying(address(this));
         }
 
+        // Update the totalDeposited amount to use the freshly computed underlying amount.
+        totalDeposited = depositBalance;
+
         // Subtract the current deposited balance from the one set during the last harvest.
         uint256 profit = depositBalance - totalDeposited;
 
-        // Update totalDeposited to use the freshly computed underlying amount.
-        totalDeposited = depositBalance;
+        // Set the new maximum locked profit.
+        maxLockedProfit = profit;
 
         // If the current float size is less than the ideal, increase the float value.
         uint256 updatedFloat = (depositBalance * targetFloatPercent) / 1e18;
@@ -239,19 +246,8 @@ contract Vault is ERC20, DSTestPlus {
 
         // Transfer fvTokens (representing fees) to the rebalancer
         if (fee > 0) {
-            emit log("");
-            emit log_uint(exchangeRateCurrent());
-
             _mint(msg.sender, (profit * 10**decimals) / exchangeRateCurrent());
-            emit log_uint(exchangeRateCurrent());
         }
-
-        // Locked profit is the delta between the underlying amount we
-        // had last harvest and the newly calculated underlying amount.
-        maxLockedProfit = profit;
-
-        // Set the lastHarvest to this block, as we just triggered a harvest.
-        lastHarvest = block.number;
 
         emit Harvest(msg.sender, maxLockedProfit);
     }
@@ -273,6 +269,8 @@ contract Vault is ERC20, DSTestPlus {
     }
 
     function calculateLockedProfit() public view returns (uint256) {
+        // TODO: If (block.number - lastHarvest) > minimumHarvestDelay, a math error will occur.
+        // TODO: add harvestOccuring
         return
             block.number >= nextHarvest()
                 ? 0
@@ -283,8 +281,8 @@ contract Vault is ERC20, DSTestPlus {
         return underlying.balanceOf(address(this));
     }
 
-    function calculateTotalFreeUnderlying() public view returns (uint256) {
-        return getFloat() + totalDeposited - calculateLockedProfit();
+    function calculateTotalFreeUnderlying() public returns (uint256) {
+        return maxLockedProfit + getFloat() + totalDeposited - calculateLockedProfit();
     }
 
     /*///////////////////////////////////////////////////////////////
