@@ -158,7 +158,7 @@ contract Vault is ERC20 {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Returns the current fvToken exchange rate, scaled by 1e18.
-    function exchangeRateCurrent() public returns (uint256) {
+    function exchangeRateCurrent() public view returns (uint256) {
         // Total fvToken supply and vault's total balance in underlying tokens.
         uint256 supply = totalSupply;
         uint256 balance = calculateTotalFreeUnderlying();
@@ -281,7 +281,7 @@ contract Vault is ERC20 {
         return underlying.balanceOf(address(this));
     }
 
-    function calculateTotalFreeUnderlying() public returns (uint256) {
+    function calculateTotalFreeUnderlying() public view returns (uint256) {
         return maxLockedProfit + getFloat() + totalDeposited - calculateLockedProfit();
     }
 
