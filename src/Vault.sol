@@ -185,18 +185,20 @@ contract Vault is ERC20 {
     /// @dev Withdraw underlying tokens from pools in the withdrawal queue.
     /// @param underlyingAmount The amount of underlying tokens to pull into float.
     function pullIntoFloat(uint256 underlyingAmount) internal {
+        // Iterate through the withdrawal queue.
         for (uint256 i = withdrawalQueue.length - 1; i < withdrawalQueue.length; i--) {
             CErc20 cToken = withdrawalQueue[i];
-            // TODO: do we need to do balance checking or can we just withdraw our amount and see if reverts idk
+
+            // Calculate the vault's balance in the cToken contract.
             uint256 balance = cToken.balanceOfUnderlying(address(this));
-            // TODO: i dont think this works.
+
+            // If the balance is greater than the amount to pull, pull the full amount.
             if (balance >= underlyingAmount) {
-                // todo: refactor this to use exitPool?
-                cToken.redeemUnderlying(underlyingAmount);
+                exitPool(i, underlyingAmount);
                 break;
             } else {
                 // todo: refactor this to use exitPool?
-                cToken.redeemUnderlying(balance);
+                exitPool(i, underlyingAmount);
                 underlyingAmount -= balance;
             }
         }
