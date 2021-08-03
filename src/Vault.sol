@@ -264,10 +264,12 @@ contract Vault is ERC20 {
         emit Harvest(msg.sender, maxLockedProfit);
     }
 
+    /// @notice Set a new minimum harvest delay.
     function setMinimumHarvestDelay(uint256 delay) public {
         minimumHarvestDelay = delay;
     }
 
+    /// @notice Set a new fee percentage.
     function setFeePercentage(uint256 newFeePercentage) external {
         feePercentage = newFeePercentage;
     }
