@@ -229,9 +229,12 @@ contract Vault is ERC20 {
         // Calculate the vault's total balance in underlying tokens.
         uint256 depositBalance;
 
+        // Store the depositPools array locally.
+        CErc20[] memory _depositedPools;
+
         // Loop over each pool to add to the total balance.
-        for (uint256 i = 0; i < depositedPools.length; i++) {
-            CErc20 pool = depositedPools[i];
+        for (uint256 i = 0; i < _depositedPools.length; i++) {
+            CErc20 pool = _depositedPools[i];
 
             // Add this pool's balance to the total.
             depositBalance += pool.balanceOfUnderlying(address(this));
