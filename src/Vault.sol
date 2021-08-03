@@ -216,6 +216,9 @@ contract Vault is ERC20 {
         return minimumHarvestDelay + lastHarvest;
     }
 
+    /// @notice Trigger a harvest.
+    /// This updates the vault's balance in the cToken contracts,
+    /// take fees, and update the float.
     function harvest() external {
         // Ensure that the harvest does not occur too early.
         require(block.number >= nextHarvest());
@@ -225,10 +228,6 @@ contract Vault is ERC20 {
 
         // Calculate the vault's total balance in underlying tokens.
         uint256 depositBalance;
-
-        // TODO: Optimizations:
-        // - Store depositedPools in memory?
-        // - Store length on stack?
 
         // Loop over each pool to add to the total balance.
         for (uint256 i = 0; i < depositedPools.length; i++) {
