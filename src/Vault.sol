@@ -165,12 +165,16 @@ contract Vault is ERC20 {
 
     /// @notice Returns the current fvToken exchange rate, scaled by 1e18.
     function exchangeRateCurrent() public view returns (uint256) {
-        // Total fvToken supply and vault's total balance in underlying tokens.
+        // Store the Total fvToken supply and vault's total balance in underlying tokens.
+
+        // Store the vault's total underlying balance and fvToken supply.
         uint256 supply = totalSupply;
         uint256 balance = calculateTotalFreeUnderlying();
 
-        // If either the supply or balance is 0, return 1.
+        // If the supply or balance is zero, return an exchange rate of 1.
         if (supply == 0 || balance == 0) return 10**decimals;
+
+        // Calculate the exchange rate by diving the underlying balance by the fvToken supply.
         return (balance * 10**decimals) / supply;
     }
 
@@ -178,8 +182,8 @@ contract Vault is ERC20 {
                          WITHDRAWAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev Withdraw an amount of underlying tokens from pools in the withdrawal queue.
-    /// @param underlyingAmount The amount of the underlying asset to pull into float.
+    /// @dev Withdraw underlying tokens from pools in the withdrawal queue.
+    /// @param underlyingAmount The amount of underlying tokens to pull into float.
     function pullIntoFloat(uint256 underlyingAmount) internal {
         for (uint256 i = withdrawalQueue.length - 1; i < withdrawalQueue.length; i--) {
             CErc20 cToken = withdrawalQueue[i];
