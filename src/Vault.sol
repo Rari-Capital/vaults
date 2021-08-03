@@ -274,6 +274,7 @@ contract Vault is ERC20 {
         feePercentage = newFeePercentage;
     }
 
+    /// @notice Calculate the profit from the last harvest that is still locked.
     function calculateLockedProfit() public view returns (uint256) {
         // TODO: If (block.number - lastHarvest) > minimumHarvestDelay, a math error will occur.
         return
