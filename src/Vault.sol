@@ -194,17 +194,15 @@ contract Vault is ERC20 {
 
             // If the balance is greater than the amount to pull, pull the full amount.
             if (balance >= underlyingAmount) {
-                exitPool(i, underlyingAmount);
+                cToken.redeemUnderlying(underlyingAmount);
                 break;
             } else {
-                // todo: refactor this to use exitPool?
-                exitPool(i, underlyingAmount);
+                cToken.redeemUnderlying(balance);
                 underlyingAmount -= balance;
             }
         }
 
         // Update the totalDeposited value to account for the new amount.
-        // todo: refactor this to use exitPool?
         totalDeposited -= underlyingAmount;
     }
 
