@@ -210,8 +210,8 @@ contract Vault is ERC20 {
                            HARVEST FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Calculate the block number of the next harvest.
     function nextHarvest() public view returns (uint256) {
-        // todo: why return block number can't it stay 0? idk
         if (lastHarvest == 0) return block.number;
         return minimumHarvestDelay + lastHarvest;
     }
