@@ -274,17 +274,8 @@ contract Vault is ERC20 {
         feePercentage = newFeePercentage;
     }
 
-    function calculateUnlockedProfit() public view returns (uint256) {
-        // TODO: CAP at 1 if block number exceeds next harvest
-        return
-            block.number >= nextHarvest()
-                ? maxLockedProfit
-                : (maxLockedProfit * (block.number - lastHarvest)) / minimumHarvestDelay;
-    }
-
     function calculateLockedProfit() public view returns (uint256) {
         // TODO: If (block.number - lastHarvest) > minimumHarvestDelay, a math error will occur.
-        // TODO: add harvestOccuring
         return
             block.number >= nextHarvest()
                 ? 0
