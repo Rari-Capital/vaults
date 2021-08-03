@@ -143,12 +143,14 @@ contract Vault is ERC20 {
     /// @notice Burns fvTokens and sends underlying tokens to the caller.
     /// @param underlyingAmount The amount of underlying tokens to withdraw.
     function withdrawUnderlying(uint256 underlyingAmount) external {
+        // Query the vault's exchange rate.
         uint256 exchangeRate = exchangeRateCurrent();
 
-        // Burn fvTokens.
+        // Convert underlying tokens to fvTokens and then burn them.
+        // This can be done by multiplying the underlying tokens by the exchange rate.
         _burn(msg.sender, (exchangeRate * underlyingAmount) / 10**decimals);
 
-        // Pull extra tokens into float from Fuse if necessary.
+        // If the withdrawal amount is greater than the float, pull tokens from Fuse.
         if (getFloat() < underlyingAmount) pullIntoFloat(underlyingAmount);
 
         // Transfer underlying tokens to the sender.
