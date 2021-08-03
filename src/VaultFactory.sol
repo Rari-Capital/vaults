@@ -1,7 +1,8 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.8.6;
 
-import {ERC20} from "./external/ERC20.sol";
+import {ERC20} from "solmate/erc20/ERC20.sol";
+
 import {Vault} from "./Vault.sol";
 
 /// @title VaultFactory
@@ -56,7 +57,7 @@ contract VaultFactory {
         );
 
         // Turn the create2 hash into the vault address.
-        return Vault(address(uint160(uint256(hash))));
+        return Vault(payable(address(uint160(uint256(hash)))));
     }
 
     /// @notice Returns if a vault at an address has been deployed yet.
