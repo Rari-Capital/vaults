@@ -293,6 +293,7 @@ contract Vault is ERC20, DSTestPlus {
                 : maxLockedProfit - (maxLockedProfit * (block.number - lastHarvest)) / minimumHarvestDelay;
     }
 
+    /// @notice Returns the amount of underlying tokens that idly sit in the vault.
     function getFloat() public view returns (uint256) {
         return underlying.balanceOf(address(this));
     }
