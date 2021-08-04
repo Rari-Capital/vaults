@@ -173,11 +173,6 @@ contract Vault is ERC20, DSTestPlus {
         uint256 supply = totalSupply;
         uint256 balance = calculateTotalFreeUnderlying();
 
-        emit log_named_uint("Free Underlying", calculateTotalFreeUnderlying());
-        emit log_named_uint("Locked Profit", calculateLockedProfit());
-        emit log_named_uint("Block", block.number);
-        emit log("");
-
         // If the supply or balance is zero, return an exchange rate of 1.
         if (supply == 0 || balance == 0) return 10**decimals;
 
@@ -263,9 +258,7 @@ contract Vault is ERC20, DSTestPlus {
 
         // Transfer fvTokens (representing fees) to the rebalancer
         if (fee > 0) {
-            emit log_uint(exchangeRateCurrent());
             _mint(msg.sender, (profit * 10**decimals) / exchangeRateCurrent());
-            emit log_uint(exchangeRateCurrent());
         }
 
         emit Harvest(msg.sender, maxLockedProfit);
