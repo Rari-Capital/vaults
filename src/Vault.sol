@@ -258,7 +258,7 @@ contract Vault is ERC20, DSTestPlus {
 
         // Transfer fvTokens (representing fees) to the rebalancer
         if (fee > 0) {
-            _mint(msg.sender, (profit * 10**decimals) / exchangeRateCurrent());
+            _mint(msg.sender, (fee * 10**decimals) / exchangeRateCurrent());
         }
 
         emit Harvest(msg.sender, maxLockedProfit);
