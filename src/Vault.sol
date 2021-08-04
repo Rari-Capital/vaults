@@ -166,12 +166,17 @@ contract Vault is ERC20, DSTestPlus {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Returns the current fvToken exchange rate, scaled by 1e18.
-    function exchangeRateCurrent() public view returns (uint256) {
+    function exchangeRateCurrent() public returns (uint256) {
         // Store the Total fvToken supply and vault's total balance in underlying tokens.
 
         // Store the vault's total underlying balance and fvToken supply.
         uint256 supply = totalSupply;
         uint256 balance = calculateTotalFreeUnderlying();
+
+        emit log_named_uint("Free Underlying", calculateTotalFreeUnderlying());
+        emit log_named_uint("Locked Profit", calculateLockedProfit());
+        emit log_named_uint("Block", block.number);
+        emit log("");
 
         // If the supply or balance is zero, return an exchange rate of 1.
         if (supply == 0 || balance == 0) return 10**decimals;
