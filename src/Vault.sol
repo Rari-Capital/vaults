@@ -107,7 +107,7 @@ contract Vault is ERC20 {
                          USER ACTION FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Deposits an underlying token and mints fvTokens.
+    /// @notice Deposit the vault's underlying token to mint fvTokens.
     /// @param underlyingAmount The amount of the underlying token to deposit.
     function deposit(uint256 underlyingAmount) external {
         _mint(msg.sender, (underlyingAmount * 10**decimals) / exchangeRateCurrent());
@@ -119,16 +119,20 @@ contract Vault is ERC20 {
     }
 
     /// @notice Burns fvTokens and sends underlying tokens to the caller.
-    /// @param amount The amount of vault shares to redeem.
+    /// @param amount The amount of fvTokens to redeem for underlying tokens.
     function withdraw(uint256 amount) external {
+        // Query the vault's exchange rate.
         uint256 exchangeRate = exchangeRateCurrent();
+
+        // Convert the amount of fvTokens to underlying tokens.
+        // This can be done by multiplying the fvTokens by the exchange rate.
         uint256 underlyingAmount = (exchangeRate * amount) / 10**decimals;
 
-        // Burn fvTokens.
+        // Burn inputed fvTokens.
         _burn(msg.sender, amount);
 
-        // Pull extra tokens into float from Fuse if necessary.
-        if (getFloat() < underlyingAmount) pullIntoFloat(underlyingAmount);
+        // If the withdrawal amount is greater than the float, pull tokens from Fuse.
+        if (underlyingAmount > getFloat()) pullIntoFloat(underlyingAmount);
 
         // Transfer tokens to the caller.
         underlying.safeTransfer(msg.sender, underlyingAmount);
@@ -139,12 +143,14 @@ contract Vault is ERC20 {
     /// @notice Burns fvTokens and sends underlying tokens to the caller.
     /// @param underlyingAmount The amount of underlying tokens to withdraw.
     function withdrawUnderlying(uint256 underlyingAmount) external {
+        // Query the vault's exchange rate.
         uint256 exchangeRate = exchangeRateCurrent();
 
-        // Burn fvTokens.
+        // Convert underlying tokens to fvTokens and then burn them.
+        // This can be done by multiplying the underlying tokens by the exchange rate.
         _burn(msg.sender, (exchangeRate * underlyingAmount) / 10**decimals);
 
-        // Pull extra tokens into float from Fuse if necessary.
+        // If the withdrawal amount is greater than the float, pull tokens from Fuse.
         if (getFloat() < underlyingAmount) pullIntoFloat(underlyingAmount);
 
         // Transfer underlying tokens to the sender.
@@ -158,13 +164,17 @@ contract Vault is ERC20 {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Returns the current fvToken exchange rate, scaled by 1e18.
-    function exchangeRateCurrent() public returns (uint256) {
-        // Total fvToken supply and vault's total balance in underlying tokens.
+    function exchangeRateCurrent() public view returns (uint256) {
+        // Store the Total fvToken supply and vault's total balance in underlying tokens.
+
+        // Store the vault's total underlying balance and fvToken supply.
         uint256 supply = totalSupply;
         uint256 balance = calculateTotalFreeUnderlying();
 
-        // If either the supply or balance is 0, return 1.
+        // If the supply or balance is zero, return an exchange rate of 1.
         if (supply == 0 || balance == 0) return 10**decimals;
+
+        // Calculate the exchange rate by diving the underlying balance by the fvToken supply.
         return (balance * 10**decimals) / supply;
     }
 
@@ -172,27 +182,28 @@ contract Vault is ERC20 {
                          WITHDRAWAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev Withdraw an amount of underlying tokens from pools in the withdrawal queue.
-    /// @param underlyingAmount The amount of the underlying asset to pull into float.
+    /// @dev Withdraw underlying tokens from pools in the withdrawal queue.
+    /// @param underlyingAmount The amount of underlying tokens to pull into float.
     function pullIntoFloat(uint256 underlyingAmount) internal {
+        // Iterate through the withdrawal queue.
         for (uint256 i = withdrawalQueue.length - 1; i < withdrawalQueue.length; i--) {
             CErc20 cToken = withdrawalQueue[i];
-            // TODO: do we need to do balance checking or can we just withdraw our amount and see if reverts idk
+
+            // Calculate the vault's balance in the cToken contract.
             uint256 balance = cToken.balanceOfUnderlying(address(this));
-            // TODO: i dont think this works.
+
+            // If the balance is greater than the amount to pull, pull the full amount.
             if (balance >= underlyingAmount) {
-                // todo: refactor this to use exitPool?
+                //todo: can we refactor these to use exit pool (dont delete this jet)
                 cToken.redeemUnderlying(underlyingAmount);
                 break;
             } else {
-                // todo: refactor this to use exitPool?
                 cToken.redeemUnderlying(balance);
                 underlyingAmount -= balance;
             }
         }
 
         // Update the totalDeposited value to account for the new amount.
-        // todo: refactor this to use exitPool?
         totalDeposited -= underlyingAmount;
     }
 
@@ -200,12 +211,15 @@ contract Vault is ERC20 {
                            HARVEST FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Calculate the block number of the next harvest.
     function nextHarvest() public view returns (uint256) {
-        // todo: why return block number can't it stay 0? idk
         if (lastHarvest == 0) return block.number;
         return minimumHarvestDelay + lastHarvest;
     }
 
+    /// @notice Trigger a harvest.
+    /// This updates the vault's balance in the cToken contracts,
+    /// take fees, and update the float.
     function harvest() external {
         // Ensure that the harvest does not occur too early.
         require(block.number >= nextHarvest());
@@ -216,13 +230,12 @@ contract Vault is ERC20 {
         // Calculate the vault's total balance in underlying tokens.
         uint256 depositBalance;
 
-        // TODO: Optimizations:
-        // - Store depositedPools in memory?
-        // - Store length on stack?
+        // Store the depositPools array locally.
+        CErc20[] memory _depositedPools = depositedPools;
 
         // Loop over each pool to add to the total balance.
-        for (uint256 i = 0; i < depositedPools.length; i++) {
-            CErc20 pool = depositedPools[i];
+        for (uint256 i = 0; i < _depositedPools.length; i++) {
+            CErc20 pool = _depositedPools[i];
 
             // Add this pool's balance to the total.
             depositBalance += pool.balanceOfUnderlying(address(this));
@@ -252,25 +265,27 @@ contract Vault is ERC20 {
         emit Harvest(msg.sender, maxLockedProfit);
     }
 
+    /// @notice Set a new minimum harvest delay.
     function setMinimumHarvestDelay(uint256 delay) public {
         minimumHarvestDelay = delay;
     }
 
+    /// @notice Set a new fee percentage.
     function setFeePercentage(uint256 newFeePercentage) external {
         feePercentage = newFeePercentage;
     }
 
-    function calculateUnlockedProfit() public view returns (uint256) {
-        // TODO: CAP at 1 if block number exceeds next harvest
-        return
-            block.number >= nextHarvest()
-                ? maxLockedProfit
-                : (maxLockedProfit * (block.number - lastHarvest)) / minimumHarvestDelay;
-    }
-
+    /// @notice Calculate the profit from the last harvest that is still locked.
     function calculateLockedProfit() public view returns (uint256) {
+        // TODO: optimize this.
+
+        // Calculate the number of blocks that have been mined since the last harvest.
+        // In order to avoid a math error, we have to ensure that sinceHarvest is less than the minimum harvest delay.
+        uint256 sinceHarvest = block.number - lastHarvest > minimumHarvestDelay
+            ? minimumHarvestDelay
+            : block.number - lastHarvest;
+
         // TODO: If (block.number - lastHarvest) > minimumHarvestDelay, a math error will occur.
-        // TODO: add harvestOccuring
         return
             block.number >= nextHarvest()
                 ? 0
@@ -281,7 +296,7 @@ contract Vault is ERC20 {
         return underlying.balanceOf(address(this));
     }
 
-    function calculateTotalFreeUnderlying() public returns (uint256) {
+    function calculateTotalFreeUnderlying() public view returns (uint256) {
         return maxLockedProfit + getFloat() + totalDeposited - calculateLockedProfit();
     }
 
