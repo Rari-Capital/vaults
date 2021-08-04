@@ -7,11 +7,13 @@ import {SafeERC20} from "solmate/erc20/SafeERC20.sol";
 import {WETH} from "./external/WETH.sol";
 import {CErc20} from "./external/CErc20.sol";
 
+import "./tests/utils/DSTestPlus.sol";
+
 /// @title Fuse Vault/fvToken
 /// @author TransmissionsDev + JetJadeja
 /// @notice Yield bearing token that enables users to swap their
 /// underlying asset for fvTokens to instantly begin earning yield.
-contract Vault is ERC20 {
+contract Vault is ERC20, DSTestPlus {
     using SafeERC20 for ERC20;
 
     /*///////////////////////////////////////////////////////////////
@@ -256,7 +258,9 @@ contract Vault is ERC20 {
 
         // Transfer fvTokens (representing fees) to the rebalancer
         if (fee > 0) {
+            emit log_uint(exchangeRateCurrent());
             _mint(msg.sender, (profit * 10**decimals) / exchangeRateCurrent());
+            emit log_uint(exchangeRateCurrent());
         }
 
         emit Harvest(msg.sender, maxLockedProfit);
