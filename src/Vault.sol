@@ -297,8 +297,11 @@ contract Vault is ERC20, DSTestPlus {
         return underlying.balanceOf(address(this));
     }
 
+    /// @notice Calculate the total amount of free underlying tokens.
     function calculateTotalFreeUnderlying() public view returns (uint256) {
-        return getFloat() + totalDeposited - calculateLockedProfit();
+        // Subtract locked profit from the amount of total deposited tokens and add the float value.
+        // We subtract the locked profit from the total deposited tokens because it is included in totalDeposited.
+        return totalDeposited - calculateLockedProfit() + getFloat();
     }
 
     /*///////////////////////////////////////////////////////////////
