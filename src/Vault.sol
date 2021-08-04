@@ -238,11 +238,11 @@ contract Vault is ERC20 {
             depositBalance += pool.balanceOfUnderlying(address(this));
         }
 
-        // Update the totalDeposited amount to use the freshly computed underlying amount.
-        totalDeposited = depositBalance;
-
         // Subtract the current deposited balance from the one set during the last harvest.
         uint256 profit = depositBalance - totalDeposited;
+
+        // Update the totalDeposited amount to use the freshly computed underlying amount.
+        totalDeposited = depositBalance;
 
         // Set the new maximum locked profit.
         maxLockedProfit = profit;
