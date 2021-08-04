@@ -230,7 +230,7 @@ contract Vault is ERC20 {
         uint256 depositBalance;
 
         // Store the depositPools array locally.
-        CErc20[] memory _depositedPools;
+        CErc20[] memory _depositedPools = depositedPools;
 
         // Loop over each pool to add to the total balance.
         for (uint256 i = 0; i < _depositedPools.length; i++) {
