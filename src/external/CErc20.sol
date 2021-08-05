@@ -8,9 +8,9 @@ interface CErc20 {
 
     // function fuseAdminHasRights() external view returns (bool);
 
-    function symbol() external view returns (string memory);
+    // function symbol() external view returns (string memory);
 
-    function decimals() external view returns (uint256);
+    // function decimals() external view returns (uint256);
 
     // function comptroller() external view returns (address);
 
@@ -28,7 +28,7 @@ interface CErc20 {
 
     function isCEther() external view returns (bool);
 
-    function underlying() external view returns (address);
+    // function underlying() external view returns (address);
 
     function balanceOf(address owner) external view returns (uint256);
 
