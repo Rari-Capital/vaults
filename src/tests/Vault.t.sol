@@ -216,14 +216,15 @@ contract VaultsTest is DSTestPlus {
         // Expected: 1e18
         // TODO: Exchange rate is less than 1e18 directly after harvest
         assertEq(vault.exchangeRateCurrent(), 1e18);
-        emit log_named_uint("Exchange rate directly after harvest", vault.exchangeRateCurrent());
 
-        // Set the block number to the next block.
+        // Forward block number to middle of the harvest.
         hevm.roll(block.number + (vault.minimumHarvestDelay() / 2));
 
         // Emit the current exchange rate
         // Expected: between 1e18 and 1.5e18
         emit log_named_uint("Exchange rate after half harvest", vault.exchangeRateCurrent());
+        uint256 exchangeRate = vault.exchangeRateCurrent();
+        assertTrue(exchangeRate > 1.24e18 && exchangeRate < 1e26);
 
         // Emit the current exchange rate
         // Expected: between 1.4e18 and 1.5e18
@@ -231,10 +232,9 @@ contract VaultsTest is DSTestPlus {
 
         // Expected: between 1e18 and 1.5e18
         assertEq(vault.exchangeRateCurrent(), 1.5e18);
-        emit log_named_uint("Exchange rate after full harvest", vault.exchangeRateCurrent());
 
         vault.harvest();
-        emit log_uint(vault.exchangeRateCurrent());
+        emit log_named_uint("Exchange rate after next harvest (check for fees)", vault.exchangeRateCurrent());
 
         //assertEq(vault.exchangeRateCurrent(), 1.5e18);
     }
