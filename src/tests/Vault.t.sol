@@ -179,7 +179,7 @@ contract VaultsTest is DSTestPlus {
     function test_harvest_profits_are_correctly_calculated(uint256 amount) public {
         //uint256 amount = 1e18;
 
-        if (amount > (type(uint256).max / 1e37) || amount < 40) return;
+        if (amount > (type(uint256).max / 1e37) || amount < 10000) return;
 
         // Deposit into the vault.
         underlying.mint(address(this), amount);
@@ -230,8 +230,8 @@ contract VaultsTest is DSTestPlus {
         // Expected: between 1.4e18 and 1.5e18
         hevm.roll(block.number + vault.minimumHarvestDelay());
 
-        // Expected: between 1e18 and 1.5e18
-        assertEq(vault.exchangeRateCurrent(), 1.5e18);
+        exchangeRate = vault.exchangeRateCurrent();
+        assertTrue(exchangeRate > 1.499e18 && exchangeRate <= 1.5e18);
 
         vault.harvest();
         emit log_named_uint("Exchange rate after next harvest (check for fees)", vault.exchangeRateCurrent());
