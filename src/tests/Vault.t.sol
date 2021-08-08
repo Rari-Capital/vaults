@@ -176,8 +176,8 @@ contract VaultsTest is DSTestPlus {
         assertGt(vault.exchangeRateCurrent(), 1e18);
     }
 
-    function test_harvest_profits_are_correctly_calculated() public {
-        uint256 amount = 1e18;
+    function test_harvest_profits_are_correctly_calculated(uint256 amount) public {
+        //uint256 amount = 1e18;
 
         if (amount > (type(uint256).max / 1e37) || amount < 40) return;
 
