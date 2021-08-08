@@ -166,6 +166,11 @@ contract Vault is ERC20 {
                          SHARE PRICE FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Returns a user's balance in underlying tokens.
+    function balanceOfUnderlying(address account) external view returns (uint256) {
+        return (balanceOf[account] * exchangeRateCurrent()) / 10**decimals;
+    }
+
     /// @notice Returns the current fvToken exchange rate, scaled by 1e18.
     function exchangeRateCurrent() public view returns (uint256) {
         // Store the vault's total underlying balance and fvToken supply.
