@@ -228,7 +228,6 @@ contract Vault is ERC20, DSTestPlus {
         uint256 _mintForFeesNextHarvest = mintForFeesNextHarvest;
         if (_mintForFeesNextHarvest > 0) {
             _mint(address(0), _mintForFeesNextHarvest);
-            emit log_uint(exchangeRateCurrent());
         }
         // Ensure that the harvest does not occur too early.
         require(block.number >= nextHarvest());
@@ -266,8 +265,6 @@ contract Vault is ERC20, DSTestPlus {
         if (fee > 0) {
             mintForFeesNextHarvest = fee;
         }
-
-        emit log_uint(exchangeRateCurrent());
 
         emit Harvest(msg.sender, maxLockedProfit);
     }
