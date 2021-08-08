@@ -217,17 +217,14 @@ contract VaultsTest is DSTestPlus {
 
         // Emit the current exchange rate
         // Expected: between 1e18 and 1.5e18
-        emit log_uint(vault.exchangeRateCurrent());
+        emit log_named_uint("Exchange rate after half harvest", vault.exchangeRateCurrent());
 
         // Emit the current exchange rate
         // Expected: between 1.4e18 and 1.5e18
         hevm.roll(block.number + vault.minimumHarvestDelay());
 
         // Expected: between 1e18 and 1.5e18
-        emit log_uint(vault.exchangeRateCurrent());
-        emit log_uint(vault.balanceOf(address(0)));
-        emit log_uint(vault.totalSupply());
-        emit log_uint(vault.calculateTotalFreeUnderlying());
+        emit log_named_uint("Exchange rate after full harvest", vault.exchangeRateCurrent());
 
         //assertEq(vault.exchangeRateCurrent(), 1.5e18);
     }
