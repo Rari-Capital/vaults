@@ -101,6 +101,9 @@ contract Vault is ERC20, DSTestPlus {
     /// @dev A mantissa where 1e18 represents 100% and 0e18 represents 0%.
     uint256 public targetFloatPercent = 0.01e18;
 
+    /// @notice A value set each harvest, representing the amount of fvTokens to mint to the fee taker next harvest
+    uint256 public mintForFeesNextHarvest;
+
     /// @notice A percent value value representing part of the total profit to take for fees.
     /// @dev A mantissa where 1e18 represents 100% and 0e18 represents 0%.
     uint256 public feePercentage = 0.02e18;
@@ -221,6 +224,12 @@ contract Vault is ERC20, DSTestPlus {
     /// This updates the vault's balance in the cToken contracts,
     /// take fees, and update the float.
     function harvest() external {
+        // Transfer fvTokens (representing fees) to the fee holder
+        uint256 _mintForFeesNextHarvest = mintForFeesNextHarvest;
+        if (_mintForFeesNextHarvest > 0) {
+            _mint(address(0), _mintForFeesNextHarvest);
+            emit log_uint(exchangeRateCurrent());
+        }
         // Ensure that the harvest does not occur too early.
         require(block.number >= nextHarvest());
 
@@ -254,10 +263,11 @@ contract Vault is ERC20, DSTestPlus {
         // Calculate the total fee taken from the profit.
         uint256 fee = (profit * feePercentage) / 1e18;
 
-        // Transfer fvTokens (representing fees) to the rebalancer
         if (fee > 0) {
-            _mint(address(0), (fee * 10**decimals) / exchangeRateCurrent());
+            mintForFeesNextHarvest = fee;
         }
+
+        emit log_uint(exchangeRateCurrent());
 
         emit Harvest(msg.sender, maxLockedProfit);
     }
