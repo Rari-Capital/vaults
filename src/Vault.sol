@@ -99,8 +99,9 @@ contract Vault is ERC20 {
     /// @dev A mantissa where 1e18 represents 100% and 0e18 represents 0%.
     uint256 public targetFloatPercent = 0.01e18;
 
-    /// @notice A value set each harvest, representing the amount of fvTokens to mint to the fee taker next harvest
-    uint256 public mintForFeesNextHarvest;
+    /// @notice A value set each harvest representing the fee set during the harvest.
+    /// @dev This is used to calculate how many fvTokens to mint to the fee holder.
+    uint256 public harvestFee;
 
     /// @notice A percent value value representing part of the total profit to take for fees.
     /// @dev A mantissa where 1e18 represents 100% and 0e18 represents 0%.
@@ -228,9 +229,9 @@ contract Vault is ERC20 {
     /// take fees, and update the float.
     function harvest() external {
         // Transfer fvTokens (representing fees) to the fee holder
-        uint256 _mintForFeesNextHarvest = mintForFeesNextHarvest;
-        if (_mintForFeesNextHarvest > 0) {
-            _mint(address(0), _mintForFeesNextHarvest);
+        uint256 _fee = harvestFee;
+        if (_fee > 0) {
+            _mint(address(0), (_fee * 10**decimals) / exchangeRateCurrent());
         }
         // Ensure that the harvest does not occur too early.
         require(block.number >= nextHarvest());
@@ -263,12 +264,7 @@ contract Vault is ERC20 {
         if (updatedFloat > underlying.balanceOf(address(this))) pullIntoFloat(updatedFloat);
 
         // Calculate the total fee taken from the profit.
-        uint256 fee = (profit * feePercentage) / 1e18;
-
-        if (fee > 0) {
-            //TODO: Use the value that the exchangeRate will be at the end of the next harvest.
-            mintForFeesNextHarvest = (fee * 10**decimals) / exchangeRateCurrent();
-        }
+        harvestFee = (profit * feePercentage) / 1e18;
 
         emit Harvest(msg.sender, maxLockedProfit);
     }
