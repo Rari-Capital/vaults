@@ -139,16 +139,16 @@ contract VaultsTest is DSTestPlus {
         vault.exitPool(0, amount);
     }
 
-    function test_harvest_functional_properly(uint256 amount) public {
+    function test_harvest_functions_properly(uint256 amount) public {
         if (amount > (type(uint256).max / 1e37) || amount < 40) return;
 
-        // Deposit into the vault.
+        // Deposit underlying tokens into the vault.
         underlying.mint(address(this), amount);
         underlying.approve(address(vault), amount);
         vault.deposit(amount);
 
         // Set the block number to 1.
-        // If the current block number is 1, the vault will act unexpectedly.
+        // If the current block number is 0, the vault will act unexpectedly.
         hevm.roll(1);
 
         // Allocate the deposited tokens to various cToken contracts.
@@ -172,13 +172,14 @@ contract VaultsTest is DSTestPlus {
         // Trigger a harvest.
         vault.harvest();
 
+        // Forward the block number to block.number + vault.minimumHarvestDelay() to simulate a full harvest.
         hevm.roll(block.number + vault.minimumHarvestDelay());
+
+        // Assert that the vault's exchange rate has increased 1.
         assertGt(vault.exchangeRateCurrent(), 1e18);
     }
 
     function test_harvest_profits_are_correctly_calculated(uint256 amount) public {
-        //uint256 amount = 1e18;
-
         if (amount > (type(uint256).max / 1e37) || amount < 10000) return;
 
         // Deposit into the vault.
@@ -187,7 +188,7 @@ contract VaultsTest is DSTestPlus {
         vault.deposit(amount);
 
         // Set the block number to 1.
-        // If the current block number is 1, the vault will act unexpectedly.
+        // If the current block number is 0, the vault will act unexpectedly.
         hevm.roll(1);
 
         // Allocate the deposited tokens to various cToken contracts.
@@ -206,15 +207,13 @@ contract VaultsTest is DSTestPlus {
             underlying.transfer(address(mockCErc20), amount / 20);
         }
 
-        // Set the withdrawalQueue to the token addresses.
+        // Set the withdrawalQueue to an array of cToken addresses.
         vault.setWithdrawalQueue(withdrawQueue);
 
         // Trigger a harvest.
         vault.harvest();
 
-        // Emit the current exchange rate
-        // Expected: 1e18
-        // TODO: Exchange rate is less than 1e18 directly after harvest
+        // Assert that the exchangeRate maintains the same value after the harvest.
         assertEq(vault.exchangeRateCurrent(), 1e18);
 
         // Forward block number to middle of the harvest.
@@ -275,25 +274,12 @@ contract VaultsTest is DSTestPlus {
         // Trigger a harvest.
         vault.harvest();
 
-        // Emit the current exchange rate
-        // Expected: 1e18
-        // TODO: Exchange rate is less than 1e18 directly after harvest
-        assertEq(vault.exchangeRateCurrent(), 1e18);
-
         // Forward block number to middle of the harvest.
         hevm.roll(block.number + (vault.minimumHarvestDelay() / 2));
 
         // Emit the current exchange rate
-        // Expected: between 1e18 and 1.5e18
-        uint256 exchangeRate = vault.exchangeRateCurrent();
-        assertTrue(exchangeRate > 1.24e18 && exchangeRate < 1e26);
-
-        // Emit the current exchange rate
         // Expected: between 1.4e18 and 1.5e18
         hevm.roll(block.number + vault.minimumHarvestDelay());
-
-        // Expected: between 1e18 and 1.5e18
-        assertEq(vault.exchangeRateCurrent(), 1.5e18);
 
         vault.harvest();
         emit log_named_uint("Expected fee amount", (vault.feePercentage() * 0.5e18) / 1e18);
