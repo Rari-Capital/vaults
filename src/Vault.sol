@@ -266,7 +266,8 @@ contract Vault is ERC20 {
         uint256 fee = (profit * feePercentage) / 1e18;
 
         if (fee > 0) {
-            mintForFeesNextHarvest = fee;
+            //TODO: Use the value that the exchangeRate will be at the end of the next harvest.
+            mintForFeesNextHarvest = (fee * 10**decimals) / exchangeRateCurrent();
         }
 
         emit Harvest(msg.sender, maxLockedProfit);
