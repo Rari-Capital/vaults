@@ -212,6 +212,11 @@ contract VaultsTest is DSTestPlus {
         // Trigger a harvest.
         vault.harvest();
 
+        // Emit the current exchange rate
+        // Expected: 1e18
+        // TODO: Exchange rate is less than 1e18 directly after harvest
+        emit log_named_uint("Exchange rate after half harvest", vault.exchangeRateCurrent());
+
         // Set the block number to the next block.
         hevm.roll(block.number + (vault.minimumHarvestDelay() / 2));
 
