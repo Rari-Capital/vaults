@@ -233,6 +233,9 @@ contract VaultsTest is DSTestPlus {
         assertEq(vault.exchangeRateCurrent(), 1.5e18);
         emit log_named_uint("Exchange rate after full harvest", vault.exchangeRateCurrent());
 
+        vault.harvest();
+        emit log_uint(vault.exchangeRateCurrent());
+
         //assertEq(vault.exchangeRateCurrent(), 1.5e18);
     }
 
