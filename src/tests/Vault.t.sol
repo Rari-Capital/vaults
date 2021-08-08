@@ -295,9 +295,11 @@ contract VaultsTest is DSTestPlus {
         // Expected: between 1e18 and 1.5e18
         assertEq(vault.exchangeRateCurrent(), 1.5e18);
 
-        emit log_named_uint("Expected fee amount", (vault.feePercentage() * 0.5e18) / 1e18);
         vault.harvest();
-        emit log_uint(vault.exchangeRateCurrent());
+        emit log_named_uint("Expected fee amount", (vault.feePercentage() * 0.5e18) / 1e18);
+
+        uint256 feesTaken = vault.balanceOfUnderlying(address(0));
+        assertTrue(feesTaken > 0.0099e18 && feesTaken < 0.01e18);
     }
 
     function test_harvest_fees_mint_and_send_tokens_to_the_right_address(uint256 amount) public {}
