@@ -232,6 +232,20 @@ contract Vault is ERC20 {
         feeClaimer = newFeeClaimer;
     }
 
+    /// @notice Allows governance to set a new float size.
+    /// @dev The new float size is a percentage mantissa scaled by 1e18.
+    /// @param newTargetFloatPercent The new target float size.percent
+    function setTargetFloatPercent(uint256 newTargetFloatPercent) external {
+        targetFloatPercent = newTargetFloatPercent;
+    }
+
+    /// @notice Allows the rebalancer to set a new withdrawal queue.
+    /// @dev The queue should be in ascending order of priority.
+    /// @param newQueue The updated queue (ordered in ascending order of priority).
+    function setWithdrawalQueue(CErc20[] memory newQueue) external {
+        withdrawalQueue = newQueue;
+    }
+
     /*///////////////////////////////////////////////////////////////
                            CALCULATION FUNCTIONS
     //////////////////////////////////////////////////////////////*/
@@ -398,20 +412,6 @@ contract Vault is ERC20 {
         totalDeposited -= underlyingReceived;
 
         emit ExitPool(pool, underlyingReceived);
-    }
-
-    /// @notice Allows governance to set a new float size.
-    /// @dev The new float size is a percentage mantissa scaled by 1e18.
-    /// @param newTargetFloatPercent The new target float size.percent
-    function setTargetFloatPercent(uint256 newTargetFloatPercent) external {
-        targetFloatPercent = newTargetFloatPercent;
-    }
-
-    /// @notice Allows the rebalancer to set a new withdrawal queue.
-    /// @dev The queue should be in ascending order of priority.
-    /// @param newQueue The updated queue (ordered in ascending order of priority).
-    function setWithdrawalQueue(CErc20[] memory newQueue) external {
-        withdrawalQueue = newQueue;
     }
 
     receive() external payable {}
