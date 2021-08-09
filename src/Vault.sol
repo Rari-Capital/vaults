@@ -236,7 +236,7 @@ contract Vault is ERC20 {
         // Transfer fvTokens (representing fees) to the fee holder
         uint256 _fee = harvestFee;
         if (_fee > 0) {
-            _mint(address(0), (_fee * 10**decimals) / exchangeRateCurrent());
+            _mint(feeClaimer, (_fee * 10**decimals) / exchangeRateCurrent());
         }
         // Ensure that the harvest does not occur too early.
         require(block.number >= nextHarvest());
