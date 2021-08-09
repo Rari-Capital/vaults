@@ -231,11 +231,6 @@ contract VaultsTest is DSTestPlus {
 
         exchangeRate = vault.exchangeRateCurrent();
         assertTrue(exchangeRate > 1.499e18 && exchangeRate <= 1.5e18);
-
-        vault.harvest();
-        emit log_named_uint("Exchange rate after next harvest (check for fees)", vault.exchangeRateCurrent());
-
-        //assertEq(vault.exchangeRateCurrent(), 1.5e18);
     }
 
     function test_harvest_fees_are_correctly_calculated() public {
