@@ -10,7 +10,7 @@ import {CErc20} from "./external/CErc20.sol";
 /// @title Fuse Vault/fvToken
 /// @author TransmissionsDev + JetJadeja
 /// @notice Yield bearing token that enables users to swap their
-/// underlying asset for fvTokens to instantly begin earning yield.
+/// underlying asset to instantly begin earning yield.
 contract Vault is ERC20 {
     using SafeERC20 for ERC20;
 
@@ -232,6 +232,7 @@ contract Vault is ERC20 {
         if (_fee > 0) {
             _mint(feeClaimer, (_fee * 10**decimals) / exchangeRateCurrent());
         }
+
         // Ensure that the harvest does not occur too early.
         require(block.number >= nextHarvest());
 
@@ -258,10 +259,6 @@ contract Vault is ERC20 {
         // Set the new maximum locked profit.
         maxLockedProfit = profit;
 
-        // If the current float size is less than the ideal, increase the float value.
-        uint256 updatedFloat = (depositBalance * targetFloatPercent) / 1e18;
-        if (updatedFloat > underlying.balanceOf(address(this))) pullIntoFloat(updatedFloat);
-
         // Calculate the total fee taken from the profit.
         harvestFee = (profit * feePercentage) / 1e18;
 
@@ -285,8 +282,9 @@ contract Vault is ERC20 {
 
     /// @notice Calculate the profit from the last harvest that is still locked.
     function calculateLockedProfit() public view returns (uint256) {
-        // If the harvest has completed, there is no locked profit
+        // If the harvest has completed, there is no locked profit.
         // Otherwise, we can subtract unlocked profit from the maximum amount of locked profit.
+        // Learn more about how we calculate unlocked profit here: https://stackoverflow.com/a/29167238.
         return
             block.number >= nextHarvest()
                 ? 0
