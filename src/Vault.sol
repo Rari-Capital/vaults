@@ -285,19 +285,12 @@ contract Vault is ERC20 {
 
     /// @notice Calculate the profit from the last harvest that is still locked.
     function calculateLockedProfit() public view returns (uint256) {
-        // TODO: optimize this.
-
-        // Calculate the number of blocks that have been mined since the last harvest.
-        // In order to avoid a math error, we have to ensure that sinceHarvest is less than the minimum harvest delay.
-        uint256 sinceHarvest = block.number - lastHarvest > minimumHarvestDelay
-            ? minimumHarvestDelay
-            : block.number - lastHarvest;
-
-        // TODO: If (block.number - lastHarvest) > minimumHarvestDelay, a math error will occur.
+        // If the harvest has completed, there is no locked profit
+        // Otherwise, we can subtract unlocked profit from the maximum amount of locked profit.
         return
             block.number >= nextHarvest()
                 ? 0
-                : maxLockedProfit - (maxLockedProfit * (sinceHarvest)) / minimumHarvestDelay;
+                : maxLockedProfit - (maxLockedProfit * (block.number - lastHarvest)) / minimumHarvestDelay;
     }
 
     /// @notice Returns the amount of underlying tokens that idly sit in the vault.
