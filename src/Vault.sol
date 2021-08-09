@@ -26,7 +26,7 @@ contract Vault is ERC20 {
 
     /// @notice Creates a new vault based on an underlying token.
     /// @param _underlying An underlying ERC20 compliant token.
-    constructor(ERC20 _underlying, address _feeClaimer)
+    constructor(ERC20 _underlying)
         ERC20(
             // ex: Fuse DAI Vault
             string(abi.encodePacked("Fuse ", _underlying.name(), " Vault")),
@@ -37,7 +37,6 @@ contract Vault is ERC20 {
         )
     {
         underlying = _underlying;
-        feeClaimer = _feeClaimer;
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -282,6 +281,11 @@ contract Vault is ERC20 {
     /// @notice Set a new fee percentage.
     function setFeePercentage(uint256 newFeePercentage) external {
         feePercentage = newFeePercentage;
+    }
+
+    /// @notice Set a new fee claimer.
+    function setFeeClaimer(address newFeeClaimer) external {
+        feeClaimer = newFeeClaimer;
     }
 
     /// @notice Calculate the profit from the last harvest that is still locked.
