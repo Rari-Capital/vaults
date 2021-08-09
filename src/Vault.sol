@@ -73,8 +73,6 @@ contract Vault is ERC20 {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice The minimum delay in blocks between each harvest.
-    /// todo: this should be changeable and we should support harvesting early
-    /// maybe just rename to target harvest blocks or something.
     uint256 public minimumHarvestDelay = 1661;
 
     /// @notice An array of cTokens the Vault holds.
@@ -82,8 +80,6 @@ contract Vault is ERC20 {
 
     /// @notice An ordered array of cTokens representing the withdrawal queue.
     CErc20[] public withdrawalQueue;
-
-    // todo: can we pack all this shit into a struct or just have it packed in storage by using smaller int amounts?
 
     /// @notice The most recent block where a harvest occurred.
     uint256 public lastHarvest;
@@ -206,10 +202,10 @@ contract Vault is ERC20 {
             // If the balance is greater than the amount to pull, pull the full amount.
             if (balance >= underlyingAmount) {
                 //todo: can we refactor these to use exit pool (dont delete this jet)
-                cToken.redeemUnderlying(underlyingAmount);
+                exitPool(i, underlyingAmount);
                 break;
             } else {
-                cToken.redeemUnderlying(balance);
+                exitPool(i, underlyingAmount);
                 underlyingAmount -= balance;
             }
         }
@@ -360,7 +356,7 @@ contract Vault is ERC20 {
         emit EnterPool(pool, underlyingAmount);
     }
 
-    function exitPool(uint256 poolIndex, uint256 cTokenAmount) external {
+    function exitPool(uint256 poolIndex, uint256 cTokenAmount) public {
         // Get the pool from the depositedPools array.
         CErc20 pool = depositedPools[poolIndex];
         uint256 cTokenBalance = pool.balanceOf(address(this));
