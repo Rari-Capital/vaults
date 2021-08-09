@@ -26,7 +26,7 @@ contract Vault is ERC20 {
 
     /// @notice Creates a new vault based on an underlying token.
     /// @param _underlying An underlying ERC20 compliant token.
-    constructor(ERC20 _underlying)
+    constructor(ERC20 _underlying, address _feeClaimer)
         ERC20(
             // ex: Fuse DAI Vault
             string(abi.encodePacked("Fuse ", _underlying.name(), " Vault")),
@@ -37,6 +37,7 @@ contract Vault is ERC20 {
         )
     {
         underlying = _underlying;
+        feeClaimer = _feeClaimer;
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -102,6 +103,10 @@ contract Vault is ERC20 {
     /// @notice A value set each harvest representing the fee set during the harvest.
     /// @dev This is used to calculate how many fvTokens to mint to the fee holder.
     uint256 public harvestFee;
+
+    /// @notice An address set during deployment that fees are sent to after being claimed.
+    // TODO: Come up with name that is better than "feeClaimer".
+    address public feeClaimer;
 
     /// @notice A percent value value representing part of the total profit to take for fees.
     /// @dev A mantissa where 1e18 represents 100% and 0e18 represents 0%.
