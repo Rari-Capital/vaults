@@ -203,10 +203,10 @@ contract Vault is ERC20, DSTestPlus {
 
             // If the balance is greater than the amount to pull, pull the full amount.
             if (balance >= underlyingAmount) {
-                exitPool(i, underlyingAmount);
+                cToken.redeemUnderlying(underlyingAmount);
                 break;
             } else {
-                exitPool(i, underlyingAmount);
+                cToken.redeemUnderlying(balance);
                 underlyingAmount -= balance;
             }
         }
