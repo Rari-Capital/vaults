@@ -318,16 +318,19 @@ contract Vault is ERC20 {
     //////////////////////////////////////////////////////////////*/
 
     function haveDepositedInto(CErc20 pool) internal view returns (bool) {
-        // TODO: Optimizations:
-        // - Store depositedPools in memory?
-        // - Store length on stack?
-        for (uint256 i = 0; i < depositedPools.length; i++) {
+        // Store depositedPools in memory.
+        CErc20[] memory _depositedPools = depositedPools;
+
+        // Iterate over deposited pools.
+        for (uint256 i = 0; i < _depositedPools.length; i++) {
             // If we find the pool that we're entering:
-            if (depositedPools[i] == pool) {
+            if (_depositedPools[i] == pool) {
                 // Exit the function early.
                 return true;
             }
         }
+
+        // If the pool is not found in the array, return false.
         return false;
     }
 
