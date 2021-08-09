@@ -7,11 +7,13 @@ import {SafeERC20} from "solmate/erc20/SafeERC20.sol";
 import {WETH} from "./external/WETH.sol";
 import {CErc20} from "./external/CErc20.sol";
 
+import "./tests/utils/DSTestPlus.sol";
+
 /// @title Fuse Vault/fvToken
 /// @author TransmissionsDev + JetJadeja
 /// @notice Yield bearing token that enables users to swap their
 /// underlying asset to instantly begin earning yield.
-contract Vault is ERC20 {
+contract Vault is ERC20, DSTestPlus {
     using SafeERC20 for ERC20;
 
     /*///////////////////////////////////////////////////////////////
@@ -287,9 +289,17 @@ contract Vault is ERC20 {
     /// This updates the vault's balance in the cToken contracts,
     /// take fees, and update the float.
     function harvest() external {
+        emit log_named_uint("Total Free Underlying", calculateTotalFreeUnderlying());
+        emit log_named_uint("Total Deposited", totalDeposited);
+
+        emit log("");
+
         // Calculate an updated float value based on the amount of profit during the last harvest.
         uint256 updatedFloat = (totalDeposited * targetFloatPercent) / 1e18;
         if (updatedFloat > getFloat()) pullIntoFloat(updatedFloat - getFloat());
+
+        emit log_named_uint("Total Free Underlying", calculateTotalFreeUnderlying());
+        emit log_named_uint("Total Deposited", totalDeposited);
 
         // Transfer fvTokens (representing fees) to the fee holder
         uint256 _fee = harvestFee;
