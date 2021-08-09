@@ -201,7 +201,6 @@ contract Vault is ERC20 {
 
             // If the balance is greater than the amount to pull, pull the full amount.
             if (balance >= underlyingAmount) {
-                //todo: can we refactor these to use exit pool (dont delete this jet)
                 exitPool(i, underlyingAmount);
                 break;
             } else {
