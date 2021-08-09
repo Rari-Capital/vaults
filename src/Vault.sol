@@ -259,6 +259,8 @@ contract Vault is ERC20 {
         // Set the new maximum locked profit.
         maxLockedProfit = profit;
 
+        // TODO: Pull into float without modifying the exchange rate.
+
         // Calculate the total fee taken from the profit.
         harvestFee = (profit * feePercentage) / 1e18;
 
@@ -300,7 +302,7 @@ contract Vault is ERC20 {
     function calculateTotalFreeUnderlying() public view returns (uint256) {
         // Subtract locked profit from the amount of total deposited tokens and add the float value.
         // We subtract the locked profit from the total deposited tokens because it is included in totalDeposited.
-        return totalDeposited - calculateLockedProfit() + getFloat();
+        return getFloat() + totalDeposited - calculateLockedProfit();
     }
 
     /*///////////////////////////////////////////////////////////////
