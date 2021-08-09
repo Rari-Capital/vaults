@@ -17,7 +17,7 @@ contract VaultsTest is DSTestPlus {
 
     function setUp() public {
         underlying = new MockERC20("Mock Token", "TKN", 18);
-        vault = new Vault(underlying, address(0));
+        vault = new Vault(underlying);
         // todo: can we make mockcerc20 just conform to cerc20 lol
         cToken = CErc20(address(new MockCERC20(underlying)));
     }

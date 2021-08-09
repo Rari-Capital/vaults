@@ -34,7 +34,10 @@ contract VaultFactory {
         // This will revert if a vault with this underlying
         // has already been deployed, as the salt would be
         // the same and we can't deploy with it twice!
-        vault = new Vault{salt: salt}(underlying, feeClaimer);
+        vault = new Vault{salt: salt}(underlying);
+
+        // Set the default fee claimer address
+        vault.setFeeClaimer(feeClaimer);
 
         emit VaultDeployed(underlying, vault);
     }
