@@ -18,7 +18,7 @@ contract VaultFactoryTest is DSTestPlus {
     }
 
     function test_deploy_vault() public {
-        Vault vault = vaultFactory.deploy(underlying);
+        Vault vault = vaultFactory.deploy(underlying, address(0));
         assertERC20Eq(vault.underlying(), underlying);
         assertVaultEq(vaultFactory.getVaultFromUnderlying(underlying), vault);
     }
