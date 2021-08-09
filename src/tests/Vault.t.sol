@@ -18,6 +18,8 @@ contract VaultsTest is DSTestPlus {
     function setUp() public {
         underlying = new MockERC20("Mock Token", "TKN", 18);
         vault = new Vault(underlying);
+
+        vault.setFeeClaimer(address(1));
         // todo: can we make mockcerc20 just conform to cerc20 lol
         cToken = CErc20(address(new MockCERC20(underlying)));
     }
@@ -279,7 +281,7 @@ contract VaultsTest is DSTestPlus {
         vault.harvest();
         emit log_named_uint("Expected fee amount", (vault.feePercentage() * 0.5e18) / 1e18);
 
-        uint256 feesTaken = vault.balanceOfUnderlying(address(0));
+        uint256 feesTaken = vault.balanceOfUnderlying(address(1));
         assertTrue(feesTaken > 0.0099e18 && feesTaken < 0.01e18);
     }
 }
