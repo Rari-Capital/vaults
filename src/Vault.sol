@@ -204,10 +204,29 @@ contract Vault is ERC20 {
 
             // If the balance is greater than the amount to pull, pull the full amount.
             if (balance >= underlyingAmount) {
-                cToken.redeemUnderlying(underlyingAmount);
+                if (cToken.isCEther()) {
+                    uint256 balanceBefore = address(this).balance;
+                    // Withdraw from the pool.
+                    cToken.redeemUnderlying(underlyingAmount);
+                    uint256 balanceAfter = address(this).balance;
+
+                    WETH(address(underlying)).deposit{value: balanceAfter - balanceBefore}();
+                } else {
+                    cToken.redeemUnderlying(underlyingAmount);
+                }
+
                 break;
             } else {
-                cToken.redeemUnderlying(balance);
+                if (cToken.isCEther()) {
+                    uint256 balanceBefore = address(this).balance;
+                    // Withdraw from the pool.
+                    cToken.redeemUnderlying(underlyingAmount);
+                    uint256 balanceAfter = address(this).balance;
+
+                    WETH(address(underlying)).deposit{value: balanceAfter - balanceBefore}();
+                } else {
+                    cToken.redeemUnderlying(underlyingAmount);
+                }
                 underlyingAmount -= balance;
             }
         }
