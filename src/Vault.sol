@@ -214,6 +214,25 @@ contract Vault is ERC20 {
     }
 
     /*///////////////////////////////////////////////////////////////
+                            SETTER FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Set a new minimum harvest delay.
+    function setMinimumHarvestDelay(uint256 delay) public {
+        minimumHarvestDelay = delay;
+    }
+
+    /// @notice Set a new fee percentage.
+    function setFeePercentage(uint256 newFeePercentage) external {
+        feePercentage = newFeePercentage;
+    }
+
+    /// @notice Set a new fee claimer.
+    function setFeeClaimer(address newFeeClaimer) external {
+        feeClaimer = newFeeClaimer;
+    }
+
+    /*///////////////////////////////////////////////////////////////
                            HARVEST FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
@@ -265,21 +284,6 @@ contract Vault is ERC20 {
         harvestFee = (profit * feePercentage) / 1e18;
 
         emit Harvest(msg.sender, maxLockedProfit);
-    }
-
-    /// @notice Set a new minimum harvest delay.
-    function setMinimumHarvestDelay(uint256 delay) public {
-        minimumHarvestDelay = delay;
-    }
-
-    /// @notice Set a new fee percentage.
-    function setFeePercentage(uint256 newFeePercentage) external {
-        feePercentage = newFeePercentage;
-    }
-
-    /// @notice Set a new fee claimer.
-    function setFeeClaimer(address newFeeClaimer) external {
-        feeClaimer = newFeeClaimer;
     }
 
     /// @notice Calculate the profit from the last harvest that is still locked.
