@@ -317,6 +317,7 @@ contract Vault is ERC20 {
                            REBALANCE FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Returns a boolean indicating whether the vault has deposited into a certain pool.
     function haveDepositedInto(CErc20 pool) internal view returns (bool) {
         // Store depositedPools in memory.
         CErc20[] memory _depositedPools = depositedPools;
@@ -334,6 +335,7 @@ contract Vault is ERC20 {
         return false;
     }
 
+    /// @notice Deposit funds into a pool.
     function enterPool(CErc20 pool, uint256 underlyingAmount) external {
         // If we have not already deposited into the pool:
         if (!haveDepositedInto(pool)) {
@@ -359,6 +361,7 @@ contract Vault is ERC20 {
         emit EnterPool(pool, underlyingAmount);
     }
 
+    /// @notice Withdraw funds from a pool.
     function exitPool(uint256 poolIndex, uint256 cTokenAmount) public {
         // Get the pool from the depositedPools array.
         CErc20 pool = depositedPools[poolIndex];
