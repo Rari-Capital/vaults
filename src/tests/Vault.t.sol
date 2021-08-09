@@ -284,4 +284,10 @@ contract VaultsTest is DSTestPlus {
         uint256 feesTaken = vault.balanceOfUnderlying(address(1));
         assertTrue(feesTaken > 0.0099e18 && feesTaken < 0.01e18);
     }
+
+    function test_harvest_pulls_into_float(uint256 amount) public {}
+
+    function test_vault_enter_pool_functions_correctly(uint256 amount) public {}
+
+    function test_vault_exit_pool_functions_correctly(uint256 amount) public {}
 }
