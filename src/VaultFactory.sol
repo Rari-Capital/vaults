@@ -26,7 +26,7 @@ contract VaultFactory {
     /// @dev This will revert if a vault with the token has already been created.
     /// @param underlying Address of the ERC20 token that the Vault will earn yield on.
     /// @return vault The newly deployed Vault contract.
-    function deploy(ERC20 underlying) external returns (Vault vault) {
+    function deploy(ERC20 underlying, address feeClaimer) external returns (Vault vault) {
         // Generate a 32 byte salt for the create2 deployment.
         bytes32 salt = keccak256(abi.encode(underlying));
 
@@ -34,7 +34,7 @@ contract VaultFactory {
         // This will revert if a vault with this underlying
         // has already been deployed, as the salt would be
         // the same and we can't deploy with it twice!
-        vault = new Vault{salt: salt}(underlying);
+        vault = new Vault{salt: salt}(underlying, feeClaimer);
 
         emit VaultDeployed(underlying, vault);
     }
