@@ -233,7 +233,7 @@ contract Vault is ERC20 {
     }
 
     /*///////////////////////////////////////////////////////////////
-                           HARVEST FUNCTIONS
+                           CALCULATION FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Calculate the block number of the next harvest.
@@ -241,6 +241,33 @@ contract Vault is ERC20 {
         if (lastHarvest == 0) return block.number;
         return minimumHarvestDelay + lastHarvest;
     }
+
+    /// @notice Calculate the profit from the last harvest that is still locked.
+    function calculateLockedProfit() public view returns (uint256) {
+        // If the harvest has completed, there is no locked profit.
+        // Otherwise, we can subtract unlocked profit from the maximum amount of locked profit.
+        // Learn more about how we calculate unlocked profit here: https://stackoverflow.com/a/29167238.
+        return
+            block.number >= nextHarvest()
+                ? 0
+                : maxLockedProfit - (maxLockedProfit * (block.number - lastHarvest)) / minimumHarvestDelay;
+    }
+
+    /// @notice Returns the amount of underlying tokens that idly sit in the vault.
+    function getFloat() public view returns (uint256) {
+        return underlying.balanceOf(address(this));
+    }
+
+    /// @notice Calculate the total amount of free underlying tokens.
+    function calculateTotalFreeUnderlying() public view returns (uint256) {
+        // Subtract locked profit from the amount of total deposited tokens and add the float value.
+        // We subtract the locked profit from the total deposited tokens because it is included in totalDeposited.
+        return getFloat() + totalDeposited - calculateLockedProfit();
+    }
+
+    /*///////////////////////////////////////////////////////////////
+                           HARVEST FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice Trigger a harvest.
     /// This updates the vault's balance in the cToken contracts,
@@ -284,29 +311,6 @@ contract Vault is ERC20 {
         harvestFee = (profit * feePercentage) / 1e18;
 
         emit Harvest(msg.sender, maxLockedProfit);
-    }
-
-    /// @notice Calculate the profit from the last harvest that is still locked.
-    function calculateLockedProfit() public view returns (uint256) {
-        // If the harvest has completed, there is no locked profit.
-        // Otherwise, we can subtract unlocked profit from the maximum amount of locked profit.
-        // Learn more about how we calculate unlocked profit here: https://stackoverflow.com/a/29167238.
-        return
-            block.number >= nextHarvest()
-                ? 0
-                : maxLockedProfit - (maxLockedProfit * (block.number - lastHarvest)) / minimumHarvestDelay;
-    }
-
-    /// @notice Returns the amount of underlying tokens that idly sit in the vault.
-    function getFloat() public view returns (uint256) {
-        return underlying.balanceOf(address(this));
-    }
-
-    /// @notice Calculate the total amount of free underlying tokens.
-    function calculateTotalFreeUnderlying() public view returns (uint256) {
-        // Subtract locked profit from the amount of total deposited tokens and add the float value.
-        // We subtract the locked profit from the total deposited tokens because it is included in totalDeposited.
-        return getFloat() + totalDeposited - calculateLockedProfit();
     }
 
     /*///////////////////////////////////////////////////////////////
