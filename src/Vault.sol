@@ -287,6 +287,10 @@ contract Vault is ERC20 {
     /// This updates the vault's balance in the cToken contracts,
     /// take fees, and update the float.
     function harvest() external {
+        // Calculate an updated float value based on the amount of profit during the last harvest.
+        uint256 updatedFloat = (totalDeposited * targetFloatPercent) / 1e18;
+        if (updatedFloat > getFloat()) pullIntoFloat(updatedFloat - getFloat());
+
         // Transfer fvTokens (representing fees) to the fee holder
         uint256 _fee = harvestFee;
         if (_fee > 0) {
