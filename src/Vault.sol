@@ -423,25 +423,7 @@ contract Vault is ERC20 {
         // Get the pool from the depositedPools array.
         CErc20 pool = depositedPools[poolIndex];
 
-        // If the input amount is equal to the max uint, withdraw the entire balance:
-        if (underlyingAmount == type(uint256).max) {
-            // TODO: Optimizations:
-            // - Store depositedPools in memory?
-            // - Store length on stack?
-            // Remove the pool we're withdrawing from:
-
-            pool.redeem(pool.balanceOf(address(this)));
-            depositedPools[poolIndex] = depositedPools[depositedPools.length - 1];
-            depositedPools.pop();
-        }
-
-        if (pool.isCEther()) {
-            // Withdraw from the pool.
-            pool.redeemUnderlying(underlyingAmount);
-            WETH(address(underlying)).deposit{value: underlyingAmount}();
-        } else {
-            pool.redeemUnderlying(underlyingAmount);
-        }
+        _withdrawFromPool(poolIndex, underlyingAmount);
 
         // Reduce totalDeposited by the underlying amount received.
         totalDeposited -= underlyingAmount;
