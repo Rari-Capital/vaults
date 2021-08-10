@@ -404,42 +404,33 @@ contract Vault is ERC20 {
     }
 
     /// @notice Withdraw funds from a pool.
-    function exitPool(uint256 poolIndex, uint256 cTokenAmount) public {
+    function exitPool(uint256 poolIndex, uint256 underlyingAmount) public {
         // Get the pool from the depositedPools array.
         CErc20 pool = depositedPools[poolIndex];
-        uint256 cTokenBalance = pool.balanceOf(address(this));
 
-        // If we're withdrawing our full balance:
-        if (cTokenBalance == cTokenAmount) {
+        // If the input amount is equal to the max uint, withdraw the entire balance:
+        if (underlyingAmount == type(uint256).max) {
             // TODO: Optimizations:
             // - Store depositedPools in memory?
             // - Store length on stack?
             // Remove the pool we're withdrawing from:
+
+            pool.redeem(pool.balanceOf(address(this)));
             depositedPools[poolIndex] = depositedPools[depositedPools.length - 1];
             depositedPools.pop();
         }
 
-        // Checkpoint our underlying balance before we withdraw.
-        uint256 preRedeemFloat = getFloat();
-
         if (pool.isCEther()) {
-            uint256 balanceBefore = address(this).balance;
             // Withdraw from the pool.
-            pool.redeem(cTokenAmount);
-            uint256 balanceAfter = address(this).balance;
-
-            WETH(address(underlying)).deposit{value: balanceAfter - balanceBefore}();
+            pool.redeemUnderlying(underlyingAmount);
+            WETH(address(underlying)).deposit{value: underlyingAmount}();
         } else {
-            pool.redeem(cTokenAmount);
+            pool.redeemUnderlying(underlyingAmount);
         }
 
-        // Calculate the amount of underlying that we received.
-        uint256 underlyingReceived = getFloat() - preRedeemFloat;
-
         // Reduce totalDeposited by the underlying amount received.
-        totalDeposited -= underlyingReceived;
-
-        emit ExitPool(pool, underlyingReceived);
+        totalDeposited -= underlyingAmount;
+        emit ExitPool(pool, underlyingAmount);
     }
 
     receive() external payable {}
