@@ -204,7 +204,11 @@ contract Vault is ERC20 {
 
             // If the balance is greater than the amount to pull, pull the full amount.
             if (balance >= underlyingAmount) {
-                _withdrawFromPool(i, type(uint256).max);
+                for (uint256 j = 0; j < depositedPools.length; j++) {
+                    if (depositedPools[j] == cToken) {
+                        _withdrawFromPool(j, type(uint256).max);
+                    }
+                }
 
                 break;
             } else {
