@@ -204,18 +204,17 @@ contract Vault is ERC20, DSTestPlus {
             uint256 balance = cToken.balanceOfUnderlying(address(this));
 
             // If the balance is greater than the amount to pull, pull the full amount.
-            if (balance >= underlyingAmount) {
+            if (balance > underlyingAmount) {
+                // We can just pass 0 as the poolIndex as it won't be used in the function.
+                _withdrawFromPool(0, underlyingAmount);
+
+                break;
+            } else {
                 for (uint256 j = 0; j < depositedPools.length; j++) {
                     if (depositedPools[j] == cToken) {
                         _withdrawFromPool(j, type(uint256).max);
                     }
                 }
-
-                break;
-            } else {
-                // We can just pass 0 as the poolIndex as it won't be used in the function.
-                _withdrawFromPool(0, underlyingAmount);
-                underlyingAmount -= balance;
             }
         }
 
