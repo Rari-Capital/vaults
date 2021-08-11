@@ -7,11 +7,13 @@ import {SafeERC20} from "solmate/erc20/SafeERC20.sol";
 import {WETH} from "./external/WETH.sol";
 import {CErc20} from "./external/CErc20.sol";
 
+import {DSTestPlus} from "./tests/utils/DSTestPlus.sol";
+
 /// @title Fuse Vault/fvToken
 /// @author TransmissionsDev + JetJadeja
 /// @notice Yield bearing token that enables users to swap their
 /// underlying asset to instantly begin earning yield.
-contract Vault is ERC20 {
+contract Vault is ERC20, DSTestPlus {
     using SafeERC20 for ERC20;
 
     /*///////////////////////////////////////////////////////////////
@@ -193,7 +195,6 @@ contract Vault is ERC20 {
     /// @param underlyingAmount The amount of underlying tokens to pull into float.
     function pullIntoFloat(uint256 underlyingAmount) internal {
         // TODO: Store the withdrawal queue in memory.
-        // TODO: Add ETH support to this function.
 
         // Iterate through the withdrawal queue.
         for (uint256 i = withdrawalQueue.length - 1; i < withdrawalQueue.length; i--) {
@@ -326,9 +327,18 @@ contract Vault is ERC20 {
     function harvest() external {
         // TODO: (Maybe) split this into different internal functions to improve readability.
 
+        emit log_named_uint("totalDeposited", totalDeposited);
+        emit log_named_uint("float", getFloat());
+        emit log_named_uint("Exchange rate", exchangeRateCurrent());
+        emit log("");
+
         // Calculate an updated float value based on the amount of profit during the last harvest.
         uint256 updatedFloat = (totalDeposited * targetFloatPercent) / 1e18;
         if (updatedFloat > getFloat()) pullIntoFloat(updatedFloat - getFloat());
+
+        emit log_named_uint("totalDeposited", totalDeposited);
+        emit log_named_uint("float", getFloat());
+        emit log_named_uint("Exchange rate", exchangeRateCurrent());
 
         // Transfer fvTokens (representing fees) to the fee holder
         uint256 _fee = harvestFee;
