@@ -327,6 +327,7 @@ contract Vault is ERC20, DSTestPlus {
     function harvest() external {
         // TODO: (Maybe) split this into different internal functions to improve readability.
 
+        // TODO: The pullIntoFloat function withdraws more than we want it to.
         // Calculate an updated float value based on the amount of profit during the last harvest.
         uint256 updatedFloat = (totalDeposited * targetFloatPercent) / 1e18;
         if (updatedFloat > getFloat()) pullIntoFloat(updatedFloat - getFloat());
