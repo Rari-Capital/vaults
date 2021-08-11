@@ -181,8 +181,7 @@ contract VaultsTest is DSTestPlus {
         assertGt(vault.exchangeRateCurrent(), 1e18);
     }
 
-    function test_harvest_profits_are_correctly_calculated() public {
-        uint256 amount = 1e18;
+    function test_harvest_profits_are_correctly_calculated(uint256 amount) public {
         if (amount > (type(uint256).max / 1e37) || amount < 10000) return;
 
         // Deposit into the vault.
@@ -236,9 +235,7 @@ contract VaultsTest is DSTestPlus {
         assertTrue(exchangeRate > 1.499e18 && exchangeRate <= 1.5e18);
     }
 
-    function test_harvest_fees_are_correctly_calculated() public {
-        uint256 amount = 1e18;
-
+    function test_harvest_fees_are_correctly_calculated(uint256 amount) public {
         if (amount > (type(uint256).max / 1e37) || amount < 40) return;
 
         // Deposit into the vault.
