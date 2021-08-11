@@ -327,18 +327,9 @@ contract Vault is ERC20, DSTestPlus {
     function harvest() external {
         // TODO: (Maybe) split this into different internal functions to improve readability.
 
-        emit log_named_uint("totalDeposited", totalDeposited);
-        emit log_named_uint("float", getFloat());
-        emit log_named_uint("Exchange rate", exchangeRateCurrent());
-        emit log("");
-
         // Calculate an updated float value based on the amount of profit during the last harvest.
         uint256 updatedFloat = (totalDeposited * targetFloatPercent) / 1e18;
         if (updatedFloat > getFloat()) pullIntoFloat(updatedFloat - getFloat());
-
-        emit log_named_uint("totalDeposited", totalDeposited);
-        emit log_named_uint("float", getFloat());
-        emit log_named_uint("Exchange rate", exchangeRateCurrent());
 
         // Transfer fvTokens (representing fees) to the fee holder
         uint256 _fee = harvestFee;
