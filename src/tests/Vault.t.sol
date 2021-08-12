@@ -288,9 +288,7 @@ contract VaultsTest is DSTestPlus {
         emit log_uint(vault.balanceOf(address(1)));
     }
 
-    function test_harvest_pulls_into_float() public {
-        uint256 amount = 1e18;
-
+    function test_harvest_pulls_into_float(uint256 amount) public {
         if (amount > (type(uint256).max / 1e37) || amount < 40) return;
 
         // Deposit into the vault.
