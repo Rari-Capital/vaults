@@ -324,13 +324,15 @@ contract VaultsTest is DSTestPlus {
         // Float before the harvest.
         uint256 floatBeforeHarvest = vault.getFloat();
 
+        uint256 expectedFloat = (vault.calculateTotalFreeUnderlying() * vault.targetFloatPercent()) / 1e18;
+
         // Trigger a harvest.
         vault.harvest();
 
         // Calculate the amount pulled from the contracts.
         uint256 pulledFloat = vault.getFloat() - floatBeforeHarvest;
 
-        emit log_uint(pulledFloat);
+        assertEq(expectedFloat, pulledFloat);
     }
 
     function test_vault_enter_pool_functions_correctly(uint256 amount) public {}
