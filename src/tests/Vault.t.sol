@@ -120,6 +120,9 @@ contract VaultsTest is DSTestPlus {
         underlying.mint(self, amount);
         underlying.transfer(address(vault), amount);
 
+        // Assert that the full token supply has been deposited into the Tank.
+        assertEq(underlying.balanceOf(address(vault)), underlying.totalSupply());
+
         // Withdraw full balance of fvTokens.
         vault.withdraw(vault.balanceOf(self));
 
@@ -127,7 +130,7 @@ contract VaultsTest is DSTestPlus {
         assertEq(vault.totalSupply(), 0);
 
         // Assert that the full underlying balance has been returned.
-        assertEq(underlying.balanceOf(self), 2 * amount);
+        assertEq(underlying.balanceOf(self), underlying.totalSupply());
     }
 
     function test_enter_pool_functions_properly(uint256 amount) public {
