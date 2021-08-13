@@ -216,14 +216,9 @@ contract VaultsTest is DSTestPlus {
         // Expected: between 1.4e18 and 1.5e18
         hevm.roll(block.number + vault.minimumHarvestDelay());
 
-        emit log_uint((vault.maxLockedProfit() * vault.feePercentage()) / 1e18);
         vault.harvest();
-        emit log_named_uint("Expected fee amount", (vault.feePercentage() * 0.5e18) / 1e18);
-
         uint256 feesTaken = vault.balanceOfUnderlying(address(1));
         assertTrue(feesTaken > 0.0099e18 && feesTaken < 0.01e18);
-        emit log_uint(feesTaken);
-        emit log_uint(vault.balanceOf(address(1)));
     }
 
     function test_harvest_pulls_into_float(uint256 amount) public {
