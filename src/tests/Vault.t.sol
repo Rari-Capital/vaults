@@ -332,6 +332,8 @@ contract VaultsTest is DSTestPlus {
     }
 
     function test_vault_enter_pool_functions_correctly(uint256 amount) public {
+        if (amount > (type(uint256).max / 1e37) || amount < 0) return;
+
         // Deposit into the vault.
         underlying.mint(address(this), amount);
         underlying.approve(address(vault), amount);
