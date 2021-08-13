@@ -236,7 +236,6 @@ contract VaultsTest is DSTestPlus {
         assertEq(vault.exchangeRateCurrent(), 1e18);
     }
 
-    // TODO: Add withdrawal tests
     // TODO: Add WETH tests
     // TODO: Add test to pull entire cToken float
     // TODO: Add tests for setter functions
