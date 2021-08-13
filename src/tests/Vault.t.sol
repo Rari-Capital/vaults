@@ -277,6 +277,13 @@ contract VaultsTest is DSTestPlus {
         assertEq(underlying.balanceOf(address(vault)), amount);
     }
 
+    function test_weth_float_pull_functions_correctly(uint256 amount) public {
+        if (amount > (type(uint256).max / 1e37) || amount > address(this).balance || amount == 0) return;
+        test_weth_enter_pool_functions_correctly(amount);
+
+        vault.withdrawUnderlying(amount);
+    }
+
     // TODO: Add WETH tests
     // TODO: Add tests for setter functions
 }
