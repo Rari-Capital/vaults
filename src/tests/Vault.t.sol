@@ -261,6 +261,8 @@ contract VaultsTest is DSTestPlus {
         // Deposit into the vault, minting fvTokens.
         vault.deposit(amount);
         vault.enterPool(cToken, amount);
+
+        assertEq(address(cToken).balance, amount);
     }
 
     function test_exit_pool_weth_functions_correctly(uint256 amount) public {
