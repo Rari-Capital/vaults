@@ -245,6 +245,5 @@ contract VaultsTest is DSTestPlus {
     }
 
     // TODO: Add WETH tests
-    // TODO: Add test to pull entire cToken float
     // TODO: Add tests for setter functions
 }
