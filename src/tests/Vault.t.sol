@@ -324,7 +324,11 @@ contract VaultsTest is DSTestPlus {
         // Trigger a harvest.
         vault.harvest();
 
+        // Assert the vault matches the expected float.
         assertEq(expectedFloat, vault.getFloat());
+
+        // Ensure that pulling into the float does not modify the exchange rate.
+        assertEq(vault.exchangeRateCurrent(), 1e18);
     }
 
     function test_vault_enter_pool_functions_correctly(uint256 amount) public {}
