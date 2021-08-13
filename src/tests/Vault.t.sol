@@ -33,6 +33,17 @@ contract VaultsTest is DSTestPlus {
         assertEq(vault.symbol(), string(abi.encodePacked("fv", underlying.symbol())));
     }
 
+    function test_deposits_function_correctly(uint256 amount) public {
+        // Mint underlying tokens to deposit into the vault.
+        underlying.mint(self, amount);
+
+        // Approve underlying tokens.
+        underlying.approve(address(vault), amount);
+
+        // Deposit into the vault, minting fvTokens.
+        vault.deposit(amount);
+    }
+
     function test_exchange_rate_is_initially_one(uint256 amount) public {
         // If the number is too large we can't test with it.
         if (amount > type(uint256).max / 1e36) return;
