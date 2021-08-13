@@ -37,6 +37,14 @@ contract MockCETH is ERC20("Mock CETH", "MCETH", 18) {
 }
 
 contract MockWETH is ERC20("Mock WETH", "mWETH", 18) {
+    function mint(address to) external payable {
+        _mint(to, msg.value);
+    }
+
+    function burn(address from, uint256 value) external {
+        _burn(from, value);
+    }
+
     function deposit() public payable {
         balanceOf[msg.sender] += msg.value;
     }
