@@ -3,7 +3,7 @@ pragma solidity 0.8.6;
 
 import {ERC20} from "solmate/erc20/ERC20.sol";
 
-contract MockCERC20 is ERC20("Mock CETH", "MCETH", 18) {
+contract MockCETH is ERC20("Mock CETH", "MCETH", 18) {
     function mint() external payable returns (uint256) {
         _mint(msg.sender, msg.value);
 
