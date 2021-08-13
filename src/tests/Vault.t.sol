@@ -248,6 +248,7 @@ contract VaultsTest is DSTestPlus {
     function test_enter_pool_weth_functions_correctly(uint256 amount) public {
         if (amount > (type(uint256).max / 1e37) || amount > address(this).balance || amount == 0) return;
 
+        // Set new contract addresses based on the use of a wETH contract.
         underlying = MockERC20(address(new MockWETH()));
         vault = new Vault(underlying);
         cToken = CErc20(address(new MockCETH()));
@@ -262,6 +263,7 @@ contract VaultsTest is DSTestPlus {
         vault.deposit(amount);
         vault.enterPool(cToken, amount);
 
+        // Assert that the cToken ETH balance is equal to the inputted amount.
         assertEq(address(cToken).balance, amount);
     }
 
@@ -271,6 +273,7 @@ contract VaultsTest is DSTestPlus {
 
         vault.exitPool(0, amount);
 
+        // Assert that the vault underlying balance is equal to the inputted amount.
         assertEq(underlying.balanceOf(address(vault)), amount);
     }
 
