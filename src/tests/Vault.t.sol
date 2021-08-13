@@ -136,7 +136,8 @@ contract VaultsTest is DSTestPlus {
     function test_enter_pool_functions_properly(uint256 amount) public {
         if (amount > (type(uint256).max / 1e37) || amount == 0) return;
 
-        test_exchange_rate_is_initially_one(amount);
+        // Mint, approve, and deposit tokens into the vault.
+        test_deposits_function_correctly(amount);
         vault.enterPool(cToken, amount);
     }
 
