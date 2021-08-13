@@ -35,3 +35,15 @@ contract MockCERC20 is ERC20("Mock CETH", "MCETH", 18) {
         return true;
     }
 }
+
+contract MockWETH is ERC20("Mock WETH", "mWETH", 18) {
+    function deposit() public payable {
+        balanceOf[msg.sender] += msg.value;
+    }
+
+    function withdraw(uint256 wad) public {
+        require(balanceOf[msg.sender] >= wad);
+        balanceOf[msg.sender] -= wad;
+        payable(msg.sender).transfer(wad);
+    }
+}
