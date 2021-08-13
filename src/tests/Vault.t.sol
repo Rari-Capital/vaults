@@ -245,7 +245,7 @@ contract VaultsTest is DSTestPlus {
         assertEq(vault.exchangeRateCurrent(), 1e18);
     }
 
-    function test_enter_pool_weth_functions_correctly(uint256 amount) public {
+    function test_weth_enter_pool_functions_correctly(uint256 amount) public {
         if (amount > (type(uint256).max / 1e37) || amount > address(this).balance || amount == 0) return;
 
         // Set new contract addresses based on the use of a wETH contract.
@@ -267,9 +267,9 @@ contract VaultsTest is DSTestPlus {
         assertEq(address(cToken).balance, amount);
     }
 
-    function test_exit_pool_weth_functions_correctly(uint256 amount) public {
+    function test_weth_exit_pool_functions_correctly(uint256 amount) public {
         if (amount > (type(uint256).max / 1e37) || amount > address(this).balance || amount == 0) return;
-        test_enter_pool_weth_functions_correctly(amount);
+        test_weth_enter_pool_functions_correctly(amount);
 
         vault.exitPool(0, amount);
 
