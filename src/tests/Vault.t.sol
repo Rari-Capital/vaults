@@ -50,11 +50,8 @@ contract VaultsTest is DSTestPlus {
         // If the number is too large we can't test with it.
         if (amount > type(uint256).max / 1e36) return;
 
-        underlying.mint(self, amount);
-        underlying.approve(address(vault), amount);
-
-        // Deposit into the vault, minting fvTokens.
-        vault.deposit(amount);
+        // Mint, approve, and deposit tokens into the vault.
+        test_deposits_function_correctly(amount);
 
         assertEq(vault.exchangeRateCurrent(), 10**underlying.decimals());
     }
@@ -63,17 +60,18 @@ contract VaultsTest is DSTestPlus {
         // If the number is too large or 0 we can't test with it.
         if (amount > (type(uint256).max / 1e37) || amount == 0) return;
 
-        underlying.mint(self, amount * 2);
-        underlying.approve(address(vault), amount);
+        underlying.mint(self, amount);
 
-        // Deposit into the vault, minting fvTokens.
-        vault.deposit(amount);
+        // Mint, approve, and deposit tokens into the vault.
+        test_deposits_function_correctly(amount);
 
+        // Assert that the initial exchange rate is 1.
         assertEq(vault.exchangeRateCurrent(), 10**underlying.decimals());
 
         // Send tokens into the vault, artificially increasing the exchangeRate.
         underlying.transfer(address(vault), amount);
 
+        // Assert that exchange rate increases when the Vault "accrues" tokens.
         assertEq(vault.exchangeRateCurrent(), 2 * 10**underlying.decimals());
     }
 
