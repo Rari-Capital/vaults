@@ -245,19 +245,25 @@ contract VaultsTest is DSTestPlus {
         assertEq(vault.exchangeRateCurrent(), 1e18);
     }
 
-    function test_enter_pool_weth_functions_correctly() public {
-        uint256 amount = 1e18;
-        if (amount > (type(uint256).max / 1e37) || amount == 0) return;
+    function test_enter_pool_weth_functions_correctly(uint256 amount) public {
+        if (amount > (type(uint256).max / 1e37) || amount > address(this).balance || amount == 0) return;
 
         underlying = MockERC20(address(new MockWETH()));
         vault = new Vault(underlying);
         cToken = CErc20(address(new MockCETH()));
 
-        test_deposits_function_correctly(amount);
+        // Mint underlying tokens to deposit into the vault.
+        MockWETH(address(underlying)).mint{value: amount}(self);
+
+        // Approve underlying tokens.
+        underlying.approve(address(vault), amount);
+
+        // Deposit into the vault, minting fvTokens.
+        vault.deposit(amount);
         vault.enterPool(cToken, amount);
     }
 
-    function test_exit_pool_weth_functions_correctly() public {}
+    function test_exit_pool_weth_functions_correctly(uint256 amount) public {}
 
     // TODO: Add WETH tests
     // TODO: Add tests for setter functions
