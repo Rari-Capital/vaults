@@ -263,7 +263,12 @@ contract VaultsTest is DSTestPlus {
         vault.enterPool(cToken, amount);
     }
 
-    function test_exit_pool_weth_functions_correctly(uint256 amount) public {}
+    function test_exit_pool_weth_functions_correctly(uint256 amount) public {
+        if (amount > (type(uint256).max / 1e37) || amount > address(this).balance || amount == 0) return;
+        test_enter_pool_weth_functions_correctly(amount);
+
+        vault.exitPool(0, amount);
+    }
 
     // TODO: Add WETH tests
     // TODO: Add tests for setter functions
