@@ -24,6 +24,8 @@ contract VaultsTest is DSTestPlus {
         cToken = CErc20(address(new MockCERC20(underlying)));
     }
 
+    // TODO: Use other test functions instead of copying and pasting test logic.
+
     function test_properly_init_erc20() public {
         assertERC20Eq(vault.underlying(), underlying);
 
@@ -354,4 +356,9 @@ contract VaultsTest is DSTestPlus {
 
         vault.exitPool(0, amount);
     }
+
+    // TODO: Add withdrawal tests
+    // TODO: Add WETH tests
+    // TODO: Add test to pull entire cToken float
+    // TODO: Add tests for setter functions
 }
