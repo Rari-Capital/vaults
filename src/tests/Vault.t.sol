@@ -347,5 +347,15 @@ contract VaultsTest is DSTestPlus {
         assertEq(underlying.balanceOf(address(vault)), 0);
     }
 
-    function test_vault_exit_pool_functions_correctly(uint256 amount) public {}
+    function test_vault_exit_pool_functions_correctly(uint256 amount) public {
+        // Deposit into the vault.
+        underlying.mint(address(this), amount);
+        underlying.approve(address(vault), amount);
+        vault.deposit(amount);
+
+        CErc20 mockCErc20 = CErc20(address(new MockCERC20(underlying)));
+        vault.enterPool(mockCErc20, amount);
+
+        vault.exitPool(0, amount);
+    }
 }
