@@ -34,6 +34,8 @@ contract VaultsTest is DSTestPlus {
     }
 
     function test_deposits_function_correctly(uint256 amount) public {
+        if (amount > type(uint256).max / 1e36) return;
+
         // Mint underlying tokens to deposit into the vault.
         underlying.mint(self, amount);
 
