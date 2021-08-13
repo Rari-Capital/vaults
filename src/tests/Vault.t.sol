@@ -229,38 +229,10 @@ contract VaultsTest is DSTestPlus {
     function test_harvest_pulls_into_float(uint256 amount) public {
         if (amount > (type(uint256).max / 1e37) || amount < 1000) return;
 
-        // Deposit into the vault.
-        underlying.mint(address(this), amount);
-        underlying.approve(address(vault), amount);
-        vault.deposit(amount);
+        test_harvest_functions_properly(amount);
 
-        // Set the block number to 1.
-        // If the current block number is 1, the vault will act unexpectedly.
-        hevm.roll(1);
-
-        // Allocate the deposited tokens to various cToken contracts.
-        for (uint256 i = 0; i < 10; i++) {
-            // Deploy a new mock cToken contract and add it to the withdrawQueue.
-            CErc20 mockCErc20 = CErc20(address(new MockCERC20(underlying)));
-            withdrawQueue.push(mockCErc20);
-
-            // Deposit 10% of the total supply into the vault.
-            // This ensure that by the end of the loop, 100% of the vault balance is deposited into the cTokens contracts.
-            vault.enterPool(mockCErc20, amount / 10);
-
-            // Transfer tokens to the cToken contract to simulate earned interest.
-            // This simulates a 50% increase.
-            underlying.mint(address(this), amount / 20);
-            underlying.transfer(address(mockCErc20), amount / 20);
-        }
-
-        // Set the withdrawalQueue to the token addresses.
-        vault.setWithdrawalQueue(withdrawQueue);
-
-        uint256 expectedFloat = (vault.calculateTotalFreeUnderlying() * vault.targetFloatPercent()) / 1e18;
-
-        // Trigger a harvest.
-        vault.harvest();
+        // Calculate the expected float after the harvest.
+        uint256 expectedFloat = (amount * vault.targetFloatPercent()) / 1e18;
 
         // Assert the vault matches the expected float.
         assertEq(expectedFloat, vault.getFloat());
