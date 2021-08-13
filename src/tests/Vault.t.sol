@@ -289,7 +289,7 @@ contract VaultsTest is DSTestPlus {
     }
 
     function test_harvest_pulls_into_float(uint256 amount) public {
-        if (amount > (type(uint256).max / 1e37) || amount < 40) return;
+        if (amount > (type(uint256).max / 1e37) || amount < 1000) return;
 
         // Deposit into the vault.
         underlying.mint(address(this), amount);
@@ -319,18 +319,12 @@ contract VaultsTest is DSTestPlus {
         // Set the withdrawalQueue to the token addresses.
         vault.setWithdrawalQueue(withdrawQueue);
 
-        // Float before the harvest.
-        uint256 floatBeforeHarvest = vault.getFloat();
-
         uint256 expectedFloat = (vault.calculateTotalFreeUnderlying() * vault.targetFloatPercent()) / 1e18;
 
         // Trigger a harvest.
         vault.harvest();
 
-        // Calculate the amount pulled from the contracts.
-        uint256 pulledFloat = vault.getFloat() - floatBeforeHarvest;
-
-        assertEq(expectedFloat, pulledFloat);
+        assertEq(expectedFloat, vault.getFloat());
     }
 
     function test_vault_enter_pool_functions_correctly(uint256 amount) public {}
