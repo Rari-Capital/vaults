@@ -36,7 +36,7 @@ contract MockCERC20 is ERC20("Mock CERC20", "MCERC20", 18) {
         return 0;
     }
 
-    function balanceOfUnderlying(address account) external view returns (uint256) {
+    function balanceOfUnderlying(address) external view returns (uint256) {
         return underlying.balanceOf(address(this));
     }
 
