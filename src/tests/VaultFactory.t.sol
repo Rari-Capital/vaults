@@ -27,4 +27,9 @@ contract VaultFactoryTest is DSTestPlus {
         test_deploy_vault();
         test_deploy_vault();
     }
+
+    function test_is_vault_deployed_function_correctly() public {
+        Vault vault = vaultFactory.deploy(underlying, address(0));
+        assertTrue(vaultFactory.isVaultDeployed(vault));
+    }
 }
