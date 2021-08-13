@@ -241,30 +241,6 @@ contract VaultsTest is DSTestPlus {
         assertEq(vault.exchangeRateCurrent(), 1e18);
     }
 
-    function test_vault_enter_pool_functions_correctly(uint256 amount) public {
-        if (amount > (type(uint256).max / 1e37) || amount < 0) return;
-
-        // Deposit into the vault.
-        underlying.mint(address(this), amount);
-        underlying.approve(address(vault), amount);
-        vault.deposit(amount);
-
-        CErc20 mockCErc20 = CErc20(address(new MockCERC20(underlying)));
-        vault.enterPool(mockCErc20, amount);
-
-        // Assert that funds are transfered correctly.
-        assertEq(underlying.balanceOf(address(mockCErc20)), amount);
-        assertEq(underlying.balanceOf(address(vault)), 0);
-    }
-
-    function test_vault_exit_pool_functions_correctly(uint256 amount) public {
-        if (amount > (type(uint256).max / 1e37) || amount < 0) return;
-
-        test_vault_enter_pool_functions_correctly(amount);
-
-        vault.exitPool(0, amount);
-    }
-
     // TODO: Add withdrawal tests
     // TODO: Add WETH tests
     // TODO: Add test to pull entire cToken float
