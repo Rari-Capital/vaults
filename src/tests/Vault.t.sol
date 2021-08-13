@@ -78,20 +78,17 @@ contract VaultsTest is DSTestPlus {
     function test_exchange_rate_is_not_affected_by_deposits(uint256 amount) public {
         if (amount > (type(uint256).max / 1e37) || amount < 1e18) return;
 
-        underlying.mint(self, amount * 3);
+        // Mint, approve, and deposit tokens into the vault.
+        test_deposits_function_correctly(amount);
 
-        // Deposit into the vault, minting fvTokens.
-        underlying.approve(address(vault), amount);
-        vault.deposit(amount);
-
+        underlying.mint(self, amount);
         underlying.transfer(address(vault), amount);
 
         // Ensure the exchange rate is equal to 2
         assertEq(vault.exchangeRateCurrent(), 2e18);
 
-        // Deposit into the vault, minting fvTokens.
-        underlying.approve(address(vault), amount);
-        vault.deposit(amount);
+        // Mint, approve, and deposit tokens into the vault.
+        test_deposits_function_correctly(amount);
 
         assertEq(vault.exchangeRateCurrent(), 2e18);
     }
