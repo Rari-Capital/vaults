@@ -418,7 +418,7 @@ contract Vault is ERC20 {
     }
 
     /// @notice Withdraw funds from a pool.
-    function exitPool(uint256 poolIndex, uint256 underlyingAmount) public {
+    function exitPool(uint256 poolIndex, uint256 underlyingAmount) external {
         // Get the pool from the depositedPools array.
         CErc20 pool = depositedPools[poolIndex];
 
