@@ -236,12 +236,8 @@ contract Vault is ERC20 {
             depositedPools[poolIndex] = depositedPools[depositedPools.length - 1];
             depositedPools.pop();
 
-            emit Deposit(address(0), 69);
-
             return;
         }
-
-        emit Withdraw(address(0), 420);
 
         if (pool.isCEther()) {
             // Withdraw from the pool.
