@@ -198,7 +198,7 @@ contract VaultsTest is DSTestPlus {
 
         // Emit the current exchange rate
         // Expected: between 1.4e18 and 1.5e18
-        hevm.roll(block.number + vault.minimumHarvestDelay());
+        hevm.roll(block.number + (vault.minimumHarvestDelay() / 2));
 
         // Assert that the exchange rate is greater than 1.499 and less than or equal to 1.5.
         exchangeRate = vault.exchangeRateCurrent();
