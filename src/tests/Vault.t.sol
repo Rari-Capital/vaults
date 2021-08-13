@@ -151,50 +151,8 @@ contract VaultsTest is DSTestPlus {
     function test_harvest_functions_properly(uint256 amount) public {
         if (amount > (type(uint256).max / 1e37) || amount < 40) return;
 
-        // Deposit underlying tokens into the vault.
-        underlying.mint(address(this), amount);
-        underlying.approve(address(vault), amount);
-        vault.deposit(amount);
-
-        // Set the block number to 1.
-        // If the current block number is 0, the vault will act unexpectedly.
-        hevm.roll(1);
-
-        // Allocate the deposited tokens to various cToken contracts.
-        for (uint256 i = 0; i < 10; i++) {
-            // Deploy a new mock cToken contract and add it to the withdrawQueue.
-            CErc20 mockCErc20 = CErc20(address(new MockCERC20(underlying)));
-            withdrawQueue.push(mockCErc20);
-
-            // Deposit 10% of the total supply into the vault.
-            // This ensure that by the end of the loop, 100% of the vault balance is deposited into the cTokens contracts.
-            vault.enterPool(mockCErc20, amount / 10);
-
-            // Transfer tokens to the cToken contract to simulate earned interest.
-            underlying.mint(address(this), amount / 40);
-            underlying.transfer(address(mockCErc20), amount / 40);
-        }
-
-        // Set the withdrawalQueue to the token addresses.
-        vault.setWithdrawalQueue(withdrawQueue);
-
-        // Trigger a harvest.
-        vault.harvest();
-
-        // Forward the block number to block.number + vault.minimumHarvestDelay() to simulate a full harvest.
-        hevm.roll(block.number + vault.minimumHarvestDelay());
-
-        // Assert that the vault's exchange rate has increased 1.
-        assertGt(vault.exchangeRateCurrent(), 1e18);
-    }
-
-    function test_harvest_profits_are_correctly_calculated(uint256 amount) public {
-        if (amount > (type(uint256).max / 1e37) || amount < 10000) return;
-
-        // Deposit into the vault.
-        underlying.mint(address(this), amount);
-        underlying.approve(address(vault), amount);
-        vault.deposit(amount);
+        // Mint, approve, and deposit tokens into the vault.
+        test_deposits_function_correctly(amount);
 
         // Set the block number to 1.
         // If the current block number is 0, the vault will act unexpectedly.
@@ -216,11 +174,17 @@ contract VaultsTest is DSTestPlus {
             underlying.transfer(address(mockCErc20), amount / 20);
         }
 
-        // Set the withdrawalQueue to an array of cToken addresses.
+        // Set the withdrawalQueue to the token addresses.
         vault.setWithdrawalQueue(withdrawQueue);
 
         // Trigger a harvest.
         vault.harvest();
+    }
+
+    function test_harvest_profits_are_correctly_calculated(uint256 amount) public {
+        if (amount > (type(uint256).max / 1e37) || amount < 10000) return;
+
+        test_harvest_functions_properly(amount);
 
         // Assert that the exchangeRate maintains the same value after the harvest.
         assertEq(vault.exchangeRateCurrent(), 1e18);
@@ -228,16 +192,15 @@ contract VaultsTest is DSTestPlus {
         // Forward block number to middle of the harvest.
         hevm.roll(block.number + (vault.minimumHarvestDelay() / 2));
 
-        // Emit the current exchange rate
-        // Expected: between 1e18 and 1.5e18
-        emit log_named_uint("Exchange rate after half harvest", vault.exchangeRateCurrent());
+        // Assert that the exchange rate is between 1.24 and 1.26
         uint256 exchangeRate = vault.exchangeRateCurrent();
-        assertTrue(exchangeRate > 1.24e18 && exchangeRate < 1e26);
+        assertTrue(exchangeRate > 1.24e18 && exchangeRate < 1.26e18);
 
         // Emit the current exchange rate
         // Expected: between 1.4e18 and 1.5e18
         hevm.roll(block.number + vault.minimumHarvestDelay());
 
+        // Assert that the exchange rate is greater than 1.499 and less than or equal to 1.5.
         exchangeRate = vault.exchangeRateCurrent();
         assertTrue(exchangeRate > 1.499e18 && exchangeRate <= 1.5e18);
     }
