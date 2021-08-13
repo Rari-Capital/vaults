@@ -21,9 +21,6 @@ contract Vault is ERC20 {
     /// @notice The underlying token for the vault.
     ERC20 public immutable underlying;
 
-    /// @notice The address of the Wrapped Ether contract.
-    address constant WETH_CONTRACT = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-
     /// @notice Creates a new vault based on an underlying token.
     /// @param _underlying An underlying ERC20 compliant token.
     constructor(ERC20 _underlying)
