@@ -270,6 +270,8 @@ contract VaultsTest is DSTestPlus {
         test_enter_pool_weth_functions_correctly(amount);
 
         vault.exitPool(0, amount);
+
+        assertEq(underlying.balanceOf(address(vault)), amount);
     }
 
     // TODO: Add WETH tests
