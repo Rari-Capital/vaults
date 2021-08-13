@@ -148,6 +148,14 @@ contract VaultsTest is DSTestPlus {
         vault.exitPool(0, amount);
     }
 
+    function test_exit_pool_max_balance_withdrawal_functions_properly() public {
+        uint256 amount = 1e18;
+        if (amount > (type(uint256).max / 1e37) || amount == 0) return;
+
+        test_enter_pool_functions_properly(amount);
+        vault.exitPool(0, type(uint256).max);
+    }
+
     function test_harvest_functions_properly(uint256 amount) public {
         if (amount > (type(uint256).max / 1e37) || amount < 40) return;
 
