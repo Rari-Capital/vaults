@@ -341,6 +341,10 @@ contract VaultsTest is DSTestPlus {
 
         CErc20 mockCErc20 = CErc20(address(new MockCERC20(underlying)));
         vault.enterPool(mockCErc20, amount);
+
+        // Assert that funds are transfered correctly.
+        assertEq(underlying.balanceOf(address(mockCErc20)), amount);
+        assertEq(underlying.balanceOf(address(vault)), 0);
     }
 
     function test_vault_exit_pool_functions_correctly(uint256 amount) public {}
