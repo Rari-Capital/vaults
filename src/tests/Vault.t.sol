@@ -75,10 +75,8 @@ contract VaultsTest is DSTestPlus {
         assertEq(vault.exchangeRateCurrent(), 2 * 10**underlying.decimals());
     }
 
-    function test_exchange_rate_is_not_affected_by_deposits() public {
-        uint256 amount = 1e18;
-        // If the number is too large or 0 we can't test with it.
-        if (amount > (type(uint256).max / 1e37) || amount == 0) return;
+    function test_exchange_rate_is_not_affected_by_deposits(uint256 amount) public {
+        if (amount > (type(uint256).max / 1e37) || amount < 1e18) return;
 
         underlying.mint(self, amount * 3);
 
