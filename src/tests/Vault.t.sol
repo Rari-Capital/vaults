@@ -281,6 +281,10 @@ contract VaultsTest is DSTestPlus {
         if (amount > (type(uint256).max / 1e37) || amount > address(this).balance || amount == 0) return;
         test_weth_enter_pool_functions_correctly(amount);
 
+        // Set the withdrawalQueue to the token addresses.
+        withdrawQueue.push(cToken);
+        vault.setWithdrawalQueue(withdrawQueue);
+
         vault.withdrawUnderlying(amount);
     }
 
