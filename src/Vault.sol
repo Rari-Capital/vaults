@@ -124,6 +124,9 @@ contract Vault is ERC20, DSTestPlus {
     /// @notice Burns fvTokens and sends underlying tokens to the caller.
     /// @param amount The amount of fvTokens to redeem for underlying tokens.
     function withdraw(uint256 amount) external {
+        // A log to check if the coverage report is valid.
+        emit log("Function withdraw, not covered");
+
         // Query the vault's exchange rate.
         uint256 exchangeRate = exchangeRateCurrent();
 
@@ -146,6 +149,9 @@ contract Vault is ERC20, DSTestPlus {
     /// @notice Burns fvTokens and sends underlying tokens to the caller.
     /// @param underlyingAmount The amount of underlying tokens to withdraw.
     function withdrawUnderlying(uint256 underlyingAmount) external {
+        // A log to check if the coverage report is valid.
+        emit log("Function withdraw, not covered");
+
         // Query the vault's exchange rate.
         uint256 exchangeRate = exchangeRateCurrent();
 
