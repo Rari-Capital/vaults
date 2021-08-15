@@ -231,7 +231,13 @@ contract Vault is ERC20, DSTestPlus {
             // - Store length on stack?
 
             // Redeem all tokens from the pool.
-            pool.redeem(pool.balanceOf(address(this)));
+            if (pool.isCEther()) {
+                // Withdraw from the pool.
+                pool.redeem(pool.balanceOf(address(this)));
+                WETH(address(underlying)).deposit{value: underlyingAmount}();
+            } else {
+                pool.redeem(pool.balanceOf(address(this)));
+            }
 
             // Remove the pool we're withdrawing from.
             depositedPools[poolIndex] = depositedPools[depositedPools.length - 1];
