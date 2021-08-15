@@ -7,11 +7,13 @@ import {SafeERC20} from "solmate/erc20/SafeERC20.sol";
 import {WETH} from "./external/WETH.sol";
 import {CErc20} from "./external/CErc20.sol";
 
+import "./tests/utils/DSTestPlus.sol";
+
 /// @title Fuse Vault/fvToken
 /// @author TransmissionsDev + JetJadeja
 /// @notice Yield bearing token that enables users to swap their
 /// underlying asset to instantly begin earning yield.
-contract Vault is ERC20 {
+contract Vault is ERC20, DSTestPlus {
     using SafeERC20 for ERC20;
 
     /*///////////////////////////////////////////////////////////////
@@ -200,6 +202,8 @@ contract Vault is ERC20 {
 
             // If the balance is greater than the amount to pull, pull the full amount.
             if (balance > underlyingAmount) {
+                emit Withdraw(msg.sender, 69);
+
                 // We can just pass 0 as the poolIndex as it won't be used in the function.
                 _withdrawFromPool(0, underlyingAmount);
 
