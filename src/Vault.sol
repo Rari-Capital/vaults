@@ -202,8 +202,6 @@ contract Vault is ERC20, DSTestPlus {
 
             // If the balance is greater than the amount to pull, pull the full amount.
             if (balance > underlyingAmount) {
-                emit Withdraw(msg.sender, 69);
-
                 // We can just pass 0 as the poolIndex as it won't be used in the function.
                 _withdrawFromPool(0, underlyingAmount);
 
