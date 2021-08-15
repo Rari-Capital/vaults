@@ -234,7 +234,9 @@ contract Vault is ERC20, DSTestPlus {
             if (pool.isCEther()) {
                 // Withdraw from the pool.
                 pool.redeem(pool.balanceOf(address(this)));
-                WETH(address(underlying)).deposit{value: underlyingAmount}();
+
+                // Deposit the vault's total ETH balance.
+                WETH(address(underlying)).deposit{value: address(this).balance}();
             } else {
                 pool.redeem(pool.balanceOf(address(this)));
             }
