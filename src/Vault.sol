@@ -194,8 +194,8 @@ contract Vault is ERC20, DSTestPlus {
         // TODO: Store the withdrawal queue in memory.
 
         // Iterate through the withdrawal queue.
-        for (uint256 i = withdrawalQueue.length - 1; i < withdrawalQueue.length; i--) {
-            CErc20 cToken = withdrawalQueue[i];
+        for (uint256 i = withdrawalQueue.length; i > 0; i--) {
+            CErc20 cToken = withdrawalQueue[i - 1];
 
             // Calculate the vault's balance in the cToken contract.
             uint256 balance = cToken.balanceOfUnderlying(address(this));
