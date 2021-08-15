@@ -150,7 +150,7 @@ contract Vault is ERC20, DSTestPlus {
     /// @param underlyingAmount The amount of underlying tokens to withdraw.
     function withdrawUnderlying(uint256 underlyingAmount) external {
         // A log to check if the coverage report is valid.
-        emit log("Function withdraw, not covered");
+        emit log("Function withdrawUnderlying, not covered");
 
         // Query the vault's exchange rate.
         uint256 exchangeRate = exchangeRateCurrent();
@@ -215,6 +215,8 @@ contract Vault is ERC20, DSTestPlus {
 
                 break;
             } else {
+                // A log to check if the coverage report is valid.
+                emit log("Function pullIntoFloat, else loop not covered");
                 for (uint256 j = 0; j < depositedPools.length; j++) {
                     if (depositedPools[j] == cToken) {
                         _withdrawFromPool(j, type(uint256).max);
@@ -238,6 +240,8 @@ contract Vault is ERC20, DSTestPlus {
 
             // Redeem all tokens from the pool.
             if (pool.isCEther()) {
+                // A log to check if the coverage report is valid.
+                emit log("Function _withdrawFromPool, if(cEther) not covered");
                 // Withdraw from the pool.
                 pool.redeem(pool.balanceOf(address(this)));
 
@@ -255,6 +259,8 @@ contract Vault is ERC20, DSTestPlus {
         }
 
         if (pool.isCEther()) {
+            emit log("Function _withdrawFromPool, if(cEther) not covered");
+
             // Withdraw from the pool.
             pool.redeemUnderlying(underlyingAmount);
             WETH(address(underlying)).deposit{value: underlyingAmount}();
