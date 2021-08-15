@@ -13,7 +13,7 @@ import "./tests/utils/DSTestPlus.sol";
 /// @author TransmissionsDev + JetJadeja
 /// @notice Yield bearing token that enables users to swap their
 /// underlying asset to instantly begin earning yield.
-contract Vault is ERC20, DSTestPlus {
+contract Vault is ERC20 {
     using SafeERC20 for ERC20;
 
     /*///////////////////////////////////////////////////////////////
