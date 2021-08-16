@@ -287,7 +287,4 @@ contract VaultsTest is DSTestPlus {
 
         vault.withdrawUnderlying(amount);
     }
-
-    // TODO: Add WETH tests
-    // TODO: Add tests for setter functions
 }
