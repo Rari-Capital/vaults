@@ -191,11 +191,13 @@ contract Vault is ERC20 {
     /// @dev Withdraw underlying tokens from pools in the withdrawal queue.
     /// @param underlyingAmount The amount of underlying tokens to pull into float.
     function pullIntoFloat(uint256 underlyingAmount) internal {
-        // TODO: Store the withdrawal queue in memory.
+        // Store the withdrawal queue array in memory.
+        CErc20[] memory _withdrawalQueue = withdrawalQueue;
+        CErc20[] memory _depositedPools;
 
         // Iterate through the withdrawal queue.
-        for (uint256 i = withdrawalQueue.length; i > 0; i--) {
-            CErc20 cToken = withdrawalQueue[i - 1];
+        for (uint256 i = _withdrawalQueue.length; i > 0; i--) {
+            CErc20 cToken = _withdrawalQueue[i - 1];
 
             // Calculate the vault's balance in the cToken contract.
             uint256 balance = cToken.balanceOfUnderlying(address(this));
@@ -207,8 +209,9 @@ contract Vault is ERC20 {
 
                 break;
             } else {
-                for (uint256 j = 0; j < depositedPools.length; j++) {
-                    if (depositedPools[j] == cToken) {
+                if (_depositedPools.length != 0) _depositedPools = depositedPools;
+                for (uint256 j = 0; j < _depositedPools.length; j++) {
+                    if (_depositedPools[j] == cToken) {
                         _withdrawFromPool(j, type(uint256).max);
                     }
                 }
