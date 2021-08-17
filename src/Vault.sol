@@ -198,6 +198,7 @@ contract Vault is ERC20 {
         CErc20[] memory _depositedPools;
 
         // Iterate through the withdrawal queue.
+        //  We iterate in reverse as it the withdrawalQueue is sorted from the least liquid pools to most liquid pools.
         for (uint256 i = _withdrawalQueue.length; i > 0; i--) {
             CErc20 cToken = _withdrawalQueue[i - 1];
 
