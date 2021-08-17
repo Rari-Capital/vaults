@@ -193,6 +193,8 @@ contract Vault is ERC20 {
     function pullIntoFloat(uint256 underlyingAmount) internal {
         // Store the withdrawal queue array in memory.
         CErc20[] memory _withdrawalQueue = withdrawalQueue;
+
+        // Allocate space in memory for the deposited pools array.
         CErc20[] memory _depositedPools;
 
         // Iterate through the withdrawal queue.
@@ -209,6 +211,8 @@ contract Vault is ERC20 {
 
                 break;
             } else {
+                // If the local depositedPools array has not been set, set it now.
+                // This prevents us from doing a potentially unecessary sload at the start of the function.
                 if (_depositedPools.length != 0) _depositedPools = depositedPools;
                 for (uint256 j = 0; j < _depositedPools.length; j++) {
                     if (_depositedPools[j] == cToken) {
