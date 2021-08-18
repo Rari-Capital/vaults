@@ -324,10 +324,15 @@ contract Vault is ERC20 {
         // If the harvest has completed, there is no locked profit.
         // Otherwise, we can subtract unlocked profit from the maximum amount of locked profit.
         // Learn more about how we calculate unlocked profit here: https://stackoverflow.com/a/29167238.
+
+        // Store maxLockedProfit in memory to prevent extra storage loads.
+        uint256 _maxLockedProfit = maxLockedProfit;
+
+        // Calculate the vault's current locked profit.
         return
             block.number >= nextHarvest()
                 ? 0
-                : maxLockedProfit - (maxLockedProfit * (block.number - lastHarvest)) / minimumHarvestDelay;
+                : _maxLockedProfit - (_maxLockedProfit * (block.number - lastHarvest)) / minimumHarvestDelay;
     }
 
     /// @notice Returns the amount of underlying tokens that idly sit in the vault.
@@ -352,7 +357,6 @@ contract Vault is ERC20 {
     function harvest() external {
         // TODO: (Maybe) split this into different internal functions to improve readability.
 
-        // TODO: The pullIntoFloat function withdraws more than we want it to.
         // Calculate an updated float value based on the amount of profit during the last harvest.
         uint256 updatedFloat = (totalDeposited * targetFloatPercent) / 1e18;
         if (updatedFloat > getFloat()) pullIntoFloat(updatedFloat - getFloat());
