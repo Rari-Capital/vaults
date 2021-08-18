@@ -380,8 +380,6 @@ contract Vault is ERC20 {
         // Set the new maximum locked profit.
         maxLockedProfit = profit;
 
-        // TODO: Pull into float without modifying the exchange rate.
-
         // Calculate the total fee taken from the profit.
         harvestFee = (profit * feePercentage) / 1e18;
 
