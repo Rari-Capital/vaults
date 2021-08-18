@@ -356,6 +356,8 @@ contract Vault is ERC20 {
     /// take fees, and update the float.
     function harvest() external {
         // TODO: (Maybe) split this into different internal functions to improve readability.
+        // Ensure that the harvest does not occur too early.
+        require(block.number >= nextHarvest());
 
         // Calculate an updated float value based on the amount of profit during the last harvest.
         uint256 updatedFloat = (totalDeposited * targetFloatPercent) / 1e18;
@@ -366,9 +368,6 @@ contract Vault is ERC20 {
         if (_fee > 0) {
             _mint(feeClaimer, (_fee * 10**decimals) / exchangeRateCurrent());
         }
-
-        // Ensure that the harvest does not occur too early.
-        require(block.number >= nextHarvest());
 
         // Set the lastHarvest to this block, as the harvest has just been triggered.
         lastHarvest = block.number;
