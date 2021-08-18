@@ -256,8 +256,10 @@ contract Vault is ERC20 {
                 pool.redeem(pool.balanceOf(address(this)));
             }
 
+            CErc20[] memory _depositedPools = depositedPools;
+
             // Remove the pool we're withdrawing from.
-            depositedPools[poolIndex] = depositedPools[depositedPools.length - 1];
+            depositedPools[poolIndex] = _depositedPools[_depositedPools.length - 1];
             depositedPools.pop();
 
             return;
