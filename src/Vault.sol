@@ -372,19 +372,7 @@ contract Vault is ERC20 {
         // Set the lastHarvest to this block, as the harvest has just been triggered.
         lastHarvest = block.number;
 
-        // Calculate the vault's total balance in underlying tokens.
-        uint256 depositBalance;
-
-        // Loop over each pool to add to the total balance.
-        for (uint256 i = 0; i < depositedPools.length; i++) {
-            CErc20 pool = depositedPools[i];
-
-            // Add this pool's balance to the total.
-            depositBalance += pool.balanceOfUnderlying(address(this));
-        }
-
-        // Subtract the current deposited balance from the one set during the last harvest.
-        uint256 profit = depositBalance - totalDeposited;
+        (uint256 profit, uint256 depositBalance) = calculateHarvestProfit();
 
         // Update the totalDeposited amount to use the freshly computed underlying amount.
         totalDeposited = depositBalance;
@@ -398,6 +386,19 @@ contract Vault is ERC20 {
         harvestFee = (profit * feePercentage) / 1e18;
 
         emit Harvest(msg.sender, maxLockedProfit);
+    }
+
+    function calculateHarvestProfit() internal returns (uint256 profit, uint256 depositBalance) {
+        // Loop over each pool to add to the total balance.
+        for (uint256 i = 0; i < depositedPools.length; i++) {
+            CErc20 pool = depositedPools[i];
+
+            // Add this pool's balance to the total.
+            depositBalance += pool.balanceOfUnderlying(address(this));
+        }
+
+        // Subtract the current deposited balance from the one set during the last harvest.
+        profit = depositBalance - totalDeposited;
     }
 
     /*///////////////////////////////////////////////////////////////
