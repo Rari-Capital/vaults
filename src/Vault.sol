@@ -230,6 +230,10 @@ contract Vault is ERC20 {
         totalDeposited -= underlyingAmount;
     }
 
+    /// @dev Withdraw underlying tokens from a pool.
+    /// @param poolIndex The index of the pool in the depositedPools array.
+    /// @param underlyingAmount The underlying amount to withdraw from the pool.
+    /// If this value is type(uint256).max, the vault will withdraw the entire token balance.
     function _withdrawFromPool(uint256 poolIndex, uint256 underlyingAmount) internal {
         CErc20 pool = depositedPools[poolIndex];
 
