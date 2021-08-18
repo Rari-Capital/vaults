@@ -372,6 +372,7 @@ contract Vault is ERC20 {
         // Set the lastHarvest to this block, as the harvest has just been triggered.
         lastHarvest = block.number;
 
+        // Calculate the profit made during the last harvest period and the updated deposited balance.
         (uint256 profit, uint256 depositBalance) = calculateHarvestProfit();
 
         // Update the totalDeposited amount to use the freshly computed underlying amount.
@@ -380,7 +381,7 @@ contract Vault is ERC20 {
         // Set the new maximum locked profit.
         maxLockedProfit = profit;
 
-        // Calculate the total fee taken from the profit.
+        // Calculate the fee that should be taken during the next harvest.
         harvestFee = (profit * feePercentage) / 1e18;
 
         emit Harvest(msg.sender, maxLockedProfit);
