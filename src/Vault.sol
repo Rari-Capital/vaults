@@ -387,6 +387,7 @@ contract Vault is ERC20 {
         emit Harvest(msg.sender, maxLockedProfit);
     }
 
+    /// @dev Calculate the profit made during the last harvest and the updated deposit balanace.
     function calculateHarvestProfit() internal returns (uint256 profit, uint256 depositBalance) {
         // Loop over each pool to add to the total balance.
         for (uint256 i = 0; i < depositedPools.length; i++) {
