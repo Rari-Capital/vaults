@@ -262,9 +262,11 @@ contract Vault is ERC20 {
             depositedPools[poolIndex] = _depositedPools[_depositedPools.length - 1];
             depositedPools.pop();
 
+            // Jump to the end of the function.
             return;
         }
 
+        // If the vault is not redeeming its entire balance:
         if (pool.isCEther()) {
             // Withdraw from the pool.
             pool.redeemUnderlying(underlyingAmount);
