@@ -214,7 +214,8 @@ contract Vault is ERC20 {
             } else {
                 // If the local depositedPools array has not been set, set it now.
                 // This prevents us from doing a potentially unecessary sload at the start of the function.
-                if (_depositedPools.length != 0) _depositedPools = depositedPools;
+                if (_depositedPools.length == 0) _depositedPools = depositedPools;
+
                 for (uint256 j = 0; j < _depositedPools.length; j++) {
                     if (_depositedPools[j] == cToken) {
                         _withdrawFromPool(j, type(uint256).max);
