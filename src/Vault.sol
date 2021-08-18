@@ -235,6 +235,7 @@ contract Vault is ERC20 {
     /// @param underlyingAmount The underlying amount to withdraw from the pool.
     /// If this value is type(uint256).max, the vault will withdraw the entire token balance.
     function _withdrawFromPool(uint256 poolIndex, uint256 underlyingAmount) internal {
+        // Store the pool in memory.
         CErc20 pool = depositedPools[poolIndex];
 
         // If the input amount is equal to the max uint value, withdraw the entire balance:
@@ -245,12 +246,13 @@ contract Vault is ERC20 {
 
             // Redeem all tokens from the pool.
             if (pool.isCEther()) {
-                // Withdraw from the pool.
+                // Redeem the vault's balance in cTokens in this pool.
                 pool.redeem(pool.balanceOf(address(this)));
 
                 // Deposit the vault's total ETH balance.
                 WETH(address(underlying)).deposit{value: address(this).balance}();
             } else {
+                // Redeem the vault's balance in cTokens in this pool.
                 pool.redeem(pool.balanceOf(address(this)));
             }
 
