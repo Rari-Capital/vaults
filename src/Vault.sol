@@ -2,6 +2,7 @@
 pragma solidity 0.8.6;
 
 import {ERC20} from "solmate/erc20/ERC20.sol";
+import {Auth} from "solmate/auth/Auth.sol";
 import {SafeERC20} from "solmate/erc20/SafeERC20.sol";
 
 import {WETH} from "./external/WETH.sol";
@@ -13,7 +14,7 @@ import "./tests/utils/DSTestPlus.sol";
 /// @author TransmissionsDev + JetJadeja
 /// @notice Yield bearing token that enables users to swap their
 /// underlying asset to instantly begin earning yield.
-contract Vault is ERC20 {
+contract Vault is ERC20, Auth {
     using SafeERC20 for ERC20;
 
     /*///////////////////////////////////////////////////////////////
