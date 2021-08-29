@@ -6,7 +6,7 @@ import {ERC20} from "solmate/erc20/ERC20.sol";
 import {Vault} from "./Vault.sol";
 
 /// @title VaultFactory
-/// @author TransmissionsDev + JetJadeja
+/// @author Transmissions11 + JetJadeja
 /// @notice Factory contract, deploying proxy implementations.
 contract VaultFactory {
     /*///////////////////////////////////////////////////////////////
