@@ -65,8 +65,7 @@ contract VaultFactory {
 
     /// @notice Returns if a vault at an address has been deployed yet.
     /// @dev This function is useful to check the return value of
-    /// getVaultFromUnderlying, as it may return vaults that have not
-    /// been deployed yet.
+    /// getVaultFromUnderlying, as it may return vaults that have not been deployed yet.
     /// @param vault The address of the vault that may not have been deployed.
     /// @return A bool indicated whether the vault has been deployed already.
     function isVaultDeployed(Vault vault) external view returns (bool) {
