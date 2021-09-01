@@ -69,6 +69,7 @@ contract VaultFactory {
     /// @param vault The address of the vault that may not have been deployed.
     /// @return A bool indicated whether the vault has been deployed already.
     function isVaultDeployed(Vault vault) external view returns (bool) {
+        // TODO: we can do address(vault).code.length instead of this assembly (https://docs.soliditylang.org/en/v0.8.7/cheatsheet.html)
         uint256 size;
         assembly {
             size := extcodesize(vault)
