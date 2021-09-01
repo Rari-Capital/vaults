@@ -63,17 +63,13 @@ contract VaultFactory {
         return Vault(payable(address(uint160(uint256(hash)))));
     }
 
+    // TODO: do we just remove this func? ppl can do this themselves anyway
     /// @notice Returns if a vault at an address has been deployed yet.
     /// @dev This function is useful to check the return value of
     /// getVaultFromUnderlying, as it may return vaults that have not been deployed yet.
     /// @param vault The address of the vault that may not have been deployed.
     /// @return A bool indicated whether the vault has been deployed already.
     function isVaultDeployed(Vault vault) external view returns (bool) {
-        // TODO: we can do address(vault).code.length instead of this assembly (https://docs.soliditylang.org/en/v0.8.7/cheatsheet.html)
-        uint256 size;
-        assembly {
-            size := extcodesize(vault)
-        }
-        return size > 0;
+        return address(vault).code.length > 0;
     }
 }
