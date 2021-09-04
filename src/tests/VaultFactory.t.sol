@@ -18,18 +18,15 @@ contract VaultFactoryTest is DSTestPlus {
     }
 
     function test_deploy_vault() public {
-        Vault vault = vaultFactory.deploy(underlying, address(0));
-        assertERC20Eq(vault.underlying(), underlying);
+        Vault vault = vaultFactory.deployVault(underlying);
+
         assertVaultEq(vaultFactory.getVaultFromUnderlying(underlying), vault);
+        assertTrue(vaultFactory.isVaultDeployed(vault));
+        assertERC20Eq(vault.underlying(), underlying);
     }
 
     function testFail_does_not_allow_duplicate_vaults() public {
         test_deploy_vault();
         test_deploy_vault();
-    }
-
-    function test_is_vault_deployed_function_correctly() public {
-        Vault vault = vaultFactory.deploy(underlying, address(0));
-        assertTrue(vaultFactory.isVaultDeployed(vault));
     }
 }

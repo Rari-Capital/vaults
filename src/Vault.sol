@@ -10,10 +10,10 @@ import {CErc20} from "./external/CErc20.sol";
 
 import "./tests/utils/DSTestPlus.sol";
 
-/// @title Fuse Vault/fvToken
+/// @title Fuse Vault (fvToken)
 /// @author Transmissions11 + JetJadeja
-/// @notice Yield bearing token that enables users to swap their
-/// underlying asset to instantly begin earning yield.
+/// @notice Yield bearing token that enables users to swap
+/// their underlying asset to instantly begin earning yield.
 contract Vault is ERC20, Auth {
     using SafeERC20 for ERC20;
 
