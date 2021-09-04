@@ -9,7 +9,7 @@ import {Vault} from "./Vault.sol";
 
 /// @title Fuse Vault Factory
 /// @author Transmissions11 + JetJadeja
-/// @notice Factory to deploy arbitrary Vault contracts to a deterministic address.
+/// @notice Factory to deploy arbitrary Vault contracts to deterministic addresses.
 contract VaultFactory {
     using Bytes32AddressLib for *;
 
