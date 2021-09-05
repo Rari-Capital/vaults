@@ -1,6 +1,6 @@
 # vaults
 
-Gas efficient yield aggregator to earn yield on any asset using Fuse.
+Gas efficient yield aggregator to earn interest on any asset using Fuse.
 
 ## Installation
 
