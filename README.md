@@ -39,7 +39,7 @@ make
 
 ## Developing
 
-**Below is a brief summary of a few common commands you may need to contribute to this project.** If you are not already comfortable with the DappTools suite, [read the dapptools docs to learn more.](https://github.com/dapphub/dapptools/tree/master/src/dapp)
+**Below is a brief summary of a few common commands you may need to contribute to this project.** If you are not already comfortable with the DappTools suite, [read the docs to learn more.](https://github.com/dapphub/dapptools/tree/master/src/dapp)
 
 ### Compiling
 
