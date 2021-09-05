@@ -39,7 +39,7 @@ make
 
 ## Developing
 
-**Below is a brief summary of a few common commands you may need to contribute to this project.** If you are not already comfortable with the DappTools suite, [read the docs to learn more.](https://github.com/dapphub/dapptools/tree/master/src/dapp)
+Read the [DappTools documentation](https://github.com/dapphub/dapptools/tree/master/src/dapp) to learn more.
 
 ### Compiling
 
@@ -79,7 +79,7 @@ Test the project and log full verbose info for everything.
 dapp debug
 ```
 
-Run a test using the HEVM interactive debugger.
+Run a test using the interactive debugger.
 
 ### Replaying
 
