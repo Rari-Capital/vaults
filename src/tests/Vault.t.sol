@@ -16,6 +16,7 @@ contract VaultsTest is DSTestPlus {
     MockERC20 underlying;
     CErc20 cToken;
     CErc20[] withdrawQueue;
+    RolesAuthority auth;
 
     function setUp() public {
         underlying = new MockERC20("Mock Token", "TKN", 18);
@@ -25,7 +26,7 @@ contract VaultsTest is DSTestPlus {
         // todo: can we make mockcerc20 just conform to cerc20 lol
         cToken = CErc20(address(new MockCERC20(underlying)));
 
-        RolesAuthority auth = new RolesAuthority();
+        auth = new RolesAuthority();
         vault.setAuthority(auth);
     }
 
@@ -291,4 +292,6 @@ contract VaultsTest is DSTestPlus {
 
         vault.withdrawUnderlying(amount);
     }
+
+    function setAuthParams() internal {}
 }
