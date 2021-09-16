@@ -172,7 +172,7 @@ contract Vault is ERC20, Auth {
         return (balanceOf[account] * exchangeRateCurrent()) / 10**decimals;
     }
 
-    /// @notice Returns the current fvToken exchange rate, scaled by 1e18.
+    /// @notice Returns the current fvToken exchange rate, scaled by the underlying decimals.
     function exchangeRateCurrent() public view returns (uint256) {
         // Store the vault's total underlying balance and fvToken supply.
         uint256 supply = totalSupply;

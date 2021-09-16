@@ -1,7 +1,7 @@
 {
   "name": "@rari-capital/vaults",
   "version": "1.0.0",
-  "description": "Gas efficient yield aggregator to earn yield on any asset using Fuse.",
+  "description": "Gas efficient yield aggregator to earn interest on any asset using Fuse.",
   "files": [
     "src/**/*.sol"
   ],
