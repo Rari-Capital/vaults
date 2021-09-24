@@ -1,6 +1,6 @@
 # vaults
 
-Gas optimized yield aggregator protoocol for earning interest on any asset.
+Gas optimized yield aggregator protocol for earning interest on any asset.
 
 ## Getting Started
 
