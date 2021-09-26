@@ -132,7 +132,7 @@ contract Vault is ERC20, Auth {
         // This can be done by multiplying the fvTokens by the exchange rate.
         uint256 underlyingAmount = (exchangeRate * amount) / 10**decimals;
 
-        // Burn inputed fvTokens.
+        // Burn inputted fvTokens.
         _burn(msg.sender, amount);
 
         // If the withdrawal amount is greater than the float, pull tokens from Fuse.
@@ -214,7 +214,7 @@ contract Vault is ERC20, Auth {
                 break;
             } else {
                 // If the local depositedPools array has not been set, set it now.
-                // This prevents us from doing a potentially unecessary sload at the start of the function.
+                // This prevents us from doing a potentially unnecessary sload at the start of the function.
                 //TODO: The depositedPools array is modified in the _withdrawFromUnderlying function. Copying it to memory once will lead to unexpected behavior.
                 if (_depositedPools.length == 0) _depositedPools = depositedPools;
 

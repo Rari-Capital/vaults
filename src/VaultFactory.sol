@@ -32,7 +32,7 @@ contract VaultFactory {
     /// @return vault The newly deployed Vault contract.
     function deployVault(ERC20 underlying) external returns (Vault vault) {
         // Use the create2 opcode to deploy a Vault contract.
-        // This will revert if a vault with this underlying has already been 
+        // This will revert if a vault with this underlying has already been
         // deployed, as the salt would be the same and we can't deploy with it twice.
         vault = new Vault{salt: address(underlying).toBytes32()}(underlying);
 
