@@ -13,15 +13,17 @@ contract VaultFactoryTest is DSTestPlus {
     MockERC20 underlying;
 
     function setUp() public {
-        underlying = new MockERC20("Mock Token", "TKN", 18);
         vaultFactory = new VaultFactory();
+        underlying = new MockERC20("Mock Token", "TKN", 18);
     }
 
     function test_deploy_vault() public {
         Vault vault = vaultFactory.deployVault(underlying);
 
         assertVaultEq(vaultFactory.getVaultFromUnderlying(underlying), vault);
+
         assertTrue(vaultFactory.isVaultDeployed(vault));
+
         assertERC20Eq(vault.underlying(), underlying);
     }
 
