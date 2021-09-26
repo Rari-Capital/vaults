@@ -9,12 +9,14 @@ import {MockWETH, MockCETH} from "./mocks/MockCETH.sol";
 
 import {Vault} from "../Vault.sol";
 import {CErc20} from "../external/CErc20.sol";
+import {RolesAuthority} from "solmate/auth/Authorities/RolesAuthority.sol";
 
 contract VaultsTest is DSTestPlus {
     Vault vault;
     MockERC20 underlying;
     CErc20 cToken;
     CErc20[] withdrawQueue;
+    RolesAuthority auth;
 
     function setUp() public {
         underlying = new MockERC20("Mock Token", "TKN", 18);
@@ -23,6 +25,9 @@ contract VaultsTest is DSTestPlus {
         vault.setFeeClaimer(address(1));
         // todo: can we make mockcerc20 just conform to cerc20 lol
         cToken = CErc20(address(new MockCERC20(underlying)));
+
+        auth = new RolesAuthority();
+        vault.setAuthority(auth);
     }
 
     // TODO: Use other test functions instead of copying and pasting test logic.
@@ -287,4 +292,6 @@ contract VaultsTest is DSTestPlus {
 
         vault.withdrawUnderlying(amount);
     }
+
+    function setAuthParams() internal {}
 }

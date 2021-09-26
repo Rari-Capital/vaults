@@ -172,7 +172,7 @@ contract Vault is ERC20, Auth {
         return (balanceOf[account] * exchangeRateCurrent()) / 10**decimals;
     }
 
-    /// @notice Returns the current fvToken exchange rate, scaled by 1e18.
+    /// @notice Returns the current fvToken exchange rate, scaled by the underlying decimals.
     function exchangeRateCurrent() public view returns (uint256) {
         // Store the vault's total underlying balance and fvToken supply.
         uint256 supply = totalSupply;
@@ -282,31 +282,31 @@ contract Vault is ERC20, Auth {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Set a new minimum harvest delay.
-    function setMinimumHarvestDelay(uint256 delay) public {
+    function setMinimumHarvestDelay(uint256 delay) public requiresAuth {
         minimumHarvestDelay = delay;
     }
 
     /// @notice Set a new fee percentage.
-    function setFeePercentage(uint256 newFeePercentage) external {
+    function setFeePercentage(uint256 newFeePercentage) external requiresAuth {
         feePercentage = newFeePercentage;
     }
 
     /// @notice Set a new fee claimer.
-    function setFeeClaimer(address newFeeClaimer) external {
+    function setFeeClaimer(address newFeeClaimer) external requiresAuth {
         feeClaimer = newFeeClaimer;
     }
 
     /// @notice Allows governance to set a new float size.
     /// @dev The new float size is a percentage mantissa scaled by 1e18.
     /// @param newTargetFloatPercent The new target float size.percent
-    function setTargetFloatPercent(uint256 newTargetFloatPercent) external {
+    function setTargetFloatPercent(uint256 newTargetFloatPercent) external requiresAuth {
         targetFloatPercent = newTargetFloatPercent;
     }
 
     /// @notice Allows the rebalancer to set a new withdrawal queue.
     /// @dev The queue should be in ascending order of priority.
     /// @param newQueue The updated queue (ordered in ascending order of priority).
-    function setWithdrawalQueue(CErc20[] memory newQueue) external {
+    function setWithdrawalQueue(CErc20[] memory newQueue) external requiresAuth {
         withdrawalQueue = newQueue;
     }
 
@@ -355,7 +355,7 @@ contract Vault is ERC20, Auth {
     /// @notice Trigger a harvest.
     /// This updates the vault's balance in the cToken contracts,
     /// take fees, and update the float.
-    function harvest() external {
+    function harvest() external requiresAuth {
         // TODO: (Maybe) split this into different internal functions to improve readability.
         // Ensure that the harvest does not occur too early.
         require(block.number >= nextHarvest());
@@ -425,7 +425,7 @@ contract Vault is ERC20, Auth {
     }
 
     /// @notice Deposit funds into a pool.
-    function enterPool(CErc20 pool, uint256 underlyingAmount) external {
+    function enterPool(CErc20 pool, uint256 underlyingAmount) external requiresAuth {
         // If we have not already deposited into the pool:
         if (!haveDepositedInto(pool)) {
             // Push the pool to the depositedPools array.
@@ -451,7 +451,7 @@ contract Vault is ERC20, Auth {
     }
 
     /// @notice Withdraw funds from a pool.
-    function exitPool(uint256 poolIndex, uint256 underlyingAmount) external {
+    function exitPool(uint256 poolIndex, uint256 underlyingAmount) external requiresAuth {
         // Get the pool from the depositedPools array.
         CErc20 pool = depositedPools[poolIndex];
 
