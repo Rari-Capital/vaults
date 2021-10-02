@@ -9,7 +9,7 @@ import {MockWETH, MockCETH} from "./mocks/MockCETH.sol";
 
 import {Vault} from "../Vault.sol";
 import {CErc20} from "../external/CErc20.sol";
-import {RolesAuthority} from "solmate/auth/Authorities/RolesAuthority.sol";
+import {RolesAuthority} from "solmate/auth/authorities/RolesAuthority.sol";
 
 contract VaultsTest is DSTestPlus {
     Vault vault;
