@@ -2,8 +2,7 @@
 pragma solidity 0.8.6;
 
 import {ERC20} from "solmate/erc20/ERC20.sol";
-
-import {Bytes32AddressLib} from "./libraries/Bytes32AddressLib.sol";
+import {Bytes32AddressLib} from "solmate/utils/Bytes32AddressLib.sol";
 
 import {Vault} from "./Vault.sol";
 
@@ -11,7 +10,8 @@ import {Vault} from "./Vault.sol";
 /// @author Transmissions11 + JetJadeja
 /// @notice Factory to deploy arbitrary Vault contracts to deterministic addresses.
 contract VaultFactory {
-    using Bytes32AddressLib for *;
+    using Bytes32AddressLib for address;
+    using Bytes32AddressLib for bytes32;
 
     /*///////////////////////////////////////////////////////////////
                                  EVENTS
@@ -34,7 +34,7 @@ contract VaultFactory {
         // Use the create2 opcode to deploy a Vault contract.
         // This will revert if a vault with this underlying has already been
         // deployed, as the salt would be the same and we can't deploy with it twice.
-        vault = new Vault{salt: address(underlying).toBytes32()}(underlying);
+        vault = new Vault{salt: address(underlying).fillLast12Bytes()}(underlying);
 
         emit VaultDeployed(underlying, vault);
     }
@@ -56,7 +56,7 @@ contract VaultFactory {
                 // Creator:
                 address(this),
                 // Salt:
-                address(underlying).toBytes32(),
+                address(underlying).fillLast12Bytes(),
                 // Bytecode hash:
                 keccak256(
                     abi.encodePacked(
@@ -70,7 +70,7 @@ contract VaultFactory {
         );
 
         // Convert the create2 hash into a Vault.
-        return Vault(payable(create2Hash.toAddress()));
+        return Vault(payable(create2Hash.fromLast20Bytes()));
     }
 
     /// @notice Returns if a vault at an address has been deployed yet.

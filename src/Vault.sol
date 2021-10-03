@@ -8,8 +8,6 @@ import {SafeERC20} from "solmate/erc20/SafeERC20.sol";
 import {WETH} from "./external/WETH.sol";
 import {CErc20} from "./external/CErc20.sol";
 
-import "./tests/utils/DSTestPlus.sol";
-
 /// @title Fuse Vault (fvToken)
 /// @author Transmissions11 + JetJadeja
 /// @notice Yield bearing token that enables users to swap
@@ -18,25 +16,31 @@ contract Vault is ERC20, Auth {
     using SafeERC20 for ERC20;
 
     /*///////////////////////////////////////////////////////////////
-                                CONSTANTS
+                                IMMUTABLES
     //////////////////////////////////////////////////////////////*/
 
     /// @notice The underlying token for the vault.
-    ERC20 public immutable underlying;
+    ERC20 public immutable UNDERLYING;
 
-    /// @notice Creates a new vault based on an underlying token.
-    /// @param _underlying An underlying ERC20 compliant token.
-    constructor(ERC20 _underlying)
+    /// @notice The decimal scale of the underlying token.
+    /// @dev Will be equal to 10 ** UNDERLYING.decimals(), meaning
+    /// if the token has 18 decimals UNDERLYING_SCALE will equal 1e18.
+    uint256 public immutable UNDERLYING_SCALE;
+
+    /// @notice Creates a new Vault that accepts a specific underlying token.
+    /// @param _UNDERLYING An underlying ERC20-compliant token.
+    constructor(ERC20 _UNDERLYING)
         ERC20(
             // ex: Fuse DAI Vault
-            string(abi.encodePacked("Fuse ", _underlying.name(), " Vault")),
+            string(abi.encodePacked("Fuse ", _UNDERLYING.name(), " Vault")),
             // ex: fvDAI
-            string(abi.encodePacked("fv", _underlying.symbol())),
+            string(abi.encodePacked("fv", _UNDERLYING.symbol())),
             // ex: 18
-            _underlying.decimals()
+            _UNDERLYING.decimals()
         )
     {
-        underlying = _underlying;
+        UNDERLYING = _UNDERLYING;
+        UNDERLYING_SCALE = 10**_UNDERLYING.decimals();
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -55,8 +59,8 @@ contract Vault is ERC20, Auth {
 
     /// @notice Emitted after a successful harvest.
     /// @param harvester The address of the account that initiated the harvest.
-    /// @param maxLockedProfit The maximum amount of locked profit accrued during the harvest.
-    event Harvest(address harvester, uint256 maxLockedProfit);
+    /// @param profit The amount of profit registered by the harvest.
+    event Harvest(address harvester, uint256 profit);
 
     /// @notice Emitted after the vault deposits into a cToken contract.
     /// @param pool The address of the cToken contract.
@@ -69,43 +73,102 @@ contract Vault is ERC20, Auth {
     event ExitPool(CErc20 pool, uint256 underlyingAmount);
 
     /*///////////////////////////////////////////////////////////////
-                             VAULT STORAGE
+                      WITHDRAWAL QUEUE CONFIGURATION
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice The minimum delay in blocks between each harvest.
-    uint256 public minimumHarvestDelay = 1661;
-
-    /// @notice An array of cTokens the Vault holds.
-    CErc20[] public depositedPools;
-
     /// @notice An ordered array of cTokens representing the withdrawal queue.
+    /// @dev The queue is processed in an ascending order, meaning the last index will be first withdrawn from.
     CErc20[] public withdrawalQueue;
+
+    /// @notice Set a new withdrawal queue.
+    /// @param newQueue The updated withdrawal queue.
+    function setWithdrawalQueue(CErc20[] calldata newQueue) external requiresAuth {
+        withdrawalQueue = newQueue;
+    }
+
+    /// @notice Push a single cToken to front of the withdrawal queue.
+    /// @param cToken The cToken to be inserted at the front of the withdrawal queue.
+    function pushToWithdrawalQueue(CErc20 cToken) external requiresAuth {
+        withdrawalQueue.push(cToken);
+    }
+
+    /// @notice Remove the cToken at the tip of the withdrawal queue.
+    /// @dev Be careful, another user could push a different cToken than
+    /// expected to the queue while a popFromWithdrawalQueue transaction is pending.
+    function popFromWithdrawalQueue() external requiresAuth {
+        withdrawalQueue.pop();
+    }
+
+    /*///////////////////////////////////////////////////////////////
+                            FEE CONFIGURATION
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice A percent value representing what percentage of profit accrued during harvest to collect as fees.
+    /// @dev A mantissa where 1e18 represents 100% and 0 represents 0%.
+    uint256 public feePercentage = 0.02e18;
+
+    /// @notice Address that will be credited fees as fvTokens during harvests.
+    address public feeClaimer;
+
+    /// @notice Set a new fee percentage.
+    function setFeePercentage(uint256 newFeePercentage) external requiresAuth {
+        feePercentage = newFeePercentage;
+    }
+
+    /// @notice Set a new fee claimer.
+    function setFeeClaimer(address newFeeClaimer) external requiresAuth {
+        feeClaimer = newFeeClaimer;
+    }
+
+    /*///////////////////////////////////////////////////////////////
+                        HARVEST CONFIGURATION
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice The expected delay in blocks between each harvest.
+    uint256 public expectedHarvestDelay = 1661;
+
+    /// @notice Set a new expected harvest delay.
+    /// @param newExpectedHarvestDelay The new expected delay in blocks between each harvest.
+    function setExpectedHarvestDelay(uint256 newExpectedHarvestDelay) external requiresAuth {
+        expectedHarvestDelay = newExpectedHarvestDelay;
+    }
+
+    /*///////////////////////////////////////////////////////////////
+                       TARGET FLOAT CONFIGURATION
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice A percent value representing part of the total underlying to keep in the vault.
+    /// @dev A mantissa where 1e18 represents 100% and 0 represents 0%.
+    uint256 public targetFloatPercent = 0.01e18;
+
+    /// @notice Allows governance to set a new float size.
+    /// @dev The new float size is a percentage mantissa scaled by 1e18.
+    /// @param newTargetFloatPercent The new target float size.percent
+    function setTargetFloatPercent(uint256 newTargetFloatPercent) external requiresAuth {
+        targetFloatPercent = newTargetFloatPercent;
+    }
+
+    /*///////////////////////////////////////////////////////////////
+                      VAULT ACCOUNTING STORAGE
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice The total amount of underlying held in deposits (calculated last harvest).
+    /// @dev Includes maxLockedProfit.
+    uint256 public totalDeposited;
+
+    /// @notice An array of cTokens the Vault has deposited into.
+    CErc20[] public depositedPools;
 
     /// @notice The most recent block where a harvest occurred.
     uint256 public lastHarvest;
 
-    /// @notice The max amount of "locked" profit accrued last harvest.
+    /// @notice The max amount of locked profit accrued last harvest.
     uint256 public maxLockedProfit;
-
-    /// @notice The total amount of underlying held in deposits (calculated last harvest).
-    /// @dev Includes `maxLockedProfit`.
-    uint256 public totalDeposited;
-
-    /// @notice A percent value representing part of the total underlying to keep in the vault.
-    /// @dev A mantissa where 1e18 represents 100% and 0e18 represents 0%.
-    uint256 public targetFloatPercent = 0.01e18;
 
     /// @notice A value set each harvest representing the fee set during the harvest.
     /// @dev This is used to calculate how many fvTokens to mint to the fee holder.
+    // TODO: Do we need this?
     uint256 public harvestFee;
-
-    /// @notice An address set during deployment that fees are sent to after being claimed.
-    // TODO: Come up with name that is better than "feeClaimer".
-    address public feeClaimer;
-
-    /// @notice A percent value value representing part of the total profit to take for fees.
-    /// @dev A mantissa where 1e18 represents 100% and 0e18 represents 0%.
-    uint256 public feePercentage = 0.02e18;
 
     /*///////////////////////////////////////////////////////////////
                          USER ACTION FUNCTIONS
@@ -117,7 +180,7 @@ contract Vault is ERC20, Auth {
         _mint(msg.sender, (underlyingAmount * 10**decimals) / exchangeRateCurrent());
 
         // Transfer in underlying tokens from the sender.
-        underlying.safeTransferFrom(msg.sender, address(this), underlyingAmount);
+        UNDERLYING.safeTransferFrom(msg.sender, address(this), underlyingAmount);
 
         emit Deposit(msg.sender, underlyingAmount);
     }
@@ -139,7 +202,7 @@ contract Vault is ERC20, Auth {
         if (underlyingAmount > getFloat()) pullIntoFloat(underlyingAmount);
 
         // Transfer tokens to the caller.
-        underlying.safeTransfer(msg.sender, underlyingAmount);
+        UNDERLYING.safeTransfer(msg.sender, underlyingAmount);
 
         emit Withdraw(msg.sender, underlyingAmount);
     }
@@ -158,7 +221,7 @@ contract Vault is ERC20, Auth {
         if (getFloat() < underlyingAmount) pullIntoFloat(underlyingAmount);
 
         // Transfer underlying tokens to the sender.
-        underlying.safeTransfer(msg.sender, underlyingAmount);
+        UNDERLYING.safeTransfer(msg.sender, underlyingAmount);
 
         emit Withdraw(msg.sender, underlyingAmount);
     }
@@ -251,7 +314,7 @@ contract Vault is ERC20, Auth {
                 pool.redeem(pool.balanceOf(address(this)));
 
                 // Deposit the vault's total ETH balance.
-                WETH(address(underlying)).deposit{value: address(this).balance}();
+                WETH(address(UNDERLYING)).deposit{value: address(this).balance}();
             } else {
                 // Redeem the vault's balance in cTokens in this pool.
                 pool.redeem(pool.balanceOf(address(this)));
@@ -271,43 +334,10 @@ contract Vault is ERC20, Auth {
         if (pool.isCEther()) {
             // Withdraw from the pool.
             pool.redeemUnderlying(underlyingAmount);
-            WETH(address(underlying)).deposit{value: underlyingAmount}();
+            WETH(address(UNDERLYING)).deposit{value: underlyingAmount}();
         } else {
             pool.redeemUnderlying(underlyingAmount);
         }
-    }
-
-    /*///////////////////////////////////////////////////////////////
-                            SETTER FUNCTIONS
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Set a new minimum harvest delay.
-    function setMinimumHarvestDelay(uint256 delay) public requiresAuth {
-        minimumHarvestDelay = delay;
-    }
-
-    /// @notice Set a new fee percentage.
-    function setFeePercentage(uint256 newFeePercentage) external requiresAuth {
-        feePercentage = newFeePercentage;
-    }
-
-    /// @notice Set a new fee claimer.
-    function setFeeClaimer(address newFeeClaimer) external requiresAuth {
-        feeClaimer = newFeeClaimer;
-    }
-
-    /// @notice Allows governance to set a new float size.
-    /// @dev The new float size is a percentage mantissa scaled by 1e18.
-    /// @param newTargetFloatPercent The new target float size.percent
-    function setTargetFloatPercent(uint256 newTargetFloatPercent) external requiresAuth {
-        targetFloatPercent = newTargetFloatPercent;
-    }
-
-    /// @notice Allows the rebalancer to set a new withdrawal queue.
-    /// @dev The queue should be in ascending order of priority.
-    /// @param newQueue The updated queue (ordered in ascending order of priority).
-    function setWithdrawalQueue(CErc20[] memory newQueue) external requiresAuth {
-        withdrawalQueue = newQueue;
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -317,7 +347,7 @@ contract Vault is ERC20, Auth {
     /// @notice Calculate the block number of the next harvest.
     function nextHarvest() public view returns (uint256) {
         if (lastHarvest == 0) return block.number;
-        return minimumHarvestDelay + lastHarvest;
+        return expectedHarvestDelay + lastHarvest;
     }
 
     /// @notice Calculate the profit from the last harvest that is still locked.
@@ -333,12 +363,12 @@ contract Vault is ERC20, Auth {
         return
             block.number >= nextHarvest()
                 ? 0
-                : _maxLockedProfit - (_maxLockedProfit * (block.number - lastHarvest)) / minimumHarvestDelay;
+                : _maxLockedProfit - (_maxLockedProfit * (block.number - lastHarvest)) / expectedHarvestDelay;
     }
 
     /// @notice Returns the amount of underlying tokens that idly sit in the vault.
     function getFloat() public view returns (uint256) {
-        return underlying.balanceOf(address(this));
+        return UNDERLYING.balanceOf(address(this));
     }
 
     /// @notice Calculate the total amount of free underlying tokens.
@@ -434,11 +464,11 @@ contract Vault is ERC20, Auth {
 
         // Identify whether the cToken
         if (pool.isCEther()) {
-            WETH(address(underlying)).withdraw(underlyingAmount);
+            WETH(address(UNDERLYING)).withdraw(underlyingAmount);
             pool.mint{value: underlyingAmount}();
         } else {
             // Approve the underlying to the pool for minting.
-            underlying.safeApprove(address(pool), underlyingAmount);
+            UNDERLYING.safeApprove(address(pool), underlyingAmount);
 
             // Deposit into the pool and receive cTokens.
             pool.mint(underlyingAmount);
