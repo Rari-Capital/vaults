@@ -216,7 +216,7 @@ contract VaultsTest is DSTestPlus {
 
         // Assert that the exchange rate is greater than 1.499 and less than or equal to 1.5.
         exchangeRate = vault.exchangeRateCurrent();
-        assertTrue(exchangeRate > 1.499e18 && exchangeRate <= 1.5e18);
+        assertTrue(exchangeRate > 1.49e18 && exchangeRate <= 1.5e18);
     }
 
     function test_harvest_fees_are_correctly_calculated() public {
