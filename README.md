@@ -1,6 +1,6 @@
 # vaults
 
-Gas optimized yield aggregator protocol for earning interest on any asset.
+Flexible, minimalist, and gas-optimized yield aggregator protocol for earning interest on any ERC20 token.
 
 ## Getting Started
 
