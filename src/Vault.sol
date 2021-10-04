@@ -49,7 +49,7 @@ contract Vault is ERC20, Auth {
         UNDERLYING = _UNDERLYING;
 
         // TODO: Once we upgrade to 0.8.9 we can use 10**decimals
-        /// instead which will save an external call and possibly SLOAD.
+        // instead which will save an external call and an SLOAD.
         BASE_UNIT = 10**_UNDERLYING.decimals();
     }
 
@@ -325,7 +325,7 @@ contract Vault is ERC20, Auth {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Trigger a harvest.
-    function harvest(CToken cToken) external requiresAuth {
+    function harvest(CToken cToken) external {
         // If a non authorized cToken could be harvested a malicious user could
         // construct a fake cToken that over-reports holdings to manipulate share price.
         require(canBeHarvested[cToken], "UNAUTHORIZED_CTOKEN");
