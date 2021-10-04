@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.8.6;
 
-interface CErc20 {
+interface CToken {
     function isCEther() external view returns (bool);
 
     function balanceOf(address owner) external view returns (uint256);

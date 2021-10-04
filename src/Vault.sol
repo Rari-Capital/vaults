@@ -4,9 +4,9 @@ pragma solidity 0.8.6;
 import {ERC20} from "solmate/erc20/ERC20.sol";
 import {Auth} from "solmate/auth/Auth.sol";
 import {SafeERC20} from "solmate/erc20/SafeERC20.sol";
+import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 
-import {WETH} from "./external/WETH.sol";
-import {CErc20} from "./external/CErc20.sol";
+import {CToken} from "./external/CToken.sol";
 
 /// @title Fuse Vault (fvToken)
 /// @author Transmissions11 + JetJadeja
@@ -14,6 +14,7 @@ import {CErc20} from "./external/CErc20.sol";
 /// their underlying asset to instantly begin earning yield.
 contract Vault is ERC20, Auth {
     using SafeERC20 for ERC20;
+    using FixedPointMathLib for uint256;
 
     /*///////////////////////////////////////////////////////////////
                                 IMMUTABLES
@@ -22,10 +23,10 @@ contract Vault is ERC20, Auth {
     /// @notice The underlying token for the vault.
     ERC20 public immutable UNDERLYING;
 
-    /// @notice The decimal scale of the underlying token.
-    /// @dev Will be equal to 10 ** UNDERLYING.decimals(), meaning
-    /// if the token has 18 decimals UNDERLYING_SCALE will equal 1e18.
-    uint256 public immutable UNDERLYING_SCALE;
+    /// @notice One base unit of the underlying, and hence fvToken.
+    /// @dev Will be equal to 10 ** UNDERLYING.decimals() which means
+    /// if the token has 18 decimals ONE_WHOLE_UNIT will equal 10**18.
+    uint256 public immutable BASE_UNIT;
 
     /// @notice Creates a new Vault that accepts a specific underlying token.
     /// @param _UNDERLYING An underlying ERC20-compliant token.
@@ -40,7 +41,10 @@ contract Vault is ERC20, Auth {
         )
     {
         UNDERLYING = _UNDERLYING;
-        UNDERLYING_SCALE = 10**_UNDERLYING.decimals();
+
+        // TODO: Once we upgrade to 0.8.9 we can use 10**decimals
+        /// instead which will save an external call and possibly SLOAD.
+        BASE_UNIT = 10**_UNDERLYING.decimals();
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -58,19 +62,58 @@ contract Vault is ERC20, Auth {
     event Withdraw(address user, uint256 underlyingAmount);
 
     /// @notice Emitted after a successful harvest.
-    /// @param harvester The address of the account that initiated the harvest.
-    /// @param profit The amount of profit registered by the harvest.
-    event Harvest(address harvester, uint256 profit);
+    /// @param cToken The cToken harvested.
+    /// @param lockedProfit The amount of locked profit after the harvest.
+    event Harvest(CToken cToken, uint256 lockedProfit);
 
     /// @notice Emitted after the vault deposits into a cToken contract.
-    /// @param pool The address of the cToken contract.
+    /// @param cToken The address of the cToken contract that was minted.
     /// @param underlyingAmount The amount of underlying tokens that were deposited.
-    event EnterPool(CErc20 pool, uint256 underlyingAmount);
+    event EnterPool(CToken cToken, uint256 underlyingAmount);
 
     /// @notice Emitted after the vault withdraws funds from a cToken contract.
-    /// @param pool The address of the cToken contract.
+    /// @param cToken The address of the cToken contract that was redeemed.
     /// @param underlyingAmount The amount of underlying tokens that were withdrawn.
-    event ExitPool(CErc20 pool, uint256 underlyingAmount);
+    event ExitPool(CToken cToken, uint256 underlyingAmount);
+
+    /*///////////////////////////////////////////////////////////////
+                         POOL ACCOUNTING STORAGE
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Maps cTokens to a boolean representing if harvest can be called with them.
+    mapping(CToken => bool) public canBeHarvested;
+
+    /// @notice Maps cTokens to the amount of underlying they were worth last harvest.
+    mapping(CToken => uint256) public balanceOfUnderlyingLastHarvest;
+
+    /// @notice The total amount of underlying held in deposits (calculated last harvest).
+    /// @dev Includes maxLockedProfit, must be correctly subtracted to compute "available" holdings.
+    uint256 public totalDeposited;
+
+    /// @notice The amount of locked profit at the time of the last harvest.
+    /// @dev Does not change in-between harvests, instead unlocked profit is computed and subtracted from on the fly.
+    uint256 public maxLockedProfit;
+
+    /// @notice The most recent timestamp where a harvest occurred.
+    uint256 public lastHarvestTimestamp;
+
+    /*///////////////////////////////////////////////////////////////
+                        HARVEST CONFIGURATION
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice The approximate period in seconds over which locked profits are unlocked.
+    /// @dev Cannot be 0 as it opens harvests to sandwich attacks.
+    uint256 public profitUnlockDelay = 6 hours;
+
+    /// @notice Set a new profit unlock delay delay.
+    /// @param newProfitUnlockDelay The new profit unlock delay.
+    function setProfitUnlockDelay(uint256 newProfitUnlockDelay) external requiresAuth {
+        // An unlock delay of 0 makes harvests vulnerable to sandwich attacks.
+        require(profitUnlockDelay > 0, "DELAY_TOO_LOW");
+
+        // Update the profit unlock delay.
+        profitUnlockDelay = newProfitUnlockDelay;
+    }
 
     /*///////////////////////////////////////////////////////////////
                       WITHDRAWAL QUEUE CONFIGURATION
@@ -78,17 +121,17 @@ contract Vault is ERC20, Auth {
 
     /// @notice An ordered array of cTokens representing the withdrawal queue.
     /// @dev The queue is processed in an ascending order, meaning the last index will be first withdrawn from.
-    CErc20[] public withdrawalQueue;
+    CToken[] public withdrawalQueue;
 
     /// @notice Set a new withdrawal queue.
     /// @param newQueue The updated withdrawal queue.
-    function setWithdrawalQueue(CErc20[] calldata newQueue) external requiresAuth {
+    function setWithdrawalQueue(CToken[] calldata newQueue) external requiresAuth {
         withdrawalQueue = newQueue;
     }
 
     /// @notice Push a single cToken to front of the withdrawal queue.
     /// @param cToken The cToken to be inserted at the front of the withdrawal queue.
-    function pushToWithdrawalQueue(CErc20 cToken) external requiresAuth {
+    function pushToWithdrawalQueue(CToken cToken) external requiresAuth {
         withdrawalQueue.push(cToken);
     }
 
@@ -99,38 +142,12 @@ contract Vault is ERC20, Auth {
         withdrawalQueue.pop();
     }
 
-    /*///////////////////////////////////////////////////////////////
-                            FEE CONFIGURATION
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice A percent value representing what percentage of profit accrued during harvest to collect as fees.
-    /// @dev A mantissa where 1e18 represents 100% and 0 represents 0%.
-    uint256 public feePercentage = 0.02e18;
-
-    /// @notice Address that will be credited fees as fvTokens during harvests.
-    address public feeClaimer;
-
-    /// @notice Set a new fee percentage.
-    function setFeePercentage(uint256 newFeePercentage) external requiresAuth {
-        feePercentage = newFeePercentage;
-    }
-
-    /// @notice Set a new fee claimer.
-    function setFeeClaimer(address newFeeClaimer) external requiresAuth {
-        feeClaimer = newFeeClaimer;
-    }
-
-    /*///////////////////////////////////////////////////////////////
-                        HARVEST CONFIGURATION
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice The expected delay in blocks between each harvest.
-    uint256 public expectedHarvestDelay = 1661;
-
-    /// @notice Set a new expected harvest delay.
-    /// @param newExpectedHarvestDelay The new expected delay in blocks between each harvest.
-    function setExpectedHarvestDelay(uint256 newExpectedHarvestDelay) external requiresAuth {
-        expectedHarvestDelay = newExpectedHarvestDelay;
+    /// @notice Swap the cToken at the tip of the queue with one at a specific index and delete the index.
+    /// @dev The index specified must be less than current length of the withdrawal queue array.
+    function swapTipAndPopFromWithdrawalQueue(uint256 index) external requiresAuth {
+        // TODO: Cache withdrawalQueue to optimize extra SLOADs?
+        require(index < withdrawalQueue.length, "INDEX_OUT_OF_BOUNDS");
+        withdrawalQueue[index] = withdrawalQueue[withdrawalQueue.length - 1];
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -145,39 +162,21 @@ contract Vault is ERC20, Auth {
     /// @dev The new float size is a percentage mantissa scaled by 1e18.
     /// @param newTargetFloatPercent The new target float size.percent
     function setTargetFloatPercent(uint256 newTargetFloatPercent) external requiresAuth {
+        // A target float percentage over 100% doesn't make sense.
+        require(targetFloatPercent <= 1e18, "TARGET_TOO_HIGH");
+
+        // Update the target float percentage.
         targetFloatPercent = newTargetFloatPercent;
     }
 
     /*///////////////////////////////////////////////////////////////
-                      VAULT ACCOUNTING STORAGE
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice The total amount of underlying held in deposits (calculated last harvest).
-    /// @dev Includes maxLockedProfit.
-    uint256 public totalDeposited;
-
-    /// @notice An array of cTokens the Vault has deposited into.
-    CErc20[] public depositedPools;
-
-    /// @notice The most recent block where a harvest occurred.
-    uint256 public lastHarvest;
-
-    /// @notice The max amount of locked profit accrued last harvest.
-    uint256 public maxLockedProfit;
-
-    /// @notice A value set each harvest representing the fee set during the harvest.
-    /// @dev This is used to calculate how many fvTokens to mint to the fee holder.
-    // TODO: Do we need this?
-    uint256 public harvestFee;
-
-    /*///////////////////////////////////////////////////////////////
-                         USER ACTION FUNCTIONS
+                        DEPOSIT/WITHDRAWAL LOGIC
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Deposit the vault's underlying token to mint fvTokens.
     /// @param underlyingAmount The amount of the underlying token to deposit.
     function deposit(uint256 underlyingAmount) external {
-        _mint(msg.sender, (underlyingAmount * 10**decimals) / exchangeRateCurrent());
+        _mint(msg.sender, underlyingAmount.fdiv(exchangeRate(), BASE_UNIT));
 
         // Transfer in underlying tokens from the sender.
         UNDERLYING.safeTransferFrom(msg.sender, address(this), underlyingAmount);
@@ -185,316 +184,225 @@ contract Vault is ERC20, Auth {
         emit Deposit(msg.sender, underlyingAmount);
     }
 
-    /// @notice Burns fvTokens and sends underlying tokens to the caller.
-    /// @param amount The amount of fvTokens to redeem for underlying tokens.
-    function withdraw(uint256 amount) external {
-        // Query the vault's exchange rate.
-        uint256 exchangeRate = exchangeRateCurrent();
+    /// @notice Withdraws a specific amount of underlying tokens by burning the equivalent amount of fvTokens.
+    /// @param underlyingAmount The amount of underlying tokens to withdraw.
+    function withdraw(uint256 underlyingAmount) external {
+        // Convert underlying tokens to fvTokens and then burn them.
+        // This is be done by dividing the amount of underlying tokens by the exchange rate.
+        _burn(msg.sender, underlyingAmount.fdiv(exchangeRate(), BASE_UNIT));
 
+        emit Withdraw(msg.sender, underlyingAmount);
+
+        // If the amount is greater than the float, redeem some cTokens.
+        if (underlyingAmount > getFloat()) pullIntoFloat(underlyingAmount);
+
+        // Transfer underlying tokens to the caller.
+        UNDERLYING.safeTransfer(msg.sender, underlyingAmount);
+    }
+
+    /// @notice Burns a specific amount of fvTokens and transfers the equivalent amount of underlying tokens.
+    /// @param amount The amount of fvTokens to redeem for underlying tokens.
+    function redeem(uint256 amount) external {
         // Convert the amount of fvTokens to underlying tokens.
-        // This can be done by multiplying the fvTokens by the exchange rate.
-        uint256 underlyingAmount = (exchangeRate * amount) / 10**decimals;
+        // This is be done by multiplying the amount of fvTokens by the exchange rate.
+        uint256 underlyingAmount = amount.fmul(exchangeRate(), BASE_UNIT);
 
         // Burn inputted fvTokens.
         _burn(msg.sender, amount);
 
-        // If the withdrawal amount is greater than the float, pull tokens from Fuse.
+        emit Withdraw(msg.sender, underlyingAmount);
+
+        // If the amount is greater than the float, redeem some cTokens.
         if (underlyingAmount > getFloat()) pullIntoFloat(underlyingAmount);
 
-        // Transfer tokens to the caller.
+        // Transfer underlying tokens to the caller.
         UNDERLYING.safeTransfer(msg.sender, underlyingAmount);
-
-        emit Withdraw(msg.sender, underlyingAmount);
-    }
-
-    /// @notice Burns fvTokens and sends underlying tokens to the caller.
-    /// @param underlyingAmount The amount of underlying tokens to withdraw.
-    function withdrawUnderlying(uint256 underlyingAmount) external {
-        // Query the vault's exchange rate.
-        uint256 exchangeRate = exchangeRateCurrent();
-
-        // Convert underlying tokens to fvTokens and then burn them.
-        // This can be done by multiplying the underlying tokens by the exchange rate.
-        _burn(msg.sender, (exchangeRate * underlyingAmount) / 10**decimals);
-
-        // If the withdrawal amount is greater than the float, pull tokens from Fuse.
-        if (getFloat() < underlyingAmount) pullIntoFloat(underlyingAmount);
-
-        // Transfer underlying tokens to the sender.
-        UNDERLYING.safeTransfer(msg.sender, underlyingAmount);
-
-        emit Withdraw(msg.sender, underlyingAmount);
     }
 
     /*///////////////////////////////////////////////////////////////
-                         SHARE PRICE FUNCTIONS
+                        VAULT ACCOUNTING LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Returns a user's balance in underlying tokens.
-    function balanceOfUnderlying(address account) external view returns (uint256) {
-        return (balanceOf[account] * exchangeRateCurrent()) / 10**decimals;
+    /// @notice Returns a user's vault balance in underlying tokens.
+    /// @return The user's vault balance in underlying tokens.
+    function underlyingBalanceOf(address account) external view returns (uint256) {
+        return balanceOf[account].fmul(exchangeRate(), BASE_UNIT);
     }
 
-    /// @notice Returns the current fvToken exchange rate, scaled by the underlying decimals.
-    function exchangeRateCurrent() public view returns (uint256) {
-        // Store the vault's total underlying balance and fvToken supply.
-        uint256 supply = totalSupply;
-        uint256 balance = calculateTotalFreeUnderlying();
-
+    /// @notice Returns the amount of underlying tokens an fvToken can be redeemed for.
+    /// @return The amount of underlying tokens an fvToken can be redeemed for.
+    function exchangeRate() public view returns (uint256) {
         // If the supply or balance is zero, return an exchange rate of 1.
-        if (supply == 0 || balance == 0) return 10**decimals;
+        if (totalSupply == 0) return BASE_UNIT;
 
+        // TODO: Optimize double SLOAD of totalSupply here?
         // Calculate the exchange rate by diving the underlying balance by the fvToken supply.
-        return (balance * 10**decimals) / supply;
+        return totalFreeDeposited().fdiv(totalSupply, BASE_UNIT);
+    }
+
+    /// @notice Calculate the total amount of free underlying tokens the Vault currently holds for depositors.
+    /// @return The total amount of free underlying tokens the Vault currently holds for depositors.
+    function totalFreeDeposited() public view returns (uint256) {
+        // Subtract locked profit from the amount of total deposited tokens and add the float value.
+        // We subtract the locked profit from the totalDeposited because maxLockedProfit is baked into it.
+        return getFloat() + (totalDeposited - lockedProfit());
+    }
+
+    /// @notice Calculate the current amount of locked profit.
+    /// @return The current amount of locked profit.
+    function lockedProfit() public view returns (uint256) {
+        // TODO: Cache SLOADs?
+        return
+            block.timestamp >= lastHarvestTimestamp + profitUnlockDelay
+                ? 0 // If profit unlock delay has passed, there is no locked profit.
+                : maxLockedProfit - (maxLockedProfit * (block.timestamp - lastHarvestTimestamp)) / profitUnlockDelay;
+    }
+
+    /// @notice Returns the amount of underlying tokens that idly sit in the Vault.
+    /// @return The amount of underlying tokens that sit idly in the Vault.
+    function getFloat() public view returns (uint256) {
+        return UNDERLYING.balanceOf(address(this));
+    }
+
+    /*///////////////////////////////////////////////////////////////
+                           HARVEST LOGIC
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Trigger a harvest.
+    function harvest(CToken cToken) external requiresAuth {
+        // If a non authorized cToken could be harvested a malicious user could
+        // construct a fake cToken that over-reports holdings to manipulate share price.
+        require(canBeHarvested[cToken], "CTOKEN_CANNOT_BE_HARVESTED");
+
+        uint256 balanceLastHarvest = balanceOfUnderlyingLastHarvest[cToken];
+        uint256 balanceThisHarvest = cToken.balanceOfUnderlying(address(this));
+
+        // Increase/decrease totalDeposited based on the computed profit/loss.
+        // We cannot wrap the delta calculation in parenthesis as it would underflow if the cToken registers a loss.
+        totalDeposited = totalDeposited + balanceThisHarvest - balanceLastHarvest;
+
+        // Update maximum locked profit to include our balance gained.
+        maxLockedProfit = lockedProfit() +
+            // Compute our profit (losses are instantly accounted for in totalDeposited)
+            balanceThisHarvest >
+            balanceLastHarvest
+            ? balanceThisHarvest - balanceLastHarvest // Difference from last harvest.
+            : 0; // If the cToken registered a net loss we don't have any new profit to lock.
+
+        // Set the lastHarvestTimestamp to the current timestamp, as a harvest was just completed.
+        lastHarvestTimestamp = block.number;
+
+        // TODO: Cache SLOAD here?
+        emit Harvest(cToken, maxLockedProfit);
+    }
+
+    /*///////////////////////////////////////////////////////////////
+                            REBALANCE LOGIC
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Deposit funds into a cToken.
+    function enterPool(CToken cToken, uint256 underlyingAmount) external requiresAuth {
+        // Enable harvesting the cToken.
+        canBeHarvested[cToken] = true;
+
+        emit EnterPool(cToken, underlyingAmount);
+
+        // Exit early if we're not actually depositing anything.
+        if (underlyingAmount == 0) return;
+
+        // Approve the underlying to the pool for minting.
+        UNDERLYING.safeApprove(address(cToken), underlyingAmount);
+
+        // Deposit into the pool and receive cTokens.
+        cToken.mint(underlyingAmount);
+
+        // Enable harvesting the cToken if it has not been enabled already.
+        if (!canBeHarvested[cToken]) canBeHarvested[cToken] = true;
+
+        // Without this whenever harvest was next called on this
+        // cToken the newly deposited amount would count as profit.
+        balanceOfUnderlyingLastHarvest[cToken] += underlyingAmount;
+
+        // Increase the totalDeposited amount to account for the minted cTokens.
+        totalDeposited += underlyingAmount;
+    }
+
+    /// @notice Withdraw funds from a pool.
+    /// @dev Exiting a pool will not remove it from the withdrawal queue!
+    function exitPool(CToken cToken, uint256 underlyingAmount) external requiresAuth {
+        // Decrease the totalDeposited amount to account for the redeemed cTokens.
+        totalDeposited -= underlyingAmount;
+
+        // Without this whenever harvest was next called on this
+        // cToken the withdrawn amount would be count as a loss.
+        balanceOfUnderlyingLastHarvest[cToken] -= underlyingAmount;
+
+        emit ExitPool(cToken, underlyingAmount);
+
+        // Redeem the right amount of cTokens to get us underlyingAmount.
+        cToken.redeemUnderlying(underlyingAmount);
     }
 
     /*///////////////////////////////////////////////////////////////
                          WITHDRAWAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev Withdraw underlying tokens from pools in the withdrawal queue.
+    /// @dev Withdraw underlying tokens from cTokens in the withdrawal queue.
     /// @param underlyingAmount The amount of underlying tokens to pull into float.
     function pullIntoFloat(uint256 underlyingAmount) internal {
-        // Store the withdrawal queue array in memory.
-        CErc20[] memory _withdrawalQueue = withdrawalQueue;
+        // TODO: Cache variables to optimize SLOADs.
 
-        // Allocate space in memory for the deposited pools array.
-        CErc20[] memory _depositedPools;
+        uint256 amountLeftToPull = underlyingAmount;
 
-        // Iterate through the withdrawal queue.
-        //  We iterate in reverse as it the withdrawalQueue is sorted from the least liquid pools to most liquid pools.
-        for (uint256 i = _withdrawalQueue.length; i > 0; i--) {
-            CErc20 cToken = _withdrawalQueue[i - 1];
+        // We iterate in reverse as the withdrawalQueue is sorted in ascending order.
+        for (uint256 i = withdrawalQueue.length; i > 0; i--) {
+            CToken cToken = withdrawalQueue[i - 1];
 
-            // Calculate the vault's balance in the cToken contract.
+            // Calculate the Vault's balance in the cToken contract.
             uint256 balance = cToken.balanceOfUnderlying(address(this));
 
-            // If the balance is greater than the amount to pull, pull the full amount.
-            if (balance > underlyingAmount) {
-                // We can just pass 0 as the poolIndex as it won't be used in the function.
-                _withdrawFromPool(0, underlyingAmount);
+            if (amountLeftToPull > balance) {
+                // If this cToken's balance isn't enough to cover the amount
+                // we need to pull, withdraw everything we can and keep looping.
+                cToken.redeemUnderlying(balance);
+
+                emit ExitPool(cToken, balance);
+
+                // Without this whenever harvest was next called on this
+                // cToken the withdrawn amount would be count as a loss.
+                balanceOfUnderlyingLastHarvest[cToken] -= balance;
+
+                // We've depleted this cToken, remove it from the queue.
+                // TODO: Modifying the array while we're looping over it might break stuff?
+                withdrawalQueue.pop();
+
+                amountLeftToPull -= balance;
+            } else {
+                // This cToken has enough to cover the amount we need to pull
+                // we need to pull, withdraw only as much as we need and break.
+                cToken.redeemUnderlying(amountLeftToPull);
+
+                emit ExitPool(cToken, amountLeftToPull);
+
+                // Without this whenever harvest was next called on this
+                // cToken the withdrawn amount would be count as a loss.
+                balanceOfUnderlyingLastHarvest[cToken] -= amountLeftToPull;
+
+                // If we depleted the cToken, remove it from the queue.
+                // TODO: Modifying the array while we're looping over it might break stuff?
+                if (amountLeftToPull == balance) withdrawalQueue.pop();
+
+                amountLeftToPull = 0;
 
                 break;
-            } else {
-                // If the local depositedPools array has not been set, set it now.
-                // This prevents us from doing a potentially unnecessary sload at the start of the function.
-                //TODO: The depositedPools array is modified in the _withdrawFromUnderlying function. Copying it to memory once will lead to unexpected behavior.
-                if (_depositedPools.length == 0) _depositedPools = depositedPools;
-
-                // Iterate over the depositedPools array, finding the cToken index in the array as it will be used in the _withdrawFromPool function.
-                for (uint256 j = 0; j < _depositedPools.length; j++) {
-                    if (_depositedPools[j] == cToken) {
-                        _withdrawFromPool(j, type(uint256).max);
-                    }
-                }
             }
         }
 
-        // Update the totalDeposited value to account for the new amount.
+        // If even after looping over the whole queue there is not enough to pull
+        // the underlyingAmount, we just revert and let the user know via an error.
+        require(amountLeftToPull == 0, "NOT_ENOUGH_UNDERLYING_IN_QUEUE");
+
+        // Decrease the totalDeposited amount to account for the redeemed cTokens.
         totalDeposited -= underlyingAmount;
     }
-
-    /// @dev Withdraw underlying tokens from a pool.
-    /// @param poolIndex The index of the pool in the depositedPools array.
-    /// @param underlyingAmount The underlying amount to withdraw from the pool.
-    /// If this value is type(uint256).max, the vault will withdraw the entire token balance.
-    function _withdrawFromPool(uint256 poolIndex, uint256 underlyingAmount) internal {
-        // Store the pool in memory.
-        CErc20 pool = depositedPools[poolIndex];
-
-        // If the input amount is equal to the max uint value, withdraw the entire balance:
-        if (underlyingAmount == type(uint256).max) {
-            // TODO: Optimizations:
-            // - Store depositedPools in memory?
-            // - Store length on stack?
-
-            // Redeem all tokens from the pool.
-            if (pool.isCEther()) {
-                // Redeem the vault's balance in cTokens in this pool.
-                pool.redeem(pool.balanceOf(address(this)));
-
-                // Deposit the vault's total ETH balance.
-                WETH(address(UNDERLYING)).deposit{value: address(this).balance}();
-            } else {
-                // Redeem the vault's balance in cTokens in this pool.
-                pool.redeem(pool.balanceOf(address(this)));
-            }
-
-            CErc20[] memory _depositedPools = depositedPools;
-
-            // Remove the pool we're withdrawing from.
-            depositedPools[poolIndex] = _depositedPools[_depositedPools.length - 1];
-            depositedPools.pop();
-
-            // Jump to the end of the function.
-            return;
-        }
-
-        // If the vault is not redeeming its entire balance:
-        if (pool.isCEther()) {
-            // Withdraw from the pool.
-            pool.redeemUnderlying(underlyingAmount);
-            WETH(address(UNDERLYING)).deposit{value: underlyingAmount}();
-        } else {
-            pool.redeemUnderlying(underlyingAmount);
-        }
-    }
-
-    /*///////////////////////////////////////////////////////////////
-                           CALCULATION FUNCTIONS
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Calculate the block number of the next harvest.
-    function nextHarvest() public view returns (uint256) {
-        if (lastHarvest == 0) return block.number;
-        return expectedHarvestDelay + lastHarvest;
-    }
-
-    /// @notice Calculate the profit from the last harvest that is still locked.
-    function calculateLockedProfit() public view returns (uint256) {
-        // If the harvest has completed, there is no locked profit.
-        // Otherwise, we can subtract unlocked profit from the maximum amount of locked profit.
-        // Learn more about how we calculate unlocked profit here: https://stackoverflow.com/a/29167238.
-
-        // Store maxLockedProfit in memory to prevent extra storage loads.
-        uint256 _maxLockedProfit = maxLockedProfit;
-
-        // Calculate the vault's current locked profit.
-        return
-            block.number >= nextHarvest()
-                ? 0
-                : _maxLockedProfit - (_maxLockedProfit * (block.number - lastHarvest)) / expectedHarvestDelay;
-    }
-
-    /// @notice Returns the amount of underlying tokens that idly sit in the vault.
-    function getFloat() public view returns (uint256) {
-        return UNDERLYING.balanceOf(address(this));
-    }
-
-    /// @notice Calculate the total amount of free underlying tokens.
-    function calculateTotalFreeUnderlying() public view returns (uint256) {
-        // Subtract locked profit from the amount of total deposited tokens and add the float value.
-        // We subtract the locked profit from the total deposited tokens because it is included in totalDeposited.
-        return getFloat() + totalDeposited - calculateLockedProfit();
-    }
-
-    /*///////////////////////////////////////////////////////////////
-                           HARVEST FUNCTIONS
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Trigger a harvest.
-    /// This updates the vault's balance in the cToken contracts,
-    /// take fees, and update the float.
-    function harvest() external requiresAuth {
-        // TODO: (Maybe) split this into different internal functions to improve readability.
-        // Ensure that the harvest does not occur too early.
-        require(block.number >= nextHarvest());
-
-        // Calculate an updated float value based on the amount of profit during the last harvest.
-        uint256 updatedFloat = (totalDeposited * targetFloatPercent) / 1e18;
-        if (updatedFloat > getFloat()) pullIntoFloat(updatedFloat - getFloat());
-
-        // Transfer fvTokens (representing fees) to the fee holder
-        uint256 _fee = harvestFee;
-        if (_fee > 0) {
-            _mint(feeClaimer, (_fee * 10**decimals) / exchangeRateCurrent());
-        }
-
-        // Set the lastHarvest to this block, as the harvest has just been triggered.
-        lastHarvest = block.number;
-
-        // Calculate the profit made during the last harvest period and the updated deposited balance.
-        (uint256 profit, uint256 depositBalance) = calculateHarvestProfit();
-
-        // Update the totalDeposited amount to use the freshly computed underlying amount.
-        totalDeposited = depositBalance;
-
-        // Set the new maximum locked profit.
-        maxLockedProfit = profit;
-
-        // Calculate the fee that should be taken during the next harvest.
-        harvestFee = (profit * feePercentage) / 1e18;
-
-        emit Harvest(msg.sender, maxLockedProfit);
-    }
-
-    /// @dev Calculate the profit made during the last harvest and the updated deposit balance.
-    function calculateHarvestProfit() internal returns (uint256 profit, uint256 depositBalance) {
-        // Loop over each pool to add to the total balance.
-        for (uint256 i = 0; i < depositedPools.length; i++) {
-            CErc20 pool = depositedPools[i];
-
-            // Add this pool's balance to the total.
-            depositBalance += pool.balanceOfUnderlying(address(this));
-        }
-
-        // Subtract the current deposited balance from the one set during the last harvest.
-        profit = depositBalance - totalDeposited;
-    }
-
-    /*///////////////////////////////////////////////////////////////
-                           REBALANCE FUNCTIONS
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Returns a boolean indicating whether the vault has deposited into a certain pool.
-    function haveDepositedInto(CErc20 pool) internal view returns (bool) {
-        // Store depositedPools in memory.
-        CErc20[] memory _depositedPools = depositedPools;
-
-        // Iterate over deposited pools.
-        for (uint256 i = 0; i < _depositedPools.length; i++) {
-            // If we find the pool that we're entering:
-            if (_depositedPools[i] == pool) {
-                // Exit the function early.
-                return true;
-            }
-        }
-
-        // If the pool is not found in the array, return false.
-        return false;
-    }
-
-    /// @notice Deposit funds into a pool.
-    function enterPool(CErc20 pool, uint256 underlyingAmount) external requiresAuth {
-        // If we have not already deposited into the pool:
-        if (!haveDepositedInto(pool)) {
-            // Push the pool to the depositedPools array.
-            depositedPools.push(pool);
-        }
-
-        // Identify whether the cToken
-        if (pool.isCEther()) {
-            WETH(address(UNDERLYING)).withdraw(underlyingAmount);
-            pool.mint{value: underlyingAmount}();
-        } else {
-            // Approve the underlying to the pool for minting.
-            UNDERLYING.safeApprove(address(pool), underlyingAmount);
-
-            // Deposit into the pool and receive cTokens.
-            pool.mint(underlyingAmount);
-        }
-
-        // Increase the totalDeposited amount to account for new deposits
-        totalDeposited += underlyingAmount;
-
-        emit EnterPool(pool, underlyingAmount);
-    }
-
-    /// @notice Withdraw funds from a pool.
-    function exitPool(uint256 poolIndex, uint256 underlyingAmount) external requiresAuth {
-        // Get the pool from the depositedPools array.
-        CErc20 pool = depositedPools[poolIndex];
-
-        _withdrawFromPool(poolIndex, underlyingAmount);
-
-        uint256 balance = pool.balanceOfUnderlying(address(this));
-
-        if (underlyingAmount == type(uint256).max)
-            // Reduce totalDeposited by the underlying amount received.
-            totalDeposited -= balance;
-
-        emit ExitPool(pool, underlyingAmount);
-    }
-
-    receive() external payable {}
 }

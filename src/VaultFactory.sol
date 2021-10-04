@@ -69,8 +69,8 @@ contract VaultFactory {
             )
         );
 
-        // Convert the create2 hash into a Vault.
-        return Vault(payable(create2Hash.fromLast20Bytes()));
+        // Convert the create2 hash into a Vault address.
+        return Vault(create2Hash.fromLast20Bytes());
     }
 
     /// @notice Returns if a vault at an address has been deployed yet.
