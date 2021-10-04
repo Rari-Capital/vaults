@@ -178,10 +178,10 @@ contract Vault is ERC20, Auth {
     function deposit(uint256 underlyingAmount) external {
         _mint(msg.sender, underlyingAmount.fdiv(exchangeRate(), BASE_UNIT));
 
+        emit Deposit(msg.sender, underlyingAmount);
+
         // Transfer in underlying tokens from the sender.
         UNDERLYING.safeTransferFrom(msg.sender, address(this), underlyingAmount);
-
-        emit Deposit(msg.sender, underlyingAmount);
     }
 
     /// @notice Withdraws a specific amount of underlying tokens by burning the equivalent amount of fvTokens.
@@ -350,6 +350,7 @@ contract Vault is ERC20, Auth {
     /// @dev Withdraw underlying tokens from cTokens in the withdrawal queue.
     /// @param underlyingAmount The amount of underlying tokens to pull into float.
     function pullIntoFloat(uint256 underlyingAmount) internal {
+        // TODO: Is there reentrancy here?
         // TODO: Cache variables to optimize SLOADs.
 
         uint256 amountLeftToPull = underlyingAmount;
@@ -364,9 +365,8 @@ contract Vault is ERC20, Auth {
             if (amountLeftToPull > balance) {
                 // If this cToken's balance isn't enough to cover the amount
                 // we need to pull, withdraw everything we can and keep looping.
-                cToken.redeemUnderlying(balance);
-
                 emit ExitPool(cToken, balance);
+                cToken.redeemUnderlying(balance);
 
                 // Without this whenever harvest was next called on this
                 // cToken the withdrawn amount would be count as a loss.
@@ -380,9 +380,8 @@ contract Vault is ERC20, Auth {
             } else {
                 // This cToken has enough to cover the amount we need to pull
                 // we need to pull, withdraw only as much as we need and break.
-                cToken.redeemUnderlying(amountLeftToPull);
-
                 emit ExitPool(cToken, amountLeftToPull);
+                cToken.redeemUnderlying(amountLeftToPull);
 
                 // Without this whenever harvest was next called on this
                 // cToken the withdrawn amount would be count as a loss.
