@@ -20,7 +20,7 @@ contract Vault is ERC20, Auth {
                                 IMMUTABLES
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice The underlying token for the vault.
+    /// @notice The underlying token for the Vault.
     ERC20 public immutable UNDERLYING;
 
     /// @notice One base unit of the underlying, and hence fvToken.
@@ -52,29 +52,37 @@ contract Vault is ERC20, Auth {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Emitted after a successful deposit.
-    /// @param user The address of the account that deposited into the vault.
+    /// @param user The address that deposited into the Vault.
     /// @param underlyingAmount The amount of underlying tokens that were deposited.
     event Deposit(address user, uint256 underlyingAmount);
 
     /// @notice Emitted after a successful withdrawal.
-    /// @param user The address of the account that withdrew from the vault.
+    /// @param user The address that withdrew from the Vault.
     /// @param underlyingAmount The amount of underlying tokens that were withdrawn.
     event Withdraw(address user, uint256 underlyingAmount);
 
     /// @notice Emitted after a successful harvest.
-    /// @param cToken The cToken harvested.
+    /// @param cToken The cToken that was harvested.
     /// @param lockedProfit The amount of locked profit after the harvest.
     event Harvest(CToken cToken, uint256 lockedProfit);
 
-    /// @notice Emitted after the vault deposits into a cToken contract.
-    /// @param cToken The address of the cToken contract that was minted.
+    /// @notice Emitted after the Vault deposits into a cToken contract.
+    /// @param cToken The cToken that was minted.
     /// @param underlyingAmount The amount of underlying tokens that were deposited.
     event EnterPool(CToken cToken, uint256 underlyingAmount);
 
-    /// @notice Emitted after the vault withdraws funds from a cToken contract.
-    /// @param cToken The address of the cToken contract that was redeemed.
+    /// @notice Emitted after the Vault withdraws funds from a cToken contract.
+    /// @param cToken The cToken that was redeemed.
     /// @param underlyingAmount The amount of underlying tokens that were withdrawn.
     event ExitPool(CToken cToken, uint256 underlyingAmount);
+
+    /// @notice Emitted when harvesting a cToken is enabled.
+    /// @param cToken The cToken enabled for harvesting.
+    event EnableHarvestingPool(CToken cToken);
+
+    /// @notice Emitted when harvesting a cToken is disabled.
+    /// @param cToken The cToken disabled for harvesting.
+    event DisableHarvestingPool(CToken cToken);
 
     /*///////////////////////////////////////////////////////////////
                          POOL ACCOUNTING STORAGE
@@ -123,6 +131,14 @@ contract Vault is ERC20, Auth {
     /// @dev The queue is processed in an ascending order, meaning the last index will be first withdrawn from.
     CToken[] public withdrawalQueue;
 
+    /// @notice Gets the full withdrawal queue.
+    /// @return An ordered array of cTokens representing the withdrawal queue.
+    /// @dev This is provided because Solidity converts public arrays into index getters,
+    /// but we need a way to allow external contracts and users to access the whole array.
+    function getWithdrawalQueue() external view returns (CToken[] memory) {
+        return withdrawalQueue;
+    }
+
     /// @notice Set a new withdrawal queue.
     /// @param newQueue The updated withdrawal queue.
     function setWithdrawalQueue(CToken[] calldata newQueue) external requiresAuth {
@@ -142,19 +158,26 @@ contract Vault is ERC20, Auth {
         withdrawalQueue.pop();
     }
 
-    /// @notice Swap the cToken at the tip of the queue with one at a specific index and delete the index.
+    /// @notice Move the cToken at the tip of the queue to the specified index and delete the tip.
     /// @dev The index specified must be less than current length of the withdrawal queue array.
-    function swapTipAndPopFromWithdrawalQueue(uint256 index) external requiresAuth {
+    function moveTipAndPopFromWithdrawalQueue(uint256 index) external requiresAuth {
         // TODO: Cache withdrawalQueue to optimize extra SLOADs?
+
+        // Ensure the index is actually in the withdrawal queue array.
         require(index < withdrawalQueue.length, "INDEX_OUT_OF_BOUNDS");
+
+        // Copy the last item in the array (the tip) to the index specified.
         withdrawalQueue[index] = withdrawalQueue[withdrawalQueue.length - 1];
+
+        // Remove the now duplicated tip from the array.
+        withdrawalQueue.pop();
     }
 
     /*///////////////////////////////////////////////////////////////
                        TARGET FLOAT CONFIGURATION
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice A percent value representing part of the total underlying to keep in the vault.
+    /// @notice A percent value representing part of the total underlying to keep in the Vault.
     /// @dev A mantissa where 1e18 represents 100% and 0 represents 0%.
     uint256 public targetFloatPercent = 0.01e18;
 
@@ -173,7 +196,7 @@ contract Vault is ERC20, Auth {
                         DEPOSIT/WITHDRAWAL LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Deposit the vault's underlying token to mint fvTokens.
+    /// @notice Deposit the Vault's underlying token to mint fvTokens.
     /// @param underlyingAmount The amount of the underlying token to deposit.
     function deposit(uint256 underlyingAmount) external {
         _mint(msg.sender, underlyingAmount.fdiv(exchangeRate(), BASE_UNIT));
@@ -194,8 +217,14 @@ contract Vault is ERC20, Auth {
         emit Withdraw(msg.sender, underlyingAmount);
 
         // If the amount is greater than the float, redeem some cTokens.
-        if (underlyingAmount > getFloat()) pullIntoFloat(underlyingAmount);
-
+        // TODO: Optimize double calls to getFloat()? One is also done in totalFreeDeposited.
+        if (underlyingAmount > getFloat())
+            pullIntoFloat(
+                // The bare minimum we need for this withdrawal.
+                (underlyingAmount - getFloat()) +
+                    // The amount needed to reach our target float percentage.
+                    (totalFreeDeposited() - underlyingAmount).fmul(targetFloatPercent, 1e18)
+            );
         // Transfer underlying tokens to the caller.
         UNDERLYING.safeTransfer(msg.sender, underlyingAmount);
     }
@@ -213,7 +242,14 @@ contract Vault is ERC20, Auth {
         emit Withdraw(msg.sender, underlyingAmount);
 
         // If the amount is greater than the float, redeem some cTokens.
-        if (underlyingAmount > getFloat()) pullIntoFloat(underlyingAmount);
+        // TODO: Optimize double calls to getFloat()? One is also done in totalFreeDeposited.
+        if (underlyingAmount > getFloat())
+            pullIntoFloat(
+                // The bare minimum we need for this withdrawal.
+                (underlyingAmount - getFloat()) +
+                    // The amount needed to reach our target float percentage.
+                    (totalFreeDeposited() - underlyingAmount).fmul(targetFloatPercent, 1e18)
+            );
 
         // Transfer underlying tokens to the caller.
         UNDERLYING.safeTransfer(msg.sender, underlyingAmount);
@@ -223,8 +259,8 @@ contract Vault is ERC20, Auth {
                         VAULT ACCOUNTING LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Returns a user's vault balance in underlying tokens.
-    /// @return The user's vault balance in underlying tokens.
+    /// @notice Returns a user's Vault balance in underlying tokens.
+    /// @return The user's Vault balance in underlying tokens.
     function underlyingBalanceOf(address account) external view returns (uint256) {
         return balanceOf[account].fmul(exchangeRate(), BASE_UNIT);
     }
@@ -272,7 +308,7 @@ contract Vault is ERC20, Auth {
     function harvest(CToken cToken) external requiresAuth {
         // If a non authorized cToken could be harvested a malicious user could
         // construct a fake cToken that over-reports holdings to manipulate share price.
-        require(canBeHarvested[cToken], "CTOKEN_CANNOT_BE_HARVESTED");
+        require(canBeHarvested[cToken], "UNAUTHORIZED_CTOKEN");
 
         uint256 balanceLastHarvest = balanceOfUnderlyingLastHarvest[cToken];
         uint256 balanceThisHarvest = cToken.balanceOfUnderlying(address(this));
@@ -296,28 +332,28 @@ contract Vault is ERC20, Auth {
         emit Harvest(cToken, maxLockedProfit);
     }
 
+    /// @notice Disables harvesting a specific cToken.
+    /// @param cToken The cToken to disable harvesting.
+    function disableHarvestingPool(CToken cToken) external requiresAuth {
+        canBeHarvested[cToken] = false;
+
+        emit EnableHarvestingPool(cToken);
+    }
+
     /*///////////////////////////////////////////////////////////////
                             REBALANCE LOGIC
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Deposit funds into a cToken.
     function enterPool(CToken cToken, uint256 underlyingAmount) external requiresAuth {
-        // Enable harvesting the cToken.
-        canBeHarvested[cToken] = true;
-
-        emit EnterPool(cToken, underlyingAmount);
+        // Enable harvesting the cToken if it wasn't already.
+        if (!canBeHarvested[cToken]) {
+            canBeHarvested[cToken] = true;
+            emit EnableHarvestingPool(cToken);
+        }
 
         // Exit early if we're not actually depositing anything.
         if (underlyingAmount == 0) return;
-
-        // Approve the underlying to the pool for minting.
-        UNDERLYING.safeApprove(address(cToken), underlyingAmount);
-
-        // Deposit into the pool and receive cTokens.
-        cToken.mint(underlyingAmount);
-
-        // Enable harvesting the cToken if it has not been enabled already.
-        if (!canBeHarvested[cToken]) canBeHarvested[cToken] = true;
 
         // Without this whenever harvest was next called on this
         // cToken the newly deposited amount would count as profit.
@@ -325,10 +361,18 @@ contract Vault is ERC20, Auth {
 
         // Increase the totalDeposited amount to account for the minted cTokens.
         totalDeposited += underlyingAmount;
+
+        emit EnterPool(cToken, underlyingAmount);
+
+        // Approve the underlying to the pool for minting.
+        UNDERLYING.safeApprove(address(cToken), underlyingAmount);
+
+        // Deposit into the pool and receive cTokens.
+        require(cToken.mint(underlyingAmount) == 0, "MINT_FAILED");
     }
 
     /// @notice Withdraw funds from a pool.
-    /// @dev Exiting a pool will not remove it from the withdrawal queue!
+    /// @dev Exiting a pool will not remove it from the withdrawal queue.
     function exitPool(CToken cToken, uint256 underlyingAmount) external requiresAuth {
         // Decrease the totalDeposited amount to account for the redeemed cTokens.
         totalDeposited -= underlyingAmount;
@@ -340,11 +384,11 @@ contract Vault is ERC20, Auth {
         emit ExitPool(cToken, underlyingAmount);
 
         // Redeem the right amount of cTokens to get us underlyingAmount.
-        cToken.redeemUnderlying(underlyingAmount);
+        require(cToken.redeemUnderlying(underlyingAmount) == 0, "REDEEM_FAILED");
     }
 
     /*///////////////////////////////////////////////////////////////
-                         WITHDRAWAL FUNCTIONS
+                          FLOAT MANAGEMENT LOGIC
     //////////////////////////////////////////////////////////////*/
 
     /// @dev Withdraw underlying tokens from cTokens in the withdrawal queue.
@@ -356,8 +400,8 @@ contract Vault is ERC20, Auth {
         uint256 amountLeftToPull = underlyingAmount;
 
         // We iterate in reverse as the withdrawalQueue is sorted in ascending order.
-        for (uint256 i = withdrawalQueue.length; i > 0; i--) {
-            CToken cToken = withdrawalQueue[i - 1];
+        for (uint256 i = withdrawalQueue.length - 1; i >= 0; i--) {
+            CToken cToken = withdrawalQueue[i];
 
             // Calculate the Vault's balance in the cToken contract.
             uint256 balance = cToken.balanceOfUnderlying(address(this));
@@ -366,7 +410,7 @@ contract Vault is ERC20, Auth {
                 // If this cToken's balance isn't enough to cover the amount
                 // we need to pull, withdraw everything we can and keep looping.
                 emit ExitPool(cToken, balance);
-                cToken.redeemUnderlying(balance);
+                require(cToken.redeemUnderlying(balance) == 0, "REDEEM_FAILED");
 
                 // Without this whenever harvest was next called on this
                 // cToken the withdrawn amount would be count as a loss.
@@ -374,6 +418,7 @@ contract Vault is ERC20, Auth {
 
                 // We've depleted this cToken, remove it from the queue.
                 // TODO: Modifying the array while we're looping over it might break stuff?
+                // TODO: It also might just be more efficient to pop a copy in memory and then commit the update in a big chunk.
                 withdrawalQueue.pop();
 
                 amountLeftToPull -= balance;
@@ -381,7 +426,7 @@ contract Vault is ERC20, Auth {
                 // This cToken has enough to cover the amount we need to pull
                 // we need to pull, withdraw only as much as we need and break.
                 emit ExitPool(cToken, amountLeftToPull);
-                cToken.redeemUnderlying(amountLeftToPull);
+                require(cToken.redeemUnderlying(amountLeftToPull) == 0, "REDEEM_FAILED");
 
                 // Without this whenever harvest was next called on this
                 // cToken the withdrawn amount would be count as a loss.
@@ -389,6 +434,7 @@ contract Vault is ERC20, Auth {
 
                 // If we depleted the cToken, remove it from the queue.
                 // TODO: Modifying the array while we're looping over it might break stuff?
+                // TODO: It also might just be more efficient to pop a copy in memory and then commit the update in a big chunk.
                 if (amountLeftToPull == balance) withdrawalQueue.pop();
 
                 amountLeftToPull = 0;
@@ -399,7 +445,7 @@ contract Vault is ERC20, Auth {
 
         // If even after looping over the whole queue there is not enough to pull
         // the underlyingAmount, we just revert and let the user know via an error.
-        require(amountLeftToPull == 0, "NOT_ENOUGH_UNDERLYING_IN_QUEUE");
+        require(amountLeftToPull == 0, "NOT_ENOUGH_FUNDS_IN_QUEUE");
 
         // Decrease the totalDeposited amount to account for the redeemed cTokens.
         totalDeposited -= underlyingAmount;
