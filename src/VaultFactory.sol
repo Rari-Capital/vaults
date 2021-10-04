@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.8.6;
 
+import {Auth} from "solmate/auth/Auth.sol";
 import {ERC20} from "solmate/erc20/ERC20.sol";
 import {Bytes32AddressLib} from "solmate/utils/Bytes32AddressLib.sol";
 
@@ -9,7 +10,7 @@ import {Vault} from "./Vault.sol";
 /// @title Fuse Vault Factory
 /// @author Transmissions11 + JetJadeja
 /// @notice Factory to deploy arbitrary Vault contracts to deterministic addresses.
-contract VaultFactory {
+contract VaultFactory is Auth(msg.sender) {
     using Bytes32AddressLib for address;
     using Bytes32AddressLib for bytes32;
 
@@ -23,7 +24,7 @@ contract VaultFactory {
     event VaultDeployed(ERC20 underlying, Vault vault);
 
     /*///////////////////////////////////////////////////////////////
-                           STATEFUL FUNCTIONS
+                          VAULT DEPLOYMENT LOGIC
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Deploy a new Vault contract that supports a specific underlying asset.
@@ -40,7 +41,7 @@ contract VaultFactory {
     }
 
     /*///////////////////////////////////////////////////////////////
-                            VIEW FUNCTIONS
+                            VAULT LOOKUP LOGIC
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Computes a Vault's address from its underlying token.

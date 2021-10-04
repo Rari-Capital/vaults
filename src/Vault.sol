@@ -7,6 +7,7 @@ import {SafeERC20} from "solmate/erc20/SafeERC20.sol";
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 
 import {CToken} from "./external/CToken.sol";
+import {VaultFactory} from "./VaultFactory.sol";
 
 /// @title Fuse Vault (fvToken)
 /// @author Transmissions11 + JetJadeja
@@ -38,6 +39,11 @@ contract Vault is ERC20, Auth {
             string(abi.encodePacked("fv", _UNDERLYING.symbol())),
             // ex: 18
             _UNDERLYING.decimals()
+        )
+        Auth(
+            // Set the Vault's owner to
+            // the VaultFactory's owner:
+            VaultFactory(msg.sender).owner()
         )
     {
         UNDERLYING = _UNDERLYING;
