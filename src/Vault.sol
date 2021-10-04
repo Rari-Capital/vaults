@@ -54,35 +54,39 @@ contract Vault is ERC20, Auth {
     /// @notice Emitted after a successful deposit.
     /// @param user The address that deposited into the Vault.
     /// @param underlyingAmount The amount of underlying tokens that were deposited.
-    event Deposit(address user, uint256 underlyingAmount);
+    event Deposit(address indexed user, uint256 underlyingAmount);
 
     /// @notice Emitted after a successful withdrawal.
     /// @param user The address that withdrew from the Vault.
     /// @param underlyingAmount The amount of underlying tokens that were withdrawn.
-    event Withdraw(address user, uint256 underlyingAmount);
+    event Withdraw(address indexed user, uint256 underlyingAmount);
 
     /// @notice Emitted after a successful harvest.
     /// @param cToken The cToken that was harvested.
     /// @param lockedProfit The amount of locked profit after the harvest.
-    event Harvest(CToken cToken, uint256 lockedProfit);
+    event Harvest(CToken indexed cToken, uint256 lockedProfit);
 
     /// @notice Emitted after the Vault deposits into a cToken contract.
     /// @param cToken The cToken that was minted.
     /// @param underlyingAmount The amount of underlying tokens that were deposited.
-    event EnterPool(CToken cToken, uint256 underlyingAmount);
+    event EnterPool(CToken indexed cToken, uint256 underlyingAmount);
 
     /// @notice Emitted after the Vault withdraws funds from a cToken contract.
     /// @param cToken The cToken that was redeemed.
     /// @param underlyingAmount The amount of underlying tokens that were withdrawn.
-    event ExitPool(CToken cToken, uint256 underlyingAmount);
+    event ExitPool(CToken indexed cToken, uint256 underlyingAmount);
 
     /// @notice Emitted when harvesting a cToken is enabled.
     /// @param cToken The cToken enabled for harvesting.
-    event EnableHarvestingPool(CToken cToken);
+    event EnableHarvestingPool(CToken indexed cToken);
 
     /// @notice Emitted when harvesting a cToken is disabled.
     /// @param cToken The cToken disabled for harvesting.
-    event DisableHarvestingPool(CToken cToken);
+    event DisableHarvestingPool(CToken indexed cToken);
+
+    /// @notice Emitted when the withdrawal queue is updated.
+    /// @param updatedWithdrawalQueue The updated withdrawal queue.
+    event WithdrawalQueueUpdated(CToken[] updatedWithdrawalQueue);
 
     /*///////////////////////////////////////////////////////////////
                          POOL ACCOUNTING STORAGE
@@ -143,19 +147,29 @@ contract Vault is ERC20, Auth {
     /// @param newQueue The updated withdrawal queue.
     function setWithdrawalQueue(CToken[] calldata newQueue) external requiresAuth {
         withdrawalQueue = newQueue;
+
+        emit WithdrawalQueueUpdated(newQueue);
     }
 
     /// @notice Push a single cToken to front of the withdrawal queue.
     /// @param cToken The cToken to be inserted at the front of the withdrawal queue.
     function pushToWithdrawalQueue(CToken cToken) external requiresAuth {
+        // TODO: Optimize SLOADs?
+
         withdrawalQueue.push(cToken);
+
+        emit WithdrawalQueueUpdated(withdrawalQueue);
     }
 
     /// @notice Remove the cToken at the tip of the withdrawal queue.
     /// @dev Be careful, another user could push a different cToken than
     /// expected to the queue while a popFromWithdrawalQueue transaction is pending.
     function popFromWithdrawalQueue() external requiresAuth {
+        // TODO: Optimize SLOADs?
+
         withdrawalQueue.pop();
+
+        emit WithdrawalQueueUpdated(withdrawalQueue);
     }
 
     /// @notice Move the cToken at the tip of the queue to the specified index and delete the tip.
@@ -449,5 +463,7 @@ contract Vault is ERC20, Auth {
 
         // Decrease the totalDeposited amount to account for the redeemed cTokens.
         totalDeposited -= underlyingAmount;
+
+        emit WithdrawalQueueUpdated(withdrawalQueue);
     }
 }
