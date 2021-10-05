@@ -125,7 +125,7 @@ contract Vault is ERC20, Auth {
     /// @param strategy The strategy to make untrusted.
     function distrustStrategy(Strategy strategy) external requiresAuth {
         // We don't allow untrusting again to prevent emitting a useless event.
-        require(!isStrategyTrusted[strategy], "ALREADY_UNTRUSTED");
+        require(isStrategyTrusted[strategy], "ALREADY_UNTRUSTED");
 
         // Store the strategy as untrusted.
         isStrategyTrusted[strategy] = false;
