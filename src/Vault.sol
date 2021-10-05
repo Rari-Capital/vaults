@@ -219,6 +219,10 @@ contract Vault is ERC20, Auth {
     /// @notice Deposit the Vault's underlying token to mint fvTokens.
     /// @param underlyingAmount The amount of the underlying token to deposit.
     function deposit(uint256 underlyingAmount) external {
+        // We don't allow depositing 0 to prevent emitting a useless event.
+        require(underlyingAmount != 0, "AMOUNT_CANNOT_BE_ZERO");
+
+        // Mint a proportional amount of fvTokens.
         _mint(msg.sender, underlyingAmount.fdiv(exchangeRate(), BASE_UNIT));
 
         emit Deposit(msg.sender, underlyingAmount);
@@ -230,8 +234,10 @@ contract Vault is ERC20, Auth {
     /// @notice Withdraws a specific amount of underlying tokens by burning the equivalent amount of fvTokens.
     /// @param underlyingAmount The amount of underlying tokens to withdraw.
     function withdraw(uint256 underlyingAmount) external {
+        // We don't allow withdrawing 0 to prevent emitting a useless event.
+        require(underlyingAmount != 0, "AMOUNT_CANNOT_BE_ZERO");
+
         // Convert underlying tokens to fvTokens and then burn them.
-        // This is be done by dividing the amount of underlying tokens by the exchange rate.
         _burn(msg.sender, underlyingAmount.fdiv(exchangeRate(), BASE_UNIT));
 
         emit Withdraw(msg.sender, underlyingAmount);
@@ -252,14 +258,16 @@ contract Vault is ERC20, Auth {
     }
 
     /// @notice Burns a specific amount of fvTokens and transfers the equivalent amount of underlying tokens.
-    /// @param amount The amount of fvTokens to redeem for underlying tokens.
-    function redeem(uint256 amount) external {
-        // Convert the amount of fvTokens to underlying tokens.
-        // This is be done by multiplying the amount of fvTokens by the exchange rate.
-        uint256 underlyingAmount = amount.fmul(exchangeRate(), BASE_UNIT);
+    /// @param fvTokenAmount The amount of fvTokens to redeem for underlying tokens.
+    function redeem(uint256 fvTokenAmount) external {
+        // We don't allow redeeming 0 to prevent emitting a useless event.
+        require(fvTokenAmount != 0, "AMOUNT_CANNOT_BE_ZERO");
 
-        // Burn inputted fvTokens.
-        _burn(msg.sender, amount);
+        // Convert the amount of fvTokens to underlying tokens.
+        uint256 underlyingAmount = fvTokenAmount.fmul(exchangeRate(), BASE_UNIT);
+
+        // Burn the provided fvTokens.
+        _burn(msg.sender, fvTokenAmount);
 
         emit Withdraw(msg.sender, underlyingAmount);
 

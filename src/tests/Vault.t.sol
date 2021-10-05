@@ -25,14 +25,14 @@ contract VaultsTest is DSTestPlus {
 
         vault.deposit(1e18);
 
-        assertEq(vault.exchangeRate(), 1e18);
+        assertEq(vault.exchangeRate(), vault.BASE_UNIT());
         assertEq(vault.balanceOf(address(this)), 1e18);
         assertEq(vault.underlyingBalanceOf(address(this)), 1e18);
         assertEq(underlying.balanceOf(address(this)), preDepositBal - 1e18);
 
         vault.withdraw(1e18);
 
-        assertEq(vault.exchangeRate(), 1e18);
+        assertEq(vault.exchangeRate(), vault.BASE_UNIT());
         assertEq(vault.balanceOf(address(this)), 0);
         assertEq(vault.underlyingBalanceOf(address(this)), 0);
         assertEq(underlying.balanceOf(address(this)), preDepositBal);
@@ -46,14 +46,14 @@ contract VaultsTest is DSTestPlus {
 
         vault.deposit(1e18);
 
-        assertEq(vault.exchangeRate(), 1e18);
+        assertEq(vault.exchangeRate(), vault.BASE_UNIT());
         assertEq(vault.balanceOf(address(this)), 1e18);
         assertEq(vault.underlyingBalanceOf(address(this)), 1e18);
         assertEq(underlying.balanceOf(address(this)), preDepositBal - 1e18);
 
         vault.redeem(1e18);
 
-        assertEq(vault.exchangeRate(), 1e18);
+        assertEq(vault.exchangeRate(), vault.BASE_UNIT());
         assertEq(vault.balanceOf(address(this)), 0);
         assertEq(vault.underlyingBalanceOf(address(this)), 0);
         assertEq(underlying.balanceOf(address(this)), preDepositBal);
