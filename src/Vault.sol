@@ -374,13 +374,14 @@ contract Vault is ERC20, Auth {
         // We cannot wrap the balance delta computation in parenthesis as it would underflow if the strategy registers a loss.
         totalStrategyHoldings = totalStrategyHoldings + balanceThisHarvest - balanceLastHarvest;
 
-        // Update maximum locked profit to include our balance gained.
-        maxLockedProfit = lockedProfit() +
-            // Compute our profit (losses are instantly accounted for in totalStrategyHoldings)
-            balanceThisHarvest >
-            balanceLastHarvest
-            ? balanceThisHarvest - balanceLastHarvest // Difference from last harvest.
-            : 0; // If the strategy registered a net loss we don't have any new profit to lock.
+        // Update maximum locked profit to include profits.
+        maxLockedProfit =
+            lockedProfit() +
+            (
+                balanceThisHarvest > balanceLastHarvest
+                    ? balanceThisHarvest - balanceLastHarvest // Profits since last harvest.
+                    : 0 // If the strategy registered a net loss we don't have any new profit to lock.
+            );
 
         // Set the lastHarvestTimestamp to the current timestamp, as a harvest was just completed.
         lastHarvestTimestamp = block.number;
