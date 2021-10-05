@@ -7,7 +7,7 @@ import {Bytes32AddressLib} from "solmate/utils/Bytes32AddressLib.sol";
 
 import {Vault} from "./Vault.sol";
 
-/// @title Fuse Vault Factory
+/// @title Rari Vault Factory
 /// @author Transmissions11 + JetJadeja
 /// @notice Factory to deploy arbitrary Vault contracts to deterministic addresses.
 contract VaultFactory is Auth(msg.sender) {

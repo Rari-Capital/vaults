@@ -6,10 +6,10 @@ import {Auth} from "solmate/auth/Auth.sol";
 import {SafeERC20} from "solmate/erc20/SafeERC20.sol";
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 
-import {CToken} from "./external/CToken.sol";
+import {Strategy} from "./external/Strategy.sol";
 import {VaultFactory} from "./VaultFactory.sol";
 
-/// @title Fuse Vault (fvToken)
+/// @title Rari Vault (rvToken)
 /// @author Transmissions11 + JetJadeja
 /// @notice Yield bearing token that enables users to swap
 /// their underlying asset to instantly begin earning yield.
@@ -24,7 +24,7 @@ contract Vault is ERC20, Auth {
     /// @notice The underlying token for the Vault.
     ERC20 public immutable UNDERLYING;
 
-    /// @notice One base unit of the underlying, and hence fvToken.
+    /// @notice One base unit of the underlying, and hence rvToken.
     /// @dev Will be equal to 10 ** UNDERLYING.decimals() which means
     /// if the token has 18 decimals ONE_WHOLE_UNIT will equal 10**18.
     uint256 public immutable BASE_UNIT;
@@ -68,59 +68,84 @@ contract Vault is ERC20, Auth {
     event Withdraw(address indexed user, uint256 underlyingAmount);
 
     /// @notice Emitted after a successful harvest.
-    /// @param cToken The cToken that was harvested.
-    /// @param lockedProfit The amount of locked profit after the harvest.
-    event Harvest(CToken indexed cToken, uint256 lockedProfit);
+    /// @param strategy The strategy that was harvested.
+    /// @param profit The amount of profit the strategy registered since the last harvest.
+    event Harvest(Strategy indexed strategy, uint256 profit);
 
-    /// @notice Emitted after the Vault deposits into a cToken contract.
-    /// @param cToken The cToken that was minted.
+    /// @notice Emitted after the Vault deposits into a strategy contract.
+    /// @param strategy The strategy that was minted.
     /// @param underlyingAmount The amount of underlying tokens that were deposited.
-    event EnterPool(CToken indexed cToken, uint256 underlyingAmount);
+    event StrategyDeposit(Strategy indexed strategy, uint256 underlyingAmount);
 
-    /// @notice Emitted after the Vault withdraws funds from a cToken contract.
-    /// @param cToken The cToken that was redeemed.
+    /// @notice Emitted after the Vault withdraws funds from a strategy contract.
+    /// @param strategy The strategy that was redeemed.
     /// @param underlyingAmount The amount of underlying tokens that were withdrawn.
-    event ExitPool(CToken indexed cToken, uint256 underlyingAmount);
-
-    /// @notice Emitted when harvesting a cToken is enabled.
-    /// @param cToken The cToken enabled for harvesting.
-    event EnableHarvestingPool(CToken indexed cToken);
-
-    /// @notice Emitted when harvesting a cToken is disabled.
-    /// @param cToken The cToken disabled for harvesting.
-    event DisableHarvestingPool(CToken indexed cToken);
+    event StrategyWithdrawal(Strategy indexed strategy, uint256 underlyingAmount);
 
     /// @notice Emitted when the withdrawal queue is updated.
     /// @param updatedWithdrawalQueue The updated withdrawal queue.
-    event WithdrawalQueueUpdated(CToken[] updatedWithdrawalQueue);
+    event WithdrawalQueueUpdated(Strategy[] updatedWithdrawalQueue);
+
+    /// @notice Emitted when a strategy is set to trusted.
+    /// @param strategy The strategy that became trusted.
+    event StrategyTrusted(Strategy indexed strategy);
+
+    /// @notice Emitted when a strategy is set to untrusted.
+    /// @param strategy The strategy that became untrusted.
+    event StrategyDistrusted(Strategy indexed strategy);
 
     /*///////////////////////////////////////////////////////////////
-                         POOL ACCOUNTING STORAGE
+                          STRATEGY STORAGE
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Maps cTokens to a boolean representing if harvest can be called with them.
-    mapping(CToken => bool) public canBeHarvested;
-
-    /// @notice Maps cTokens to the amount of underlying they were worth last harvest.
-    mapping(CToken => uint256) public balanceOfUnderlyingLastHarvest;
-
-    /// @notice The total amount of underlying held in deposits (calculated last harvest).
+    /// @notice The total amount of underlying tokens held in strategies at the time of the last harvest.
     /// @dev Includes maxLockedProfit, must be correctly subtracted to compute available/free holdings.
-    uint256 public totalDeposited;
+    uint256 public totalStrategyHoldings;
 
-    /// @notice The amount of locked profit at the time of the last harvest.
-    /// @dev Does not change in-between harvests, instead unlocked profit is computed and subtracted from on the fly.
-    uint256 public maxLockedProfit;
+    /// @notice Maps strategies to the amount of underlying tokens they held last harvest.
+    mapping(Strategy => uint256) public balanceOfStrategy;
+
+    /// @notice Maps strategies to a boolean representing if the strategy is trusted.
+    /// @dev A strategy must be trusted for harvest to be called with it.
+    mapping(Strategy => bool) public isStrategyTrusted;
+
+    /// @notice Store a strategy as trusted, enabling it to be harvested.
+    /// @param strategy The strategy to make trusted.
+    function trustStrategy(Strategy strategy) external requiresAuth {
+        // We don't allow trusting again to prevent emitting a useless event.
+        require(!isStrategyTrusted[strategy], "ALREADY_TRUSTED");
+
+        // Store the strategy as trusted.
+        isStrategyTrusted[strategy] = true;
+
+        emit StrategyTrusted(strategy);
+    }
+
+    /// @notice Store a strategy as untrusted, disabling it from being harvested.
+    /// @param strategy The strategy to make untrusted.
+    function distrustStrategy(Strategy strategy) external requiresAuth {
+        // We don't allow untrusting again to prevent emitting a useless event.
+        require(!isStrategyTrusted[strategy], "ALREADY_UNTRUSTED");
+
+        // Store the strategy as untrusted.
+        isStrategyTrusted[strategy] = false;
+
+        emit StrategyDistrusted(strategy);
+    }
+
+    /*///////////////////////////////////////////////////////////////
+                          HARVEST STORAGE
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice The most recent timestamp where a harvest occurred.
     uint256 public lastHarvestTimestamp;
 
-    /*///////////////////////////////////////////////////////////////
-                        HARVEST CONFIGURATION
-    //////////////////////////////////////////////////////////////*/
+    /// @notice The amount of locked profit at the end of the last harvest.
+    /// @dev Does not change between harvests, instead unlocked profit is computed and subtracted from on the fly.
+    uint256 public maxLockedProfit;
 
     /// @notice The approximate period in seconds over which locked profits are unlocked.
-    /// @dev Cannot be 0 as it opens harvests to sandwich attacks.
+    /// @dev Defaults to 6 hours. Cannot be 0 as it opens harvests to sandwich attacks.
     uint256 public profitUnlockDelay = 6 hours;
 
     /// @notice Set a new profit unlock delay delay.
@@ -137,38 +162,38 @@ contract Vault is ERC20, Auth {
                       WITHDRAWAL QUEUE CONFIGURATION
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice An ordered array of cTokens representing the withdrawal queue.
-    /// @dev The queue is processed in an ascending order, meaning the last index will be first withdrawn from.
-    CToken[] public withdrawalQueue;
+    /// @notice An ordered array of strategies representing the withdrawal queue.
+    /// @dev The queue is processed in an ascending order, meaning the last index will be withdrawn from first.
+    Strategy[] public withdrawalQueue;
 
     /// @notice Gets the full withdrawal queue.
-    /// @return An ordered array of cTokens representing the withdrawal queue.
+    /// @return An ordered array of strategies representing the withdrawal queue.
     /// @dev This is provided because Solidity converts public arrays into index getters,
     /// but we need a way to allow external contracts and users to access the whole array.
-    function getWithdrawalQueue() external view returns (CToken[] memory) {
+    function getWithdrawalQueue() external view returns (Strategy[] memory) {
         return withdrawalQueue;
     }
 
     /// @notice Set a new withdrawal queue.
     /// @param newQueue The updated withdrawal queue.
-    function setWithdrawalQueue(CToken[] calldata newQueue) external requiresAuth {
+    function setWithdrawalQueue(Strategy[] calldata newQueue) external requiresAuth {
         withdrawalQueue = newQueue;
 
         emit WithdrawalQueueUpdated(newQueue);
     }
 
-    /// @notice Push a single cToken to front of the withdrawal queue.
-    /// @param cToken The cToken to be inserted at the front of the withdrawal queue.
-    function pushToWithdrawalQueue(CToken cToken) external requiresAuth {
+    /// @notice Push a single strategy to front of the withdrawal queue.
+    /// @param strategy The strategy to be inserted at the front of the withdrawal queue.
+    function pushToWithdrawalQueue(Strategy strategy) external requiresAuth {
         // TODO: Optimize SLOADs?
 
-        withdrawalQueue.push(cToken);
+        withdrawalQueue.push(strategy);
 
         emit WithdrawalQueueUpdated(withdrawalQueue);
     }
 
-    /// @notice Remove the cToken at the tip of the withdrawal queue.
-    /// @dev Be careful, another user could push a different cToken than
+    /// @notice Remove the strategy at the tip of the withdrawal queue.
+    /// @dev Be careful, another user could push a different strategy than
     /// expected to the queue while a popFromWithdrawalQueue transaction is pending.
     function popFromWithdrawalQueue() external requiresAuth {
         // TODO: Optimize SLOADs?
@@ -178,15 +203,13 @@ contract Vault is ERC20, Auth {
         emit WithdrawalQueueUpdated(withdrawalQueue);
     }
 
-    /// @notice Move the cToken at the tip of the queue to the specified index and delete the tip.
+    /// @notice Move the strategy at the tip of the queue to the specified index and pop the tip off the queue.
     /// @dev The index specified must be less than current length of the withdrawal queue array.
-    function moveTipAndPopFromWithdrawalQueue(uint256 index) external requiresAuth {
-        // TODO: Cache withdrawalQueue to optimize extra SLOADs?
-
+    function replaceWithdrawalQueueIndexWithTip(uint256 index) external requiresAuth {
         // Ensure the index is actually in the withdrawal queue array.
         require(index < withdrawalQueue.length, "INDEX_OUT_OF_BOUNDS");
 
-        // Copy the last item in the array (the tip) to the index specified.
+        // Replace the index specified with the tip of the queue.
         withdrawalQueue[index] = withdrawalQueue[withdrawalQueue.length - 1];
 
         // Remove the now duplicated tip from the array.
@@ -216,73 +239,74 @@ contract Vault is ERC20, Auth {
                         DEPOSIT/WITHDRAWAL LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Deposit the Vault's underlying token to mint fvTokens.
+    /// @notice Deposit a specific amount of underlying tokens.
     /// @param underlyingAmount The amount of the underlying token to deposit.
     function deposit(uint256 underlyingAmount) external {
         // We don't allow depositing 0 to prevent emitting a useless event.
         require(underlyingAmount != 0, "AMOUNT_CANNOT_BE_ZERO");
 
-        // Mint a proportional amount of fvTokens.
+        // Determine the equivalent amount of rvTokens and mint them.
         _mint(msg.sender, underlyingAmount.fdiv(exchangeRate(), BASE_UNIT));
 
         emit Deposit(msg.sender, underlyingAmount);
 
-        // Transfer in underlying tokens from the sender.
+        // Transfer in underlying tokens from the user.
         UNDERLYING.safeTransferFrom(msg.sender, address(this), underlyingAmount);
     }
 
-    /// @notice Withdraws a specific amount of underlying tokens by burning the equivalent amount of fvTokens.
+    /// @notice Withdraw a specific amount of underlying tokens.
     /// @param underlyingAmount The amount of underlying tokens to withdraw.
     function withdraw(uint256 underlyingAmount) external {
         // We don't allow withdrawing 0 to prevent emitting a useless event.
         require(underlyingAmount != 0, "AMOUNT_CANNOT_BE_ZERO");
 
-        // Convert underlying tokens to fvTokens and then burn them.
+        // Determine the equivalent amount of rvTokens and burn them.
+        // This will revert if the user does not have enough rvTokens.
         _burn(msg.sender, underlyingAmount.fdiv(exchangeRate(), BASE_UNIT));
 
         emit Withdraw(msg.sender, underlyingAmount);
 
-        // If the amount is greater than the float, redeem some cTokens.
-        // TODO: Optimize double calls to getFloat()? One is also done in totalFreeDeposited.
-        if (underlyingAmount > getFloat()) {
-            pullIntoFloat(
+        // If the amount is greater than the float, withdraw from strategies.
+        // TODO: Optimize double calls to totalFloat()? One is also done in totalHoldings.
+        if (underlyingAmount > totalFloat()) {
+            pullFromWithdrawalQueue(
                 // The bare minimum we need for this withdrawal.
-                (underlyingAmount - getFloat()) +
+                (underlyingAmount - totalFloat()) +
                     // The amount needed to reach our target float percentage.
-                    (totalFreeDeposited() - underlyingAmount).fmul(targetFloatPercent, 1e18)
+                    (totalHoldings() - underlyingAmount).fmul(targetFloatPercent, 1e18)
             );
         }
 
-        // Transfer underlying tokens to the caller.
+        // Transfer underlying tokens to the user.
         UNDERLYING.safeTransfer(msg.sender, underlyingAmount);
     }
 
-    /// @notice Burns a specific amount of fvTokens and transfers the equivalent amount of underlying tokens.
-    /// @param fvTokenAmount The amount of fvTokens to redeem for underlying tokens.
-    function redeem(uint256 fvTokenAmount) external {
+    /// @notice Redeem a specific amount of rvTokens for underlying tokens.
+    /// @param rvTokenAmount The amount of rvTokens to redeem for underlying tokens.
+    function redeem(uint256 rvTokenAmount) external {
         // We don't allow redeeming 0 to prevent emitting a useless event.
-        require(fvTokenAmount != 0, "AMOUNT_CANNOT_BE_ZERO");
+        require(rvTokenAmount != 0, "AMOUNT_CANNOT_BE_ZERO");
 
-        // Convert the amount of fvTokens to underlying tokens.
-        uint256 underlyingAmount = fvTokenAmount.fmul(exchangeRate(), BASE_UNIT);
+        // Determine the equivalent amount of underlying tokens.
+        uint256 underlyingAmount = rvTokenAmount.fmul(exchangeRate(), BASE_UNIT);
 
-        // Burn the provided fvTokens.
-        _burn(msg.sender, fvTokenAmount);
+        // Burn the provided rvTokens.
+        _burn(msg.sender, rvTokenAmount);
 
         emit Withdraw(msg.sender, underlyingAmount);
 
-        // If the amount is greater than the float, redeem some cTokens.
-        // TODO: Optimize double calls to getFloat()? One is also done in totalFreeDeposited.
-        if (underlyingAmount > getFloat()) {
-            pullIntoFloat(
+        // If the amount is greater than the float, withdraw from strategies.
+        // TODO: Optimize double calls to totalFloat()? One is also done in totalHoldings.
+        if (underlyingAmount > totalFloat()) {
+            pullFromWithdrawalQueue(
                 // The bare minimum we need for this withdrawal.
-                (underlyingAmount - getFloat()) +
+                (underlyingAmount - totalFloat()) +
                     // The amount needed to reach our target float percentage.
-                    (totalFreeDeposited() - underlyingAmount).fmul(targetFloatPercent, 1e18)
+                    (totalHoldings() - underlyingAmount).fmul(targetFloatPercent, 1e18)
             );
         }
 
-        // Transfer underlying tokens to the caller.
+        // Transfer underlying tokens to the user.
         UNDERLYING.safeTransfer(msg.sender, underlyingAmount);
     }
 
@@ -296,23 +320,23 @@ contract Vault is ERC20, Auth {
         return balanceOf[account].fmul(exchangeRate(), BASE_UNIT);
     }
 
-    /// @notice Returns the amount of underlying tokens an fvToken can be redeemed for.
-    /// @return The amount of underlying tokens an fvToken can be redeemed for.
+    /// @notice Returns the amount of underlying tokens an rvToken can be redeemed for.
+    /// @return The amount of underlying tokens an rvToken can be redeemed for.
     function exchangeRate() public view returns (uint256) {
-        // If the supply or balance is zero, return an exchange rate of 1.
+        // If there are no rvTokens in circulation, return an exchange rate of 1:1.
         if (totalSupply == 0) return BASE_UNIT;
 
         // TODO: Optimize double SLOAD of totalSupply here?
-        // Calculate the exchange rate by diving the underlying balance by the fvToken supply.
-        return totalFreeDeposited().fdiv(totalSupply, BASE_UNIT);
+        // Calculate the exchange rate by diving the total holdings by the rvToken supply.
+        return totalHoldings().fdiv(totalSupply, BASE_UNIT);
     }
 
-    /// @notice Calculate the total amount of free underlying tokens the Vault currently holds for depositors.
-    /// @return The total amount of free underlying tokens the Vault currently holds for depositors.
-    function totalFreeDeposited() public view returns (uint256) {
+    /// @notice Calculate the total amount of tokens the Vault currently holds for depositors.
+    /// @return The total amount of tokens the Vault currently holds for depositors.
+    function totalHoldings() public view returns (uint256) {
         // Subtract locked profit from the amount of total deposited tokens and add the float value.
-        // We subtract the locked profit from the totalDeposited because maxLockedProfit is baked into it.
-        return getFloat() + (totalDeposited - lockedProfit());
+        // We subtract locked profit from totalStrategyHoldings because maxLockedProfit is baked into it.
+        return totalFloat() + (totalStrategyHoldings - lockedProfit());
     }
 
     /// @notice Calculate the current amount of locked profit.
@@ -327,7 +351,7 @@ contract Vault is ERC20, Auth {
 
     /// @notice Returns the amount of underlying tokens that idly sit in the Vault.
     /// @return The amount of underlying tokens that sit idly in the Vault.
-    function getFloat() public view returns (uint256) {
+    function totalFloat() public view returns (uint256) {
         return UNDERLYING.balanceOf(address(this));
     }
 
@@ -335,96 +359,94 @@ contract Vault is ERC20, Auth {
                            HARVEST LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Trigger a harvest.
-    function harvest(CToken cToken) external {
-        // If a non authorized cToken could be harvested a malicious user could
-        // construct a fake cToken that over-reports holdings to manipulate share price.
-        require(canBeHarvested[cToken], "UNAUTHORIZED_CTOKEN");
+    /// @notice Harvest a trusted strategy.
+    /// @param strategy The trusted strategy to harvest.
+    function harvest(Strategy strategy) external {
+        // If an untrusted strategy could be harvested a malicious user could
+        // construct a fake strategy that over-reports holdings to manipulate share price.
+        require(isStrategyTrusted[strategy], "UNTRUSTED_STRATEGY");
 
-        uint256 balanceLastHarvest = balanceOfUnderlyingLastHarvest[cToken];
-        uint256 balanceThisHarvest = cToken.balanceOfUnderlying(address(this));
+        uint256 balanceLastHarvest = balanceOfStrategy[strategy];
+        uint256 balanceThisHarvest = strategy.balanceOfUnderlying(address(this));
 
-        // Increase/decrease totalDeposited based on the computed profit/loss.
-        // We cannot wrap the delta calculation in parenthesis as it would underflow if the cToken registers a loss.
-        totalDeposited = totalDeposited + balanceThisHarvest - balanceLastHarvest;
+        // Increase/decrease totalStrategyHoldings based on the computed profit/loss.
+        // We cannot wrap the balance delta computation in parenthesis as it would underflow if the strategy registers a loss.
+        totalStrategyHoldings = totalStrategyHoldings + balanceThisHarvest - balanceLastHarvest;
 
         // Update maximum locked profit to include our balance gained.
         maxLockedProfit = lockedProfit() +
-            // Compute our profit (losses are instantly accounted for in totalDeposited)
+            // Compute our profit (losses are instantly accounted for in totalStrategyHoldings)
             balanceThisHarvest >
             balanceLastHarvest
             ? balanceThisHarvest - balanceLastHarvest // Difference from last harvest.
-            : 0; // If the cToken registered a net loss we don't have any new profit to lock.
+            : 0; // If the strategy registered a net loss we don't have any new profit to lock.
 
         // Set the lastHarvestTimestamp to the current timestamp, as a harvest was just completed.
         lastHarvestTimestamp = block.number;
 
         // TODO: Cache SLOAD here?
-        emit Harvest(cToken, maxLockedProfit);
-    }
-
-    /// @notice Disables harvesting a specific cToken.
-    /// @param cToken The cToken to disable harvesting.
-    function disableHarvestingPool(CToken cToken) external requiresAuth {
-        canBeHarvested[cToken] = false;
-
-        emit EnableHarvestingPool(cToken);
+        emit Harvest(strategy, maxLockedProfit);
     }
 
     /*///////////////////////////////////////////////////////////////
                             REBALANCE LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Deposit funds into a cToken.
-    function enterPool(CToken cToken, uint256 underlyingAmount) external requiresAuth {
-        // Enable harvesting the cToken if it wasn't already.
-        if (!canBeHarvested[cToken]) {
-            canBeHarvested[cToken] = true;
-            emit EnableHarvestingPool(cToken);
-        }
+    /// @notice Deposit a specific amount of float into a strategy.
+    /// @param strategy The strategy to deposit into.
+    /// @param underlyingAmount The amount of underlying tokens in float to deposit.
+    function depositIntoStrategy(Strategy strategy, uint256 underlyingAmount) external requiresAuth {
+        // A strategy must be trusted before it can be deposited into.
+        require(isStrategyTrusted[strategy], "UNTRUSTED_STRATEGY");
 
-        // Exit early if we're not actually depositing anything.
-        if (underlyingAmount == 0) return;
+        // We don't allow exiting 0 to prevent emitting a useless event.
+        require(underlyingAmount != 0, "AMOUNT_CANNOT_BE_ZERO");
 
         // Without this whenever harvest was next called on this
-        // cToken the newly deposited amount would count as profit.
-        balanceOfUnderlyingLastHarvest[cToken] += underlyingAmount;
+        // strategy the newly deposited amount would count as profit.
+        balanceOfStrategy[strategy] += underlyingAmount;
 
-        // Increase the totalDeposited amount to account for the minted cTokens.
-        totalDeposited += underlyingAmount;
+        // Increase the totalStrategyHoldings amount to account for the minted strategies.
+        totalStrategyHoldings += underlyingAmount;
 
-        emit EnterPool(cToken, underlyingAmount);
+        emit StrategyDeposit(strategy, underlyingAmount);
 
-        // Approve the underlying to the pool for minting.
-        UNDERLYING.safeApprove(address(cToken), underlyingAmount);
+        // Approve the underlying to the strategy for minting.
+        UNDERLYING.safeApprove(address(strategy), underlyingAmount);
 
-        // Deposit into the pool and receive cTokens.
-        require(cToken.mint(underlyingAmount) == 0, "MINT_FAILED");
+        // Deposit and mint some strategies.
+        require(strategy.mint(underlyingAmount) == 0, "MINT_FAILED");
     }
 
-    /// @notice Withdraw funds from a pool.
-    /// @dev Exiting a pool will not remove it from the withdrawal queue.
-    function exitPool(CToken cToken, uint256 underlyingAmount) external requiresAuth {
-        // Decrease the totalDeposited amount to account for the redeemed cTokens.
-        totalDeposited -= underlyingAmount;
+    /// @notice Withdraw a specific amount of underlying tokens from a strategy.
+    /// @param strategy The strategy to withdraw from.
+    /// @param underlyingAmount  The amount of underlying tokens to withdraw.
+    /// @dev Withdrawing from a strategy will not remove it from the withdrawal queue.
+    function withdrawFromStrategy(Strategy strategy, uint256 underlyingAmount) external requiresAuth {
+        // We don't allow exiting 0 to prevent emitting a useless event.
+        require(underlyingAmount != 0, "AMOUNT_CANNOT_BE_ZERO");
+
+        // Decrease the totalStrategyHoldings amount to account for the redeemed strategies.
+        totalStrategyHoldings -= underlyingAmount;
 
         // Without this whenever harvest was next called on this
-        // cToken the withdrawn amount would be count as a loss.
-        balanceOfUnderlyingLastHarvest[cToken] -= underlyingAmount;
+        // strategy the withdrawn amount would be count as a loss.
+        balanceOfStrategy[strategy] -= underlyingAmount;
 
-        emit ExitPool(cToken, underlyingAmount);
+        emit StrategyWithdrawal(strategy, underlyingAmount);
 
-        // Redeem the right amount of cTokens to get us underlyingAmount.
-        require(cToken.redeemUnderlying(underlyingAmount) == 0, "REDEEM_FAILED");
+        // Redeem the right amount of strategies to get us underlyingAmount.
+        require(strategy.redeemUnderlying(underlyingAmount) == 0, "REDEEM_FAILED");
     }
 
     /*///////////////////////////////////////////////////////////////
-                          FLOAT MANAGEMENT LOGIC
+                       STRATEGY WITHDRAWAL LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev Withdraw underlying tokens from cTokens in the withdrawal queue.
+    /// @dev Withdraw a specific amount of underlying tokens from strategies in the withdrawal queue.
     /// @param underlyingAmount The amount of underlying tokens to pull into float.
-    function pullIntoFloat(uint256 underlyingAmount) internal {
+    /// @dev Automatically removes depleted strategies from the withdrawal queue.
+    function pullFromWithdrawalQueue(uint256 underlyingAmount) internal {
         // TODO: Is there reentrancy here?
         // TODO: Cache variables to optimize SLOADs.
 
@@ -432,54 +454,36 @@ contract Vault is ERC20, Auth {
 
         // We iterate in reverse as the withdrawalQueue is sorted in ascending order.
         for (uint256 i = withdrawalQueue.length - 1; i >= 0; i--) {
-            CToken cToken = withdrawalQueue[i];
+            Strategy strategy = withdrawalQueue[i];
 
-            // Calculate the Vault's balance in the cToken contract.
-            uint256 balance = cToken.balanceOfUnderlying(address(this));
+            // We want to pull as much as we can from the strategy, but no more than we need.
+            uint256 amountToPull = FixedPointMathLib.min(amountLeftToPull, balanceOfStrategy[strategy]);
 
-            if (amountLeftToPull > balance) {
-                // If this cToken's balance isn't enough to cover the amount
-                // we need to pull, withdraw everything we can and keep looping.
-                emit ExitPool(cToken, balance);
-                require(cToken.redeemUnderlying(balance) == 0, "REDEEM_FAILED");
+            // Without this whenever harvest was next called on this
+            // strategy the withdrawn amount would be count as a loss.
+            balanceOfStrategy[strategy] -= underlyingAmount;
 
-                // Without this whenever harvest was next called on this
-                // cToken the withdrawn amount would be count as a loss.
-                balanceOfUnderlyingLastHarvest[cToken] -= balance;
+            // Redeem the right amount of strategies to get us underlyingAmount.
+            require(strategy.redeemUnderlying(underlyingAmount) == 0, "REDEEM_FAILED");
 
-                // We've depleted this cToken, remove it from the queue.
-                // TODO: Modifying the array while we're looping over it might break stuff?
-                // TODO: It also might just be more efficient to pop a copy in memory and then commit the update in a big chunk.
-                withdrawalQueue.pop();
+            emit StrategyWithdrawal(strategy, underlyingAmount);
 
-                amountLeftToPull -= balance;
-            } else {
-                // This cToken has enough to cover the amount we need to pull
-                // we need to pull, withdraw only as much as we need and break.
-                emit ExitPool(cToken, amountLeftToPull);
-                require(cToken.redeemUnderlying(amountLeftToPull) == 0, "REDEEM_FAILED");
+            // Adjust our goal based on how much we were able to pull from the strategy.
+            amountLeftToPull -= amountToPull;
 
-                // Without this whenever harvest was next called on this
-                // cToken the withdrawn amount would be count as a loss.
-                balanceOfUnderlyingLastHarvest[cToken] -= amountLeftToPull;
+            // If we depleted the strategy, remove it from the queue.
+            if (balanceOfStrategy[strategy] == amountToPull) withdrawalQueue.pop();
 
-                // If we depleted the cToken, remove it from the queue.
-                // TODO: Modifying the array while we're looping over it might break stuff?
-                // TODO: It also might just be more efficient to pop a copy in memory and then commit the update in a big chunk.
-                if (amountLeftToPull == balance) withdrawalQueue.pop();
-
-                amountLeftToPull = 0;
-
-                break;
-            }
+            // If we've pulled all we need, exit the loop.
+            if (amountLeftToPull == 0) break;
         }
 
         // If even after looping over the whole queue there is not enough to pull
         // the underlyingAmount, we just revert and let the user know via an error.
-        require(amountLeftToPull == 0, "NOT_ENOUGH_FUNDS_IN_QUEUE");
+        require(amountLeftToPull == 0, "NOT_ENOUGH_IN_QUEUE");
 
-        // Decrease the totalDeposited amount to account for the redeemed cTokens.
-        totalDeposited -= underlyingAmount;
+        // Decrease the totalDeposited amount to account for the withdrawals.
+        totalStrategyHoldings -= underlyingAmount;
 
         emit WithdrawalQueueUpdated(withdrawalQueue);
     }
