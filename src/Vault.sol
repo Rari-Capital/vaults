@@ -238,13 +238,15 @@ contract Vault is ERC20, Auth {
 
         // If the amount is greater than the float, redeem some cTokens.
         // TODO: Optimize double calls to getFloat()? One is also done in totalFreeDeposited.
-        if (underlyingAmount > getFloat())
+        if (underlyingAmount > getFloat()) {
             pullIntoFloat(
                 // The bare minimum we need for this withdrawal.
                 (underlyingAmount - getFloat()) +
                     // The amount needed to reach our target float percentage.
                     (totalFreeDeposited() - underlyingAmount).fmul(targetFloatPercent, 1e18)
             );
+        }
+
         // Transfer underlying tokens to the caller.
         UNDERLYING.safeTransfer(msg.sender, underlyingAmount);
     }
@@ -263,13 +265,14 @@ contract Vault is ERC20, Auth {
 
         // If the amount is greater than the float, redeem some cTokens.
         // TODO: Optimize double calls to getFloat()? One is also done in totalFreeDeposited.
-        if (underlyingAmount > getFloat())
+        if (underlyingAmount > getFloat()) {
             pullIntoFloat(
                 // The bare minimum we need for this withdrawal.
                 (underlyingAmount - getFloat()) +
                     // The amount needed to reach our target float percentage.
                     (totalFreeDeposited() - underlyingAmount).fmul(targetFloatPercent, 1e18)
             );
+        }
 
         // Transfer underlying tokens to the caller.
         UNDERLYING.safeTransfer(msg.sender, underlyingAmount);

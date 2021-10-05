@@ -19,19 +19,80 @@ contract VaultsTest is DSTestPlus {
 
     function testAtomicDepositWithdraw() public {
         underlying.mint(address(this), 1e18);
+        underlying.approve(address(vault), 1e18);
 
         uint256 preDepositBal = underlying.balanceOf(address(this));
 
-        underlying.approve(address(vault), 1e18);
-
         vault.deposit(1e18);
 
-        assertEq(underlying.balanceOf(address(this)), preDepositBal - 1e18);
+        assertEq(vault.exchangeRate(), 1e18);
+        assertEq(vault.balanceOf(address(this)), 1e18);
         assertEq(vault.underlyingBalanceOf(address(this)), 1e18);
+        assertEq(underlying.balanceOf(address(this)), preDepositBal - 1e18);
 
         vault.withdraw(1e18);
 
-        assertEq(underlying.balanceOf(address(this)), preDepositBal);
+        assertEq(vault.exchangeRate(), 1e18);
+        assertEq(vault.balanceOf(address(this)), 0);
         assertEq(vault.underlyingBalanceOf(address(this)), 0);
+        assertEq(underlying.balanceOf(address(this)), preDepositBal);
+    }
+
+    function testAtomicDepositRedeem() public {
+        underlying.mint(address(this), 1e18);
+        underlying.approve(address(vault), 1e18);
+
+        uint256 preDepositBal = underlying.balanceOf(address(this));
+
+        vault.deposit(1e18);
+
+        assertEq(vault.exchangeRate(), 1e18);
+        assertEq(vault.balanceOf(address(this)), 1e18);
+        assertEq(vault.underlyingBalanceOf(address(this)), 1e18);
+        assertEq(underlying.balanceOf(address(this)), preDepositBal - 1e18);
+
+        vault.redeem(1e18);
+
+        assertEq(vault.exchangeRate(), 1e18);
+        assertEq(vault.balanceOf(address(this)), 0);
+        assertEq(vault.underlyingBalanceOf(address(this)), 0);
+        assertEq(underlying.balanceOf(address(this)), preDepositBal);
+    }
+
+    function testFailDepositWithNoApproval() public {
+        vault.deposit(1e18);
+    }
+
+    function testFailDepositWithNotEnoughApproval() public {
+        underlying.mint(address(this), 0.5e18);
+        underlying.approve(address(vault), 0.5e18);
+
+        vault.deposit(1e18);
+    }
+
+    function testFailWithdrawWithNoBalance() public {
+        vault.withdraw(1e18);
+    }
+
+    function testFailWithdrawWithNotEnoughBalance() public {
+        underlying.mint(address(this), 0.5e18);
+        underlying.approve(address(vault), 0.5e18);
+
+        vault.deposit(0.5e18);
+
+        vault.withdraw(1e18);
+    }
+
+    function testFailRedeemWithNoBalance() public {
+        vault.redeem(1e18);
+    }
+
+    function testFailRedeemWithNotEnoughBalance() public {
+        underlying.mint(address(this), 0.5e18);
+        underlying.approve(address(vault), 0.5e18);
+
+        vault.deposit(0.5e18);
+
+        vault.redeem(1e18);
     }
 }
