@@ -291,6 +291,7 @@ contract Vault is ERC20, Auth {
         uint256 underlyingAmount = rvTokenAmount.fmul(exchangeRate(), BASE_UNIT);
 
         // Burn the provided rvTokens.
+        // This will revert if the user does not have enough rvTokens.
         _burn(msg.sender, rvTokenAmount);
 
         emit Withdraw(msg.sender, underlyingAmount);
