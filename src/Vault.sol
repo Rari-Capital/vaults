@@ -374,6 +374,9 @@ contract Vault is ERC20, Auth {
         // We cannot wrap the balance delta computation in parenthesis as it would underflow if the strategy registers a loss.
         totalStrategyHoldings = totalStrategyHoldings + balanceThisHarvest - balanceLastHarvest;
 
+        // Update our stored balance for the strategy.
+        balanceOfStrategy[strategy] = balanceThisHarvest;
+
         // Update maximum locked profit to include profits.
         maxLockedProfit =
             lockedProfit() +
