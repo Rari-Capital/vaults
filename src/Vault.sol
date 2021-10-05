@@ -105,7 +105,7 @@ contract Vault is ERC20, Auth {
     mapping(CToken => uint256) public balanceOfUnderlyingLastHarvest;
 
     /// @notice The total amount of underlying held in deposits (calculated last harvest).
-    /// @dev Includes maxLockedProfit, must be correctly subtracted to compute "available" holdings.
+    /// @dev Includes maxLockedProfit, must be correctly subtracted to compute available/free holdings.
     uint256 public totalDeposited;
 
     /// @notice The amount of locked profit at the time of the last harvest.

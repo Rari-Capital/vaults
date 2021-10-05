@@ -59,6 +59,14 @@ contract VaultsTest is DSTestPlus {
         assertEq(underlying.balanceOf(address(this)), preDepositBal);
     }
 
+    function testFailRedeemWithNoBalance() public {
+        vault.redeem(1e18);
+    }
+
+    function testFailWithdrawWithNoBalance() public {
+        vault.withdraw(1e18);
+    }
+
     function testFailDepositWithNoApproval() public {
         vault.deposit(1e18);
     }
@@ -70,10 +78,6 @@ contract VaultsTest is DSTestPlus {
         vault.deposit(1e18);
     }
 
-    function testFailWithdrawWithNoBalance() public {
-        vault.withdraw(1e18);
-    }
-
     function testFailWithdrawWithNotEnoughBalance() public {
         underlying.mint(address(this), 0.5e18);
         underlying.approve(address(vault), 0.5e18);
@@ -81,10 +85,6 @@ contract VaultsTest is DSTestPlus {
         vault.deposit(0.5e18);
 
         vault.withdraw(1e18);
-    }
-
-    function testFailRedeemWithNoBalance() public {
-        vault.redeem(1e18);
     }
 
     function testFailRedeemWithNotEnoughBalance() public {
