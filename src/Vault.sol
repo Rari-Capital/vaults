@@ -69,8 +69,8 @@ contract Vault is ERC20, Auth {
 
     /// @notice Emitted after a successful harvest.
     /// @param strategy The strategy that was harvested.
-    /// @param profit The amount of profit the strategy registered since the last harvest.
-    event Harvest(Strategy indexed strategy, uint256 profit);
+    /// @param lockedProfit The amount of locked profit after the harvest.
+    event Harvest(Strategy indexed strategy, uint256 lockedProfit);
 
     /// @notice Emitted after the Vault deposits into a strategy contract.
     /// @param strategy The strategy that was minted.
