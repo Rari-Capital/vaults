@@ -315,7 +315,7 @@ contract Vault is ERC20, Auth {
 
     /// @notice Returns a user's Vault balance in underlying tokens.
     /// @return The user's Vault balance in underlying tokens.
-    function underlyingBalanceOf(address account) external view returns (uint256) {
+    function balanceOfUnderlying(address account) external view returns (uint256) {
         return balanceOf[account].fmul(exchangeRate(), BASE_UNIT);
     }
 

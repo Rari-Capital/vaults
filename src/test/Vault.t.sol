@@ -35,7 +35,7 @@ contract VaultsTest is DSTestPlus {
         assertEq(vault.totalHoldings(), 1e18);
         assertEq(vault.totalFloat(), 1e18);
         assertEq(vault.balanceOf(address(this)), 1e18);
-        assertEq(vault.underlyingBalanceOf(address(this)), 1e18);
+        assertEq(vault.balanceOfUnderlying(address(this)), 1e18);
         assertEq(underlying.balanceOf(address(this)), preDepositBal - 1e18);
 
         vault.withdraw(1e18);
@@ -45,7 +45,7 @@ contract VaultsTest is DSTestPlus {
         assertEq(vault.totalHoldings(), 0);
         assertEq(vault.totalFloat(), 0);
         assertEq(vault.balanceOf(address(this)), 0);
-        assertEq(vault.underlyingBalanceOf(address(this)), 0);
+        assertEq(vault.balanceOfUnderlying(address(this)), 0);
         assertEq(underlying.balanceOf(address(this)), preDepositBal);
     }
 
@@ -62,7 +62,7 @@ contract VaultsTest is DSTestPlus {
         assertEq(vault.totalHoldings(), 1e18);
         assertEq(vault.totalFloat(), 1e18);
         assertEq(vault.balanceOf(address(this)), 1e18);
-        assertEq(vault.underlyingBalanceOf(address(this)), 1e18);
+        assertEq(vault.balanceOfUnderlying(address(this)), 1e18);
         assertEq(underlying.balanceOf(address(this)), preDepositBal - 1e18);
 
         vault.redeem(1e18);
@@ -72,7 +72,7 @@ contract VaultsTest is DSTestPlus {
         assertEq(vault.totalHoldings(), 0);
         assertEq(vault.totalFloat(), 0);
         assertEq(vault.balanceOf(address(this)), 0);
-        assertEq(vault.underlyingBalanceOf(address(this)), 0);
+        assertEq(vault.balanceOfUnderlying(address(this)), 0);
         assertEq(underlying.balanceOf(address(this)), preDepositBal);
     }
 
@@ -149,7 +149,7 @@ contract VaultsTest is DSTestPlus {
         assertEq(vault.totalHoldings(), 1e18);
         assertEq(vault.totalFloat(), 0);
         assertEq(vault.balanceOf(address(this)), 1e18);
-        assertEq(vault.underlyingBalanceOf(address(this)), 1e18);
+        assertEq(vault.balanceOfUnderlying(address(this)), 1e18);
 
         vault.withdrawFromStrategy(strategy, 0.5e18);
 
@@ -158,7 +158,7 @@ contract VaultsTest is DSTestPlus {
         assertEq(vault.totalHoldings(), 1e18);
         assertEq(vault.totalFloat(), 0.5e18);
         assertEq(vault.balanceOf(address(this)), 1e18);
-        assertEq(vault.underlyingBalanceOf(address(this)), 1e18);
+        assertEq(vault.balanceOfUnderlying(address(this)), 1e18);
 
         vault.withdrawFromStrategy(strategy, 0.5e18);
 
@@ -167,6 +167,6 @@ contract VaultsTest is DSTestPlus {
         assertEq(vault.totalHoldings(), 1e18);
         assertEq(vault.totalFloat(), 1e18);
         assertEq(vault.balanceOf(address(this)), 1e18);
-        assertEq(vault.underlyingBalanceOf(address(this)), 1e18);
+        assertEq(vault.balanceOfUnderlying(address(this)), 1e18);
     }
 }
