@@ -13,9 +13,15 @@ contract VaultsTest is DSTestPlus {
     Vault vault;
     MockERC20 underlying;
 
+    MockStrategy strategy1;
+    MockStrategy strategy2;
+
     function setUp() public {
         underlying = new MockERC20("Mock Token", "TKN", 18);
         vault = new VaultFactory().deployVault(underlying);
+
+        strategy1 = new MockStrategy(underlying);
+        strategy2 = new MockStrategy(underlying);
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -133,16 +139,14 @@ contract VaultsTest is DSTestPlus {
                   BASIC STRATEGY DEPOSIT/WITHDRAWAL TESTS
     //////////////////////////////////////////////////////////////*/
 
-    function testAtomicEnterExitPool() public {
-        MockStrategy strategy = new MockStrategy(underlying);
-
+    function testAtomicEnterExitSinglePool() public {
         underlying.mint(address(this), 1e18);
         underlying.approve(address(vault), 1e18);
         vault.deposit(1e18);
 
-        vault.trustStrategy(strategy);
+        vault.trustStrategy(strategy1);
 
-        vault.depositIntoStrategy(strategy, 1e18);
+        vault.depositIntoStrategy(strategy1, 1e18);
 
         assertEq(vault.exchangeRate(), vault.BASE_UNIT());
         assertEq(vault.totalStrategyHoldings(), 1e18);
@@ -151,7 +155,7 @@ contract VaultsTest is DSTestPlus {
         assertEq(vault.balanceOf(address(this)), 1e18);
         assertEq(vault.balanceOfUnderlying(address(this)), 1e18);
 
-        vault.withdrawFromStrategy(strategy, 0.5e18);
+        vault.withdrawFromStrategy(strategy1, 0.5e18);
 
         assertEq(vault.exchangeRate(), vault.BASE_UNIT());
         assertEq(vault.totalStrategyHoldings(), 0.5e18);
@@ -160,7 +164,7 @@ contract VaultsTest is DSTestPlus {
         assertEq(vault.balanceOf(address(this)), 1e18);
         assertEq(vault.balanceOfUnderlying(address(this)), 1e18);
 
-        vault.withdrawFromStrategy(strategy, 0.5e18);
+        vault.withdrawFromStrategy(strategy1, 0.5e18);
 
         assertEq(vault.exchangeRate(), vault.BASE_UNIT());
         assertEq(vault.totalStrategyHoldings(), 0);
@@ -169,4 +173,100 @@ contract VaultsTest is DSTestPlus {
         assertEq(vault.balanceOf(address(this)), 1e18);
         assertEq(vault.balanceOfUnderlying(address(this)), 1e18);
     }
+
+    function testAtomicEnterExitMultiPool() public {
+        underlying.mint(address(this), 1e18);
+        underlying.approve(address(vault), 1e18);
+        vault.deposit(1e18);
+
+        vault.trustStrategy(strategy1);
+
+        vault.depositIntoStrategy(strategy1, 0.5e18);
+
+        assertEq(vault.exchangeRate(), vault.BASE_UNIT());
+        assertEq(vault.totalStrategyHoldings(), 0.5e18);
+        assertEq(vault.totalHoldings(), 1e18);
+        assertEq(vault.totalFloat(), 0.5e18);
+        assertEq(vault.balanceOf(address(this)), 1e18);
+        assertEq(vault.balanceOfUnderlying(address(this)), 1e18);
+
+        vault.trustStrategy(strategy2);
+
+        vault.depositIntoStrategy(strategy2, 0.5e18);
+
+        assertEq(vault.exchangeRate(), vault.BASE_UNIT());
+        assertEq(vault.totalStrategyHoldings(), 1e18);
+        assertEq(vault.totalHoldings(), 1e18);
+        assertEq(vault.totalFloat(), 0);
+        assertEq(vault.balanceOf(address(this)), 1e18);
+        assertEq(vault.balanceOfUnderlying(address(this)), 1e18);
+
+        vault.withdrawFromStrategy(strategy1, 0.5e18);
+
+        assertEq(vault.exchangeRate(), vault.BASE_UNIT());
+        assertEq(vault.totalStrategyHoldings(), 0.5e18);
+        assertEq(vault.totalHoldings(), 1e18);
+        assertEq(vault.totalFloat(), 0.5e18);
+        assertEq(vault.balanceOf(address(this)), 1e18);
+        assertEq(vault.balanceOfUnderlying(address(this)), 1e18);
+
+        vault.withdrawFromStrategy(strategy2, 0.5e18);
+
+        assertEq(vault.exchangeRate(), vault.BASE_UNIT());
+        assertEq(vault.totalStrategyHoldings(), 0);
+        assertEq(vault.totalHoldings(), 1e18);
+        assertEq(vault.totalFloat(), 1e18);
+        assertEq(vault.balanceOf(address(this)), 1e18);
+        assertEq(vault.balanceOfUnderlying(address(this)), 1e18);
+    }
+
+    function testFailDepositIntoStrategyWithNotEnoughBalance() public {
+        underlying.mint(address(this), 0.5e18);
+        underlying.approve(address(vault), 0.5e18);
+
+        vault.deposit(0.5e18);
+
+        vault.trustStrategy(strategy1);
+
+        vault.depositIntoStrategy(strategy1, 1e18);
+    }
+
+    function testFailWithdrawFromStrategyWithNotEnoughBalance() public {
+        underlying.mint(address(this), 0.5e18);
+        underlying.approve(address(vault), 0.5e18);
+
+        vault.deposit(0.5e18);
+
+        vault.trustStrategy(strategy1);
+
+        vault.depositIntoStrategy(strategy1, 0.5e18);
+
+        vault.withdrawFromStrategy(strategy1, 1e18);
+    }
+
+    function testFailDepositIntoStrategyWithNoBalance() public {
+        vault.trustStrategy(strategy1);
+
+        vault.depositIntoStrategy(strategy1, 1e18);
+    }
+
+    function testFailWithdrawFromStrategyWithNoBalance() public {
+        vault.withdrawFromStrategy(strategy1, 1e18);
+    }
+
+    function testFailDepositIntoStrategyZero() public {
+        vault.trustStrategy(strategy1);
+
+        vault.depositIntoStrategy(strategy1, 0);
+    }
+
+    function testFailWithdrawFromStrategyZero() public {
+        vault.withdrawFromStrategy(strategy1, 0);
+    }
+
+    /*///////////////////////////////////////////////////////////////
+                         BASIC HARVEST TESTS
+    //////////////////////////////////////////////////////////////*/
+
+    function testBasicHarvest() public {}
 }
