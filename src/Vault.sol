@@ -375,7 +375,7 @@ contract Vault is ERC20, Auth {
         // Update our stored balance for the strategy.
         balanceOfStrategy[strategy] = balanceThisHarvest;
 
-        // Update maximum locked profit to include profits.
+        // Update maxLockedProfit to include any new profit.
         maxLockedProfit =
             lockedProfit() +
             (
