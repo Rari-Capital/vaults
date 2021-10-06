@@ -49,7 +49,7 @@ contract Vault is ERC20, Auth {
         UNDERLYING = _UNDERLYING;
 
         // TODO: Once we upgrade to 0.8.9 we can use 10**decimals
-        // instead which will save an external call and an SLOAD.
+        // instead which will save us an external call and SLOAD.
         BASE_UNIT = 10**_UNDERLYING.decimals();
     }
 
@@ -152,7 +152,7 @@ contract Vault is ERC20, Auth {
     /// @param newProfitUnlockDelay The new profit unlock delay.
     function setProfitUnlockDelay(uint256 newProfitUnlockDelay) external requiresAuth {
         // An unlock delay of 0 makes harvests vulnerable to sandwich attacks.
-        require(profitUnlockDelay > 0, "DELAY_TOO_LOW");
+        require(profitUnlockDelay != 0, "DELAY_CANNOT_BE_ZERO");
 
         // Update the profit unlock delay.
         profitUnlockDelay = newProfitUnlockDelay;
@@ -207,7 +207,7 @@ contract Vault is ERC20, Auth {
     /// @dev The index specified must be less than current length of the withdrawal queue array.
     function replaceWithdrawalQueueIndexWithTip(uint256 index) external requiresAuth {
         // Ensure the index is actually in the withdrawal queue array.
-        require(index < withdrawalQueue.length, "INDEX_OUT_OF_BOUNDS");
+        require(index < withdrawalQueue.length, "OUT_OF_BOUNDS");
 
         // Replace the index specified with the tip of the queue.
         withdrawalQueue[index] = withdrawalQueue[withdrawalQueue.length - 1];
@@ -407,8 +407,7 @@ contract Vault is ERC20, Auth {
         // We don't allow exiting 0 to prevent emitting a useless event.
         require(underlyingAmount != 0, "AMOUNT_CANNOT_BE_ZERO");
 
-        // Without this whenever harvest was next called on this
-        // strategy the newly deposited amount would count as profit.
+        // Without this the next harvest would count the deposit as profit.
         balanceOfStrategy[strategy] += underlyingAmount;
 
         // Increase the totalStrategyHoldings amount to account for the newly deposited funds.
@@ -431,8 +430,7 @@ contract Vault is ERC20, Auth {
         // We don't allow exiting 0 to prevent emitting a useless event.
         require(underlyingAmount != 0, "AMOUNT_CANNOT_BE_ZERO");
 
-        // Without this whenever harvest was next called on this
-        // strategy the withdrawn amount would be count as a loss.
+        // Without this the next harvest would count the withdrawal as a loss.
         balanceOfStrategy[strategy] -= underlyingAmount;
 
         // Decrease the totalStrategyHoldings amount to account for the redeemed strategies.
@@ -452,20 +450,20 @@ contract Vault is ERC20, Auth {
     /// @param underlyingAmount The amount of underlying tokens to pull into float.
     /// @dev Automatically removes depleted strategies from the withdrawal queue.
     function pullFromWithdrawalQueue(uint256 underlyingAmount) internal {
-        // TODO: Is there reentrancy here?
         // TODO: Cache variables to optimize SLOADs.
 
         uint256 amountLeftToPull = underlyingAmount;
 
         // We iterate in reverse as the withdrawalQueue is sorted in ascending order.
-        for (uint256 i = withdrawalQueue.length - 1; i >= 0; i--) {
-            Strategy strategy = withdrawalQueue[i];
+        uint256 startingIndex;
+        uint256 currentQueueIndex;
+        for (currentQueueIndex = startingIndex; currentQueueIndex >= 0; currentQueueIndex--) {
+            Strategy strategy = withdrawalQueue[currentQueueIndex];
 
             // We want to pull as much as we can from the strategy, but no more than we need.
             uint256 amountToPull = FixedPointMathLib.min(amountLeftToPull, balanceOfStrategy[strategy]);
 
-            // Without this whenever harvest was next called on this
-            // strategy the withdrawn amount would be count as a loss.
+            // Without this the next harvest would count the withdrawal as a loss.
             balanceOfStrategy[strategy] -= amountToPull;
 
             // Adjust our goal based on how much we're able to pull from the strategy.
@@ -490,6 +488,7 @@ contract Vault is ERC20, Auth {
         // Decrease the totalDeposited amount to account for the withdrawals.
         totalStrategyHoldings -= underlyingAmount;
 
-        emit WithdrawalQueueUpdated(withdrawalQueue);
+        // If we went beyond the starting index, at least one item on the queue was popped.
+        if (currentQueueIndex != startingIndex) emit WithdrawalQueueUpdated(withdrawalQueue);
     }
 }
