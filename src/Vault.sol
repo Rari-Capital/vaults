@@ -72,7 +72,7 @@ contract Vault is ERC20, Auth {
     event Harvest(Strategy indexed strategy, uint256 lockedProfit);
 
     /// @notice Emitted after the Vault deposits into a strategy contract.
-    /// @param strategy The strategy that was minted.
+    /// @param strategy The strategy that was deposited into.
     /// @param underlyingAmount The amount of underlying tokens that were deposited.
     event StrategyDeposit(Strategy indexed strategy, uint256 underlyingAmount);
 
@@ -413,7 +413,7 @@ contract Vault is ERC20, Auth {
 
         emit StrategyDeposit(strategy, underlyingAmount);
 
-        // Approve the underlying to the strategy for minting.
+        // Approve underlyingAmount to the strategy so we can deposit.
         UNDERLYING.safeApprove(address(strategy), underlyingAmount);
 
         // Deposit into the strategy and revert if returns an error code.
