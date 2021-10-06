@@ -368,12 +368,12 @@ contract Vault is ERC20, Auth {
         uint256 balanceLastHarvest = balanceOfStrategy[strategy];
         uint256 balanceThisHarvest = strategy.balanceOfUnderlying(address(this));
 
+        // Update our stored balance for the strategy.
+        balanceOfStrategy[strategy] = balanceThisHarvest;
+
         // Increase/decrease totalStrategyHoldings based on the profit/loss registered.
         // We cannot wrap the subtraction in parenthesis as it would underflow if the strategy had a loss.
         totalStrategyHoldings = totalStrategyHoldings + balanceThisHarvest - balanceLastHarvest;
-
-        // Update our stored balance for the strategy.
-        balanceOfStrategy[strategy] = balanceThisHarvest;
 
         // Update maxLockedProfit to include any new profit.
         maxLockedProfit =
