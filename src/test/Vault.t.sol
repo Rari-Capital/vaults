@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.8.6;
 
-import {MockERC20} from "solmate/tests/utils/MockERC20.sol";
+import {MockERC20} from "solmate/test/utils/MockERC20.sol";
 
 import {DSTestPlus} from "./utils/DSTestPlus.sol";
 import {MockStrategy} from "./mocks/MockStrategy.sol";

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.8.6;
 
-import {DSTestPlus as DSTest} from "solmate/tests/utils/DSTestPlus.sol";
+import {DSTestPlus as DSTest} from "solmate/test/utils/DSTestPlus.sol";
 import {ERC20} from "solmate/erc20/ERC20.sol";
 
 import {Vault} from "../../Vault.sol";

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.8.6;
 
-import {ERC20} from "solmate/erc20/ERC20.sol";
 import {Auth} from "solmate/auth/Auth.sol";
+import {ERC20} from "solmate/erc20/ERC20.sol";
 import {SafeERC20} from "solmate/erc20/SafeERC20.sol";
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 
