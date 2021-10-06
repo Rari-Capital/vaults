@@ -452,13 +452,19 @@ contract Vault is ERC20, Auth {
     function pullFromWithdrawalQueue(uint256 underlyingAmount) internal {
         // TODO: Cache variables to optimize SLOADs.
 
+        // We will update this variable as we pull from strategies.
         uint256 amountLeftToPull = underlyingAmount;
 
-        // We iterate in reverse as the withdrawalQueue is sorted in ascending order.
-        uint256 startingIndex;
-        uint256 currentQueueIndex;
-        for (currentQueueIndex = startingIndex; currentQueueIndex >= 0; currentQueueIndex--) {
-            Strategy strategy = withdrawalQueue[currentQueueIndex];
+        // Store the starting index which is at the tip of the queue.
+        uint256 startingIndex = withdrawalQueue.length - 1;
+
+        // We will use this after the loop to check how many strategies we withdrew from.
+        uint256 currentIndex = startingIndex;
+
+        // Iterate in reverse as the withdrawalQueue is sorted in ascending order.
+        for (; currentIndex >= 0; currentIndex--) {
+            // Get the strategy at the current queue index.
+            Strategy strategy = withdrawalQueue[currentIndex];
 
             // We want to pull as much as we can from the strategy, but no more than we need.
             uint256 amountToPull = FixedPointMathLib.min(amountLeftToPull, balanceOfStrategy[strategy]);
@@ -489,6 +495,6 @@ contract Vault is ERC20, Auth {
         totalStrategyHoldings -= underlyingAmount;
 
         // If we went beyond the starting index, at least one item on the queue was popped.
-        if (currentQueueIndex != startingIndex) emit WithdrawalQueueUpdated(withdrawalQueue);
+        if (currentIndex != startingIndex) emit WithdrawalQueueUpdated(withdrawalQueue);
     }
 }
