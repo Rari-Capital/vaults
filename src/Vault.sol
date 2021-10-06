@@ -371,7 +371,7 @@ contract Vault is ERC20, Auth {
         uint256 balanceThisHarvest = strategy.balanceOfUnderlying(address(this));
 
         // Increase/decrease totalStrategyHoldings based on the computed profit/loss.
-        // We cannot wrap the balance delta computation in parenthesis as it would underflow if the strategy registers a loss.
+        // We cannot wrap the subtraction in parenthesis as it would underflow if the strategy had a loss.
         totalStrategyHoldings = totalStrategyHoldings + balanceThisHarvest - balanceLastHarvest;
 
         // Update our stored balance for the strategy.
