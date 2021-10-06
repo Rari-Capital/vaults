@@ -133,7 +133,7 @@ contract Vault is ERC20, Auth {
     }
 
     /*///////////////////////////////////////////////////////////////
-                          HARVEST STORAGE
+                             HARVEST STORAGE
     //////////////////////////////////////////////////////////////*/
 
     /// @notice A timestamp representing when the last harvest occurred.
@@ -355,7 +355,7 @@ contract Vault is ERC20, Auth {
     }
 
     /*///////////////////////////////////////////////////////////////
-                           HARVEST LOGIC
+                             HARVEST LOGIC
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Harvest a trusted strategy.
