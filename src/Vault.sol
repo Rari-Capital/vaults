@@ -77,7 +77,7 @@ contract Vault is ERC20, Auth {
     event StrategyDeposit(Strategy indexed strategy, uint256 underlyingAmount);
 
     /// @notice Emitted after the Vault withdraws funds from a strategy contract.
-    /// @param strategy The strategy that was redeemed.
+    /// @param strategy The strategy that was withdrawn from.
     /// @param underlyingAmount The amount of underlying tokens that were withdrawn.
     event StrategyWithdrawal(Strategy indexed strategy, uint256 underlyingAmount);
 
@@ -368,7 +368,7 @@ contract Vault is ERC20, Auth {
         uint256 balanceLastHarvest = balanceOfStrategy[strategy];
         uint256 balanceThisHarvest = strategy.balanceOfUnderlying(address(this));
 
-        // Increase/decrease totalStrategyHoldings based on the computed profit/loss.
+        // Increase/decrease totalStrategyHoldings based on the profit/loss registered.
         // We cannot wrap the subtraction in parenthesis as it would underflow if the strategy had a loss.
         totalStrategyHoldings = totalStrategyHoldings + balanceThisHarvest - balanceLastHarvest;
 
@@ -408,7 +408,7 @@ contract Vault is ERC20, Auth {
         // Without this the next harvest would count the deposit as profit.
         balanceOfStrategy[strategy] += underlyingAmount;
 
-        // Increase the totalStrategyHoldings amount to account for the newly deposited funds.
+        // Increase totalStrategyHoldings to account for the deposit.
         totalStrategyHoldings += underlyingAmount;
 
         emit StrategyDeposit(strategy, underlyingAmount);
@@ -431,7 +431,7 @@ contract Vault is ERC20, Auth {
         // Without this the next harvest would count the withdrawal as a loss.
         balanceOfStrategy[strategy] -= underlyingAmount;
 
-        // Decrease the totalStrategyHoldings amount to account for the redeemed strategies.
+        // Decrease totalStrategyHoldings to account for the withdrawal.
         totalStrategyHoldings -= underlyingAmount;
 
         emit StrategyWithdrawal(strategy, underlyingAmount);
@@ -485,11 +485,10 @@ contract Vault is ERC20, Auth {
             if (amountLeftToPull == 0) break;
         }
 
-        // If even after looping over the whole queue there is not enough to pull
-        // the underlyingAmount, we just revert and let the user know via an error.
+        // Revert if we weren't able to pull the desired amount.
         require(amountLeftToPull == 0, "NOT_ENOUGH_IN_QUEUE");
 
-        // Decrease the totalDeposited amount to account for the withdrawals.
+        // Decrease totalStrategyHoldings to account for the withdrawals.
         totalStrategyHoldings -= underlyingAmount;
 
         // If we went beyond the starting index, at least one item on the queue was popped.
