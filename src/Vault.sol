@@ -11,8 +11,7 @@ import {VaultFactory} from "./VaultFactory.sol";
 
 /// @title Rari Vault (rvToken)
 /// @author Transmissions11 + JetJadeja
-/// @notice Yield bearing token that enables users to swap
-/// their underlying asset to instantly begin earning yield.
+/// @notice Minimalist yield aggregator designed to support any ERC20 token.
 contract Vault is ERC20, Auth {
     using SafeERC20 for ERC20;
     using FixedPointMathLib for uint256;
