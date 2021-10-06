@@ -137,11 +137,10 @@ contract Vault is ERC20, Auth {
                           HARVEST STORAGE
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice The most recent timestamp where a harvest occurred.
-    uint256 public lastHarvestTimestamp;
+    /// @notice A timestamp representing when the last harvest occurred.
+    uint256 public lastHarvest;
 
     /// @notice The amount of locked profit at the end of the last harvest.
-    /// @dev Does not change between harvests, instead unlocked profit is computed and subtracted from on the fly.
     uint256 public maxLockedProfit;
 
     /// @notice The approximate period in seconds over which locked profits are unlocked.
@@ -345,9 +344,9 @@ contract Vault is ERC20, Auth {
     function lockedProfit() public view returns (uint256) {
         // TODO: Cache SLOADs?
         return
-            block.timestamp >= lastHarvestTimestamp + profitUnlockDelay
+            block.timestamp >= lastHarvest + profitUnlockDelay
                 ? 0 // If profit unlock delay has passed, there is no locked profit.
-                : maxLockedProfit - (maxLockedProfit * (block.timestamp - lastHarvestTimestamp)) / profitUnlockDelay;
+                : maxLockedProfit - (maxLockedProfit * (block.timestamp - lastHarvest)) / profitUnlockDelay;
     }
 
     /// @notice Returns the amount of underlying tokens that idly sit in the Vault.
@@ -386,8 +385,8 @@ contract Vault is ERC20, Auth {
                     : 0 // If the strategy registered a net loss we don't have any new profit to lock.
             );
 
-        // Set the lastHarvestTimestamp to the current timestamp, as a harvest was just completed.
-        lastHarvestTimestamp = block.timestamp;
+        // Set lastHarvest to the current timestamp.
+        lastHarvest = block.timestamp;
 
         // TODO: Cache SLOAD here?
         emit Harvest(strategy, maxLockedProfit);
