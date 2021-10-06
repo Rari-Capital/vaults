@@ -397,8 +397,8 @@ contract Vault is ERC20, Auth {
                             REBALANCE LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Deposit a specific amount of float into a strategy.
-    /// @param strategy The strategy to deposit into.
+    /// @notice Deposit a specific amount of float into a trusted strategy.
+    /// @param strategy The trusted strategy to deposit into.
     /// @param underlyingAmount The amount of underlying tokens in float to deposit.
     function depositIntoStrategy(Strategy strategy, uint256 underlyingAmount) external requiresAuth {
         // A strategy must be trusted before it can be deposited into.
