@@ -416,7 +416,7 @@ contract Vault is ERC20, Auth {
         // Approve the underlying to the strategy for minting.
         UNDERLYING.safeApprove(address(strategy), underlyingAmount);
 
-        // Deposit and mint some strategies.
+        // Deposit into the strategy and revert if returns an error code.
         require(strategy.mint(underlyingAmount) == 0, "MINT_FAILED");
     }
 
@@ -436,7 +436,7 @@ contract Vault is ERC20, Auth {
 
         emit StrategyWithdrawal(strategy, underlyingAmount);
 
-        // Redeem the right amount of strategies to get us underlyingAmount.
+        // Withdraw from the strategy and revert if returns an error code.
         require(strategy.redeemUnderlying(underlyingAmount) == 0, "REDEEM_FAILED");
     }
 
@@ -473,7 +473,7 @@ contract Vault is ERC20, Auth {
             // Adjust our goal based on how much we're able to pull from the strategy.
             amountLeftToPull -= amountToPull;
 
-            // Redeem the right amount of strategies to get us underlyingAmount.
+            // Withdraw from the strategy and revert if returns an error code.
             require(strategy.redeemUnderlying(amountToPull) == 0, "REDEEM_FAILED");
 
             emit StrategyWithdrawal(strategy, amountToPull);
