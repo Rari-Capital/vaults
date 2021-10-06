@@ -82,10 +82,6 @@ contract Vault is ERC20, Auth {
     /// @param underlyingAmount The amount of underlying tokens that were withdrawn.
     event StrategyWithdrawal(Strategy indexed strategy, uint256 underlyingAmount);
 
-    /// @notice Emitted when the withdrawal queue is updated.
-    /// @param updatedWithdrawalQueue The updated withdrawal queue.
-    event WithdrawalQueueUpdated(Strategy[] updatedWithdrawalQueue);
-
     /// @notice Emitted when a strategy is set to trusted.
     /// @param strategy The strategy that became trusted.
     event StrategyTrusted(Strategy indexed strategy);
@@ -93,6 +89,10 @@ contract Vault is ERC20, Auth {
     /// @notice Emitted when a strategy is set to untrusted.
     /// @param strategy The strategy that became untrusted.
     event StrategyDistrusted(Strategy indexed strategy);
+
+    /// @notice Emitted when the withdrawal queue is updated.
+    /// @param updatedWithdrawalQueue The updated withdrawal queue.
+    event WithdrawalQueueUpdated(Strategy[] updatedWithdrawalQueue);
 
     /*///////////////////////////////////////////////////////////////
                           STRATEGY STORAGE
