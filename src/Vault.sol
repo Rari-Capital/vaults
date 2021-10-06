@@ -481,7 +481,7 @@ contract Vault is ERC20, Auth {
             emit StrategyWithdrawal(strategy, amountToPull);
 
             // If we depleted the strategy, remove it from the queue.
-            if (balanceOfStrategy[strategy] == amountToPull) withdrawalQueue.pop();
+            if (balanceOfStrategy[strategy] == 0) withdrawalQueue.pop();
 
             // If we've pulled all we need, exit the loop.
             if (amountLeftToPull == 0) break;
