@@ -33,10 +33,10 @@ contract Vault is ERC20, Auth {
     /// @param _UNDERLYING An underlying ERC20-compliant token.
     constructor(ERC20 _UNDERLYING)
         ERC20(
-            // ex: Fuse DAI Vault
-            string(abi.encodePacked("Fuse ", _UNDERLYING.name(), " Vault")),
-            // ex: fvDAI
-            string(abi.encodePacked("fv", _UNDERLYING.symbol())),
+            // ex: Rari DAI Vault
+            string(abi.encodePacked("Rari ", _UNDERLYING.name(), " Vault")),
+            // ex: rvDAI
+            string(abi.encodePacked("rv", _UNDERLYING.symbol())),
             // ex: 18
             _UNDERLYING.decimals()
         )
@@ -387,7 +387,7 @@ contract Vault is ERC20, Auth {
             );
 
         // Set the lastHarvestTimestamp to the current timestamp, as a harvest was just completed.
-        lastHarvestTimestamp = block.number;
+        lastHarvestTimestamp = block.timestamp;
 
         // TODO: Cache SLOAD here?
         emit Harvest(strategy, maxLockedProfit);
@@ -411,7 +411,7 @@ contract Vault is ERC20, Auth {
         // strategy the newly deposited amount would count as profit.
         balanceOfStrategy[strategy] += underlyingAmount;
 
-        // Increase the totalStrategyHoldings amount to account for the minted strategies.
+        // Increase the totalStrategyHoldings amount to account for the newly deposited funds.
         totalStrategyHoldings += underlyingAmount;
 
         emit StrategyDeposit(strategy, underlyingAmount);
@@ -431,12 +431,12 @@ contract Vault is ERC20, Auth {
         // We don't allow exiting 0 to prevent emitting a useless event.
         require(underlyingAmount != 0, "AMOUNT_CANNOT_BE_ZERO");
 
-        // Decrease the totalStrategyHoldings amount to account for the redeemed strategies.
-        totalStrategyHoldings -= underlyingAmount;
-
         // Without this whenever harvest was next called on this
         // strategy the withdrawn amount would be count as a loss.
         balanceOfStrategy[strategy] -= underlyingAmount;
+
+        // Decrease the totalStrategyHoldings amount to account for the redeemed strategies.
+        totalStrategyHoldings -= underlyingAmount;
 
         emit StrategyWithdrawal(strategy, underlyingAmount);
 
@@ -466,15 +466,15 @@ contract Vault is ERC20, Auth {
 
             // Without this whenever harvest was next called on this
             // strategy the withdrawn amount would be count as a loss.
-            balanceOfStrategy[strategy] -= underlyingAmount;
+            balanceOfStrategy[strategy] -= amountToPull;
+
+            // Adjust our goal based on how much we're able to pull from the strategy.
+            amountLeftToPull -= amountToPull;
 
             // Redeem the right amount of strategies to get us underlyingAmount.
-            require(strategy.redeemUnderlying(underlyingAmount) == 0, "REDEEM_FAILED");
+            require(strategy.redeemUnderlying(amountToPull) == 0, "REDEEM_FAILED");
 
-            emit StrategyWithdrawal(strategy, underlyingAmount);
-
-            // Adjust our goal based on how much we were able to pull from the strategy.
-            amountLeftToPull -= amountToPull;
+            emit StrategyWithdrawal(strategy, amountToPull);
 
             // If we depleted the strategy, remove it from the queue.
             if (balanceOfStrategy[strategy] == amountToPull) withdrawalQueue.pop();
