@@ -20,7 +20,7 @@ contract Vault is ERC20, Auth {
                                 IMMUTABLES
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice The underlying token the Vault accepts and rebala.
+    /// @notice The underlying token the Vault accepts.
     ERC20 public immutable UNDERLYING;
 
     /// @notice The base unit of the underlying token and hence rvToken.
