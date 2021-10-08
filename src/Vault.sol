@@ -28,7 +28,7 @@ contract Vault is ERC20, Auth {
     uint256 internal immutable BASE_UNIT;
 
     /// @notice Creates a new Vault that accepts a specific underlying token.
-    /// @param _UNDERLYING An underlying ERC20-compliant token.
+    /// @param _UNDERLYING The ERC20 compliant token the Vault should accept.
     constructor(ERC20 _UNDERLYING)
         ERC20(
             // ex: Rari Dai Stablecoin Vault
