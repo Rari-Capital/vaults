@@ -31,7 +31,7 @@ contract Vault is ERC20, Auth {
     /// @param _UNDERLYING An underlying ERC20-compliant token.
     constructor(ERC20 _UNDERLYING)
         ERC20(
-            // ex: Rari DAI Vault
+            // ex: Rari Dai Stablecoin Vault
             string(abi.encodePacked("Rari ", _UNDERLYING.name(), " Vault")),
             // ex: rvDAI
             string(abi.encodePacked("rv", _UNDERLYING.symbol())),
