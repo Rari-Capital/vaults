@@ -25,7 +25,7 @@ contract Vault is ERC20, Auth {
 
     /// @notice The base unit of the underlying token and hence rvToken.
     /// @dev Equal to 10 ** decimals. Used for fixed point multiplication and division.
-    uint256 internal immutable BASE_UNIT;
+    uint256 public immutable BASE_UNIT;
 
     /// @notice Creates a new Vault that accepts a specific underlying token.
     /// @param _UNDERLYING An underlying ERC20-compliant token.
