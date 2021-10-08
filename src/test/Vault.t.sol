@@ -36,7 +36,7 @@ contract VaultsTest is DSTestPlus {
 
         vault.deposit(1e18);
 
-        assertEq(vault.exchangeRate(), vault.BASE_UNIT());
+        assertEq(vault.exchangeRate(), 1e18);
         assertEq(vault.totalStrategyHoldings(), 0);
         assertEq(vault.totalHoldings(), 1e18);
         assertEq(vault.totalFloat(), 1e18);
@@ -46,7 +46,7 @@ contract VaultsTest is DSTestPlus {
 
         vault.withdraw(1e18);
 
-        assertEq(vault.exchangeRate(), vault.BASE_UNIT());
+        assertEq(vault.exchangeRate(), 1e18);
         assertEq(vault.totalStrategyHoldings(), 0);
         assertEq(vault.totalHoldings(), 0);
         assertEq(vault.totalFloat(), 0);
@@ -63,7 +63,7 @@ contract VaultsTest is DSTestPlus {
 
         vault.deposit(1e18);
 
-        assertEq(vault.exchangeRate(), vault.BASE_UNIT());
+        assertEq(vault.exchangeRate(), 1e18);
         assertEq(vault.totalStrategyHoldings(), 0);
         assertEq(vault.totalHoldings(), 1e18);
         assertEq(vault.totalFloat(), 1e18);
@@ -73,7 +73,7 @@ contract VaultsTest is DSTestPlus {
 
         vault.redeem(1e18);
 
-        assertEq(vault.exchangeRate(), vault.BASE_UNIT());
+        assertEq(vault.exchangeRate(), 1e18);
         assertEq(vault.totalStrategyHoldings(), 0);
         assertEq(vault.totalHoldings(), 0);
         assertEq(vault.totalFloat(), 0);
@@ -148,7 +148,7 @@ contract VaultsTest is DSTestPlus {
 
         vault.depositIntoStrategy(strategy1, 1e18);
 
-        assertEq(vault.exchangeRate(), vault.BASE_UNIT());
+        assertEq(vault.exchangeRate(), 1e18);
         assertEq(vault.totalStrategyHoldings(), 1e18);
         assertEq(vault.totalHoldings(), 1e18);
         assertEq(vault.totalFloat(), 0);
@@ -157,7 +157,7 @@ contract VaultsTest is DSTestPlus {
 
         vault.withdrawFromStrategy(strategy1, 0.5e18);
 
-        assertEq(vault.exchangeRate(), vault.BASE_UNIT());
+        assertEq(vault.exchangeRate(), 1e18);
         assertEq(vault.totalStrategyHoldings(), 0.5e18);
         assertEq(vault.totalHoldings(), 1e18);
         assertEq(vault.totalFloat(), 0.5e18);
@@ -166,7 +166,7 @@ contract VaultsTest is DSTestPlus {
 
         vault.withdrawFromStrategy(strategy1, 0.5e18);
 
-        assertEq(vault.exchangeRate(), vault.BASE_UNIT());
+        assertEq(vault.exchangeRate(), 1e18);
         assertEq(vault.totalStrategyHoldings(), 0);
         assertEq(vault.totalHoldings(), 1e18);
         assertEq(vault.totalFloat(), 1e18);
@@ -183,7 +183,7 @@ contract VaultsTest is DSTestPlus {
 
         vault.depositIntoStrategy(strategy1, 0.5e18);
 
-        assertEq(vault.exchangeRate(), vault.BASE_UNIT());
+        assertEq(vault.exchangeRate(), 1e18);
         assertEq(vault.totalStrategyHoldings(), 0.5e18);
         assertEq(vault.totalHoldings(), 1e18);
         assertEq(vault.totalFloat(), 0.5e18);
@@ -194,7 +194,7 @@ contract VaultsTest is DSTestPlus {
 
         vault.depositIntoStrategy(strategy2, 0.5e18);
 
-        assertEq(vault.exchangeRate(), vault.BASE_UNIT());
+        assertEq(vault.exchangeRate(), 1e18);
         assertEq(vault.totalStrategyHoldings(), 1e18);
         assertEq(vault.totalHoldings(), 1e18);
         assertEq(vault.totalFloat(), 0);
@@ -203,7 +203,7 @@ contract VaultsTest is DSTestPlus {
 
         vault.withdrawFromStrategy(strategy1, 0.5e18);
 
-        assertEq(vault.exchangeRate(), vault.BASE_UNIT());
+        assertEq(vault.exchangeRate(), 1e18);
         assertEq(vault.totalStrategyHoldings(), 0.5e18);
         assertEq(vault.totalHoldings(), 1e18);
         assertEq(vault.totalFloat(), 0.5e18);
@@ -212,7 +212,7 @@ contract VaultsTest is DSTestPlus {
 
         vault.withdrawFromStrategy(strategy2, 0.5e18);
 
-        assertEq(vault.exchangeRate(), vault.BASE_UNIT());
+        assertEq(vault.exchangeRate(), 1e18);
         assertEq(vault.totalStrategyHoldings(), 0);
         assertEq(vault.totalHoldings(), 1e18);
         assertEq(vault.totalFloat(), 1e18);
@@ -268,5 +268,113 @@ contract VaultsTest is DSTestPlus {
                          BASIC HARVEST TESTS
     //////////////////////////////////////////////////////////////*/
 
-    function testBasicHarvest() public {}
+    function testProfitableHarvest() public {
+        underlying.mint(address(this), 1.5e18);
+
+        underlying.approve(address(vault), 1e18);
+        vault.deposit(1e18);
+
+        vault.trustStrategy(strategy1);
+        vault.depositIntoStrategy(strategy1, 1e18);
+        vault.pushToWithdrawalQueue(strategy1);
+
+        assertEq(vault.exchangeRate(), 1e18);
+        assertEq(vault.totalStrategyHoldings(), 1e18);
+        assertEq(vault.totalFloat(), 0);
+        assertEq(vault.totalHoldings(), 1e18);
+        assertEq(vault.balanceOf(address(this)), 1e18);
+        assertEq(vault.balanceOfUnderlying(address(this)), 1e18);
+
+        underlying.transfer(address(strategy1), 0.5e18);
+
+        assertEq(vault.exchangeRate(), 1e18);
+        assertEq(vault.totalStrategyHoldings(), 1e18);
+        assertEq(vault.totalFloat(), 0);
+        assertEq(vault.totalHoldings(), 1e18);
+        assertEq(vault.balanceOf(address(this)), 1e18);
+        assertEq(vault.balanceOfUnderlying(address(this)), 1e18);
+
+        vault.harvest(strategy1);
+
+        assertEq(vault.exchangeRate(), 1e18);
+        assertEq(vault.totalStrategyHoldings(), 1.5e18);
+        assertEq(vault.totalFloat(), 0);
+        assertEq(vault.totalHoldings(), 1e18);
+        assertEq(vault.balanceOf(address(this)), 1e18);
+        assertEq(vault.balanceOfUnderlying(address(this)), 1e18);
+
+        hevm.warp(block.timestamp + (vault.profitUnlockDelay() / 2));
+
+        assertEq(vault.exchangeRate(), 1.25e18);
+        assertEq(vault.totalStrategyHoldings(), 1.5e18);
+        assertEq(vault.totalFloat(), 0);
+        assertEq(vault.totalHoldings(), 1.25e18);
+        assertEq(vault.balanceOf(address(this)), 1e18);
+        assertEq(vault.balanceOfUnderlying(address(this)), 1.25e18);
+
+        hevm.warp(block.timestamp + vault.profitUnlockDelay());
+
+        assertEq(vault.exchangeRate(), 1.5e18);
+        assertEq(vault.totalStrategyHoldings(), 1.5e18);
+        assertEq(vault.totalFloat(), 0);
+        assertEq(vault.totalHoldings(), 1.5e18);
+        assertEq(vault.balanceOf(address(this)), 1e18);
+        assertEq(vault.balanceOfUnderlying(address(this)), 1.5e18);
+
+        vault.redeem(1e18);
+        assertEq(underlying.balanceOf(address(this)), 1.5e18);
+
+        assertEq(vault.exchangeRate(), 1e18);
+        assertEq(vault.totalStrategyHoldings(), 0);
+        assertEq(vault.totalFloat(), 0);
+        assertEq(vault.totalHoldings(), 0);
+        assertEq(vault.balanceOf(address(this)), 0);
+        assertEq(vault.balanceOfUnderlying(address(this)), 0);
+    }
+
+    function testUnprofitableHarvest() public {
+        underlying.mint(address(this), 1e18);
+
+        underlying.approve(address(vault), 1e18);
+        vault.deposit(1e18);
+
+        vault.trustStrategy(strategy1);
+        vault.depositIntoStrategy(strategy1, 1e18);
+        vault.pushToWithdrawalQueue(strategy1);
+
+        assertEq(vault.exchangeRate(), 1e18);
+        assertEq(vault.totalStrategyHoldings(), 1e18);
+        assertEq(vault.totalFloat(), 0);
+        assertEq(vault.totalHoldings(), 1e18);
+        assertEq(vault.balanceOf(address(this)), 1e18);
+        assertEq(vault.balanceOfUnderlying(address(this)), 1e18);
+
+        strategy1.simulateLoss(0.5e18);
+
+        assertEq(vault.exchangeRate(), 1e18);
+        assertEq(vault.totalStrategyHoldings(), 1e18);
+        assertEq(vault.totalFloat(), 0);
+        assertEq(vault.totalHoldings(), 1e18);
+        assertEq(vault.balanceOf(address(this)), 1e18);
+        assertEq(vault.balanceOfUnderlying(address(this)), 1e18);
+
+        vault.harvest(strategy1);
+
+        assertEq(vault.exchangeRate(), 0.5e18);
+        assertEq(vault.totalStrategyHoldings(), 0.5e18);
+        assertEq(vault.totalFloat(), 0);
+        assertEq(vault.totalHoldings(), 0.5e18);
+        assertEq(vault.balanceOf(address(this)), 1e18);
+        assertEq(vault.balanceOfUnderlying(address(this)), 0.5e18);
+
+        vault.redeem(1e18);
+        assertEq(underlying.balanceOf(address(this)), 0.5e18);
+
+        assertEq(vault.exchangeRate(), 1e18);
+        assertEq(vault.totalStrategyHoldings(), 0);
+        assertEq(vault.totalFloat(), 0);
+        assertEq(vault.totalHoldings(), 0);
+        assertEq(vault.balanceOf(address(this)), 0);
+        assertEq(vault.balanceOfUnderlying(address(this)), 0);
+    }
 }

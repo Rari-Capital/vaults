@@ -41,6 +41,10 @@ contract MockStrategy is Strategy, ERC20("Mock Strategy", "vsMOCK", 18) {
         return 0;
     }
 
+    function simulateLoss(uint256 underlyingAmount) external {
+        UNDERLYING.safeTransfer(0x000000000000000000000000000000000000dEaD, underlyingAmount);
+    }
+
     function balanceOfUnderlying(address account) external view override returns (uint256) {
         return balanceOf[account].fmul(exchangeRate(), BASE_UNIT);
     }

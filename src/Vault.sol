@@ -25,7 +25,7 @@ contract Vault is ERC20, Auth {
 
     /// @notice The base unit of the underlying token and hence rvToken.
     /// @dev Equal to 10 ** decimals. Used for fixed point multiplication and division.
-    uint256 public immutable BASE_UNIT;
+    uint256 internal immutable BASE_UNIT;
 
     /// @notice Creates a new Vault that accepts a specific underlying token.
     /// @param _UNDERLYING An underlying ERC20-compliant token.
@@ -453,6 +453,7 @@ contract Vault is ERC20, Auth {
         uint256 amountLeftToPull = underlyingAmount;
 
         // Store the starting index which is at the tip of the queue.
+        // If there are no strategies in the queue this will revert due to underflow.
         uint256 startingIndex = withdrawalQueue.length - 1;
 
         // We will use this after the loop to check how many strategies we withdrew from.
