@@ -88,6 +88,10 @@ contract Vault is ERC20, Auth {
     /// @param strategy The strategy that became untrusted.
     event StrategyDistrusted(Strategy indexed strategy);
 
+    /// @notice Emitted when the profit unlock delay is updated.
+    /// @param newProfitUnlockDelay The updated profit unlock delay.
+    event ProfitUnlockDelayUpdated(uint256 newProfitUnlockDelay);
+
     /// @notice Emitted when the withdrawal queue is updated.
     /// @param updatedWithdrawalQueue The updated withdrawal queue.
     event WithdrawalQueueUpdated(Strategy[] updatedWithdrawalQueue);
@@ -153,6 +157,8 @@ contract Vault is ERC20, Auth {
 
         // Update the profit unlock delay.
         profitUnlockDelay = newProfitUnlockDelay;
+
+        emit ProfitUnlockDelayUpdated(newProfitUnlockDelay);
     }
 
     /*///////////////////////////////////////////////////////////////
