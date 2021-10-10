@@ -219,7 +219,7 @@ contract VaultsTest is DSTestPlus {
         assertEq(vault.balanceOf(address(this)), 1e18);
         assertEq(vault.balanceOfUnderlying(address(this)), 1e18);
     }
-    
+
     /*///////////////////////////////////////////////////////////////
               STRATEGY DEPOSIT/WITHDRAWAL SANITY CHECK TESTS
     //////////////////////////////////////////////////////////////*/

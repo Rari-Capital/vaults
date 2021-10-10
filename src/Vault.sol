@@ -6,8 +6,8 @@ import {ERC20} from "solmate/erc20/ERC20.sol";
 import {SafeERC20} from "solmate/erc20/SafeERC20.sol";
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 
-import {Strategy} from "./external/Strategy.sol";
 import {VaultFactory} from "./VaultFactory.sol";
+import {Strategy} from "./external/Strategy.sol";
 
 /// @title Rari Vault (rvToken)
 /// @author Transmissions11 + JetJadeja
