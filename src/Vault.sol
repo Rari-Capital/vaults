@@ -460,7 +460,7 @@ contract Vault is ERC20, Auth {
         uint256 amountLeftToPull = underlyingAmount;
 
         // Store the starting index which is at the tip of the queue.
-        // If there are no strategies in the queue this will revert due to underflow.
+        // Will revert due to underflow if there are no strategies in the queue.
         uint256 startingIndex = withdrawalQueue.length - 1;
 
         // We will use this after the loop to check how many strategies we withdrew from.
