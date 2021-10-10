@@ -166,7 +166,7 @@ contract Vault is ERC20, Auth {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice An ordered array of strategies representing the withdrawal queue.
-    /// @dev The queue is processed in an ascending order, meaning the last index will be withdrawn from first.
+    /// @dev The queue is processed in an descending order, meaning the last index will be withdrawn from first.
     Strategy[] public withdrawalQueue;
 
     /// @notice Gets the full withdrawal queue.
@@ -254,6 +254,7 @@ contract Vault is ERC20, Auth {
         emit Deposit(msg.sender, underlyingAmount);
 
         // Transfer in underlying tokens from the user.
+        // This will revert if the user does not have the amount specified.
         UNDERLYING.safeTransferFrom(msg.sender, address(this), underlyingAmount);
     }
 
@@ -280,7 +281,7 @@ contract Vault is ERC20, Auth {
             );
         }
 
-        // Transfer underlying tokens to the user.
+        // Transfer the provided amount of underlying tokens.
         UNDERLYING.safeTransfer(msg.sender, underlyingAmount);
     }
 
@@ -293,7 +294,7 @@ contract Vault is ERC20, Auth {
         // Determine the equivalent amount of underlying tokens.
         uint256 underlyingAmount = rvTokenAmount.fmul(exchangeRate(), BASE_UNIT);
 
-        // Burn the provided rvTokens.
+        // Burn the provided amount of rvTokens.
         // This will revert if the user does not have enough rvTokens.
         _burn(msg.sender, rvTokenAmount);
 
@@ -310,7 +311,7 @@ contract Vault is ERC20, Auth {
             );
         }
 
-        // Transfer underlying tokens to the user.
+        // Transfer the determined amount of underlying tokens.
         UNDERLYING.safeTransfer(msg.sender, underlyingAmount);
     }
 
@@ -465,7 +466,7 @@ contract Vault is ERC20, Auth {
         // We will use this after the loop to check how many strategies we withdrew from.
         uint256 currentIndex = startingIndex;
 
-        // Iterate in reverse as the withdrawalQueue is sorted in ascending order.
+        // Iterate in reverse as the withdrawalQueue is sorted in ascending order of priority.
         for (; currentIndex >= 0; currentIndex--) {
             // Get the strategy at the current queue index.
             Strategy strategy = withdrawalQueue[currentIndex];
