@@ -467,7 +467,8 @@ contract Vault is ERC20, Auth {
         uint256 currentIndex = startingIndex;
 
         // Iterate in reverse as the withdrawalQueue is sorted in ascending order of priority.
-        for (; currentIndex >= 0; currentIndex--) {
+        // Will revert due to underflow if we empty the queue before pulling the desired amount.
+        for (; ; currentIndex--) {
             // Get the strategy at the current queue index.
             Strategy strategy = withdrawalQueue[currentIndex];
 
@@ -491,9 +492,6 @@ contract Vault is ERC20, Auth {
             // If we've pulled all we need, exit the loop.
             if (amountLeftToPull == 0) break;
         }
-
-        // Revert if we weren't able to pull the desired amount.
-        require(amountLeftToPull == 0, "NOT_ENOUGH_IN_QUEUE");
 
         // Decrease totalStrategyHoldings to account for the withdrawals.
         totalStrategyHoldings -= underlyingAmount;
