@@ -48,6 +48,7 @@ contract VaultFactory is Auth(msg.sender) {
     /// @dev The Vault returned may not have been deployed yet.
     /// @param underlying The underlying ERC20 token the Vault earns yield on.
     /// @return The Vault that supports this underlying token.
+    /// @dev The Vault returned may not be deployed yet. Use isVaultDeployed to check.
     function getVaultFromUnderlying(ERC20 underlying) external view returns (Vault) {
         // Compute the create2 hash.
         bytes32 create2Hash = keccak256(
