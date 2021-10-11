@@ -381,4 +381,36 @@ contract VaultsTest is DSTestPlus {
         assertEq(vault.balanceOf(address(this)), 0);
         assertEq(vault.balanceOfUnderlying(address(this)), 0);
     }
+
+    /*///////////////////////////////////////////////////////////////
+                            EDGE CASE TESTS
+    //////////////////////////////////////////////////////////////*/
+
+    function testFailWithdrawWithEmptyQueue() public {
+        underlying.mint(address(this), 1e18);
+
+        underlying.approve(address(vault), 1e18);
+        vault.deposit(1e18);
+
+        vault.trustStrategy(strategy1);
+        vault.depositIntoStrategy(strategy1, 1e18);
+
+        vault.redeem(1e18);
+    }
+
+    function testFailWithdrawWithIncompleteQueue() public {
+        underlying.mint(address(this), 1e18);
+
+        underlying.approve(address(vault), 1e18);
+        vault.deposit(1e18);
+
+        vault.trustStrategy(strategy1);
+        vault.depositIntoStrategy(strategy1, 0.5e18);
+        vault.pushToWithdrawalQueue(strategy1);
+
+        vault.trustStrategy(strategy2);
+        vault.depositIntoStrategy(strategy2, 0.5e18);
+
+        vault.redeem(1e18);
+    }
 }
