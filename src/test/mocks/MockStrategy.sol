@@ -11,14 +11,14 @@ contract MockStrategy is Strategy, ERC20("Mock Strategy", "vsMOCK", 18) {
     using SafeERC20 for ERC20;
     using FixedPointMathLib for uint256;
 
-    ERC20 public immutable UNDERLYING;
+    ERC20 public immutable override underlying;
 
     uint256 public immutable BASE_UNIT;
 
-    constructor(ERC20 _UNDERLYING) {
-        UNDERLYING = _UNDERLYING;
+    constructor(ERC20 _underlying) {
+        underlying = _underlying;
 
-        BASE_UNIT = 10**_UNDERLYING.decimals();
+        BASE_UNIT = 10**_underlying.decimals();
     }
 
     function mint(uint256 underlyingAmount) external override returns (uint256) {
@@ -26,7 +26,7 @@ contract MockStrategy is Strategy, ERC20("Mock Strategy", "vsMOCK", 18) {
         _mint(msg.sender, underlyingAmount.fdiv(exchangeRate(), BASE_UNIT));
 
         // Transfer in underlying tokens from the sender.
-        UNDERLYING.safeTransferFrom(msg.sender, address(this), underlyingAmount);
+        underlying.safeTransferFrom(msg.sender, address(this), underlyingAmount);
 
         return 0;
     }
@@ -36,13 +36,13 @@ contract MockStrategy is Strategy, ERC20("Mock Strategy", "vsMOCK", 18) {
         _burn(msg.sender, underlyingAmount.fdiv(exchangeRate(), BASE_UNIT));
 
         // Transfer underlying tokens to the caller.
-        UNDERLYING.safeTransfer(msg.sender, underlyingAmount);
+        underlying.safeTransfer(msg.sender, underlyingAmount);
 
         return 0;
     }
 
     function simulateLoss(uint256 underlyingAmount) external {
-        UNDERLYING.safeTransfer(0x000000000000000000000000000000000000dEaD, underlyingAmount);
+        underlying.safeTransfer(0x000000000000000000000000000000000000dEaD, underlyingAmount);
     }
 
     function balanceOfUnderlying(address account) external view override returns (uint256) {
@@ -54,6 +54,6 @@ contract MockStrategy is Strategy, ERC20("Mock Strategy", "vsMOCK", 18) {
         if (totalSupply == 0) return BASE_UNIT;
 
         // TODO: Optimize double SLOAD of totalSupply here?
-        return UNDERLYING.balanceOf(address(this)).fdiv(totalSupply, BASE_UNIT);
+        return underlying.balanceOf(address(this)).fdiv(totalSupply, BASE_UNIT);
     }
 }

@@ -386,6 +386,14 @@ contract VaultsTest is DSTestPlus {
                             EDGE CASE TESTS
     //////////////////////////////////////////////////////////////*/
 
+    function testFailTrustStrategyWithWrongUnderlying() public {
+        MockERC20 wrongUnderlying = new MockERC20("Not The Right Token", "TKN2", 18);
+
+        MockStrategy badStrategy = new MockStrategy(wrongUnderlying);
+
+        vault.trustStrategy(badStrategy);
+    }
+
     function testFailWithdrawWithEmptyQueue() public {
         underlying.mint(address(this), 1e18);
 
@@ -406,11 +414,38 @@ contract VaultsTest is DSTestPlus {
 
         vault.trustStrategy(strategy1);
         vault.depositIntoStrategy(strategy1, 0.5e18);
+
         vault.pushToWithdrawalQueue(strategy1);
 
         vault.trustStrategy(strategy2);
         vault.depositIntoStrategy(strategy2, 0.5e18);
 
         vault.redeem(1e18);
+    }
+
+    function testUpdatingProfitUnlockDelayWhileProfitIsStillLocked() public {
+        underlying.mint(address(this), 1.5e18);
+
+        underlying.approve(address(vault), 1e18);
+        vault.deposit(1e18);
+
+        vault.trustStrategy(strategy1);
+        vault.depositIntoStrategy(strategy1, 1e18);
+        vault.pushToWithdrawalQueue(strategy1);
+
+        underlying.transfer(address(strategy1), 0.5e18);
+        vault.harvest(strategy1);
+
+        hevm.warp(block.timestamp + (vault.profitUnlockDelay() / 2));
+        assertEq(vault.balanceOfUnderlying(address(this)), 1.25e18);
+
+        vault.setProfitUnlockDelay(vault.profitUnlockDelay() * 2);
+        assertEq(vault.balanceOfUnderlying(address(this)), 1.125e18);
+
+        hevm.warp(block.timestamp + vault.profitUnlockDelay());
+        assertEq(vault.balanceOfUnderlying(address(this)), 1.5e18);
+
+        vault.redeem(1e18);
+        assertEq(underlying.balanceOf(address(this)), 1.5e18);
     }
 }

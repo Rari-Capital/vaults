@@ -114,6 +114,9 @@ contract Vault is ERC20, Auth {
     /// @notice Store a strategy as trusted, enabling it to be harvested.
     /// @param strategy The strategy to make trusted.
     function trustStrategy(Strategy strategy) external requiresAuth {
+        // Ensure the strategy accepts the correct underlying token.
+        require(strategy.underlying() == UNDERLYING, "WRONG_UNDERLYING");
+
         // We don't allow trusting again to prevent emitting a useless event.
         require(!isStrategyTrusted[strategy], "ALREADY_TRUSTED");
 
