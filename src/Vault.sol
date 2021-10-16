@@ -169,7 +169,7 @@ contract Vault is ERC20, Auth {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice An ordered array of strategies representing the withdrawal queue.
-    /// @dev The queue is processed in an descending order, meaning the last index will be withdrawn from first.
+    /// @dev The queue is processed in descending order, meaning the last index will be withdrawn from first.
     Strategy[] public withdrawalQueue;
 
     /// @notice Gets the full withdrawal queue.
@@ -199,8 +199,8 @@ contract Vault is ERC20, Auth {
     }
 
     /// @notice Remove the strategy at the tip of the withdrawal queue.
-    /// @dev Be careful, another user could push a different strategy than
-    /// expected to the queue while a popFromWithdrawalQueue transaction is pending.
+    /// @dev Be careful, another authorized user could push a different strategy
+    /// than expected to the queue while a popFromWithdrawalQueue transaction is pending.
     function popFromWithdrawalQueue() external requiresAuth {
         // TODO: Optimize SLOADs?
 
@@ -469,7 +469,7 @@ contract Vault is ERC20, Auth {
         // We will use this after the loop to check how many strategies we withdrew from.
         uint256 currentIndex = startingIndex;
 
-        // Iterate in reverse as the withdrawalQueue is sorted in ascending order of priority.
+        // Iterate in reverse so we pull from the queue in a "last in, first out" manner.
         // Will revert due to underflow if we empty the queue before pulling the desired amount.
         for (; ; currentIndex--) {
             // Get the strategy at the current queue index.
