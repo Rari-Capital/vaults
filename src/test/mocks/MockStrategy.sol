@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity 0.8.6;
+pragma solidity 0.8.9;
 
 import {ERC20} from "solmate/erc20/ERC20.sol";
 import {SafeERC20} from "solmate/erc20/SafeERC20.sol";
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 
-import {Strategy} from "../../external/Strategy.sol";
+import {Strategy} from "../../Strategy.sol";
 
 contract MockStrategy is Strategy, ERC20("Mock Strategy", "vsMOCK", 18) {
     using SafeERC20 for ERC20;
@@ -14,6 +14,12 @@ contract MockStrategy is Strategy, ERC20("Mock Strategy", "vsMOCK", 18) {
     ERC20 public immutable override underlying;
 
     uint256 public immutable BASE_UNIT;
+
+    function mint() external payable {}
+
+    function isCEther() external pure returns (bool) {
+        return false;
+    }
 
     constructor(ERC20 _underlying) {
         underlying = _underlying;

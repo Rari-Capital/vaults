@@ -1,19 +1,21 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity 0.8.6;
+pragma solidity 0.8.9;
 
 import {Auth} from "solmate/auth/Auth.sol";
 import {ERC20} from "solmate/erc20/ERC20.sol";
 import {SafeERC20} from "solmate/erc20/SafeERC20.sol";
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 
+import {Strategy} from "./Strategy.sol";
+import {StrategyLib} from "./StrategyLib.sol";
 import {VaultFactory} from "./VaultFactory.sol";
-import {Strategy} from "./external/Strategy.sol";
 
 /// @title Rari Vault (rvToken)
 /// @author Transmissions11 + JetJadeja
 /// @notice Minimalist yield aggregator designed to support any ERC20 token.
 contract Vault is ERC20, Auth {
     using SafeERC20 for ERC20;
+    using StrategyLib for Strategy;
     using FixedPointMathLib for uint256;
 
     /*///////////////////////////////////////////////////////////////
