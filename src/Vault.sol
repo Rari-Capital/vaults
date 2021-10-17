@@ -48,9 +48,7 @@ contract Vault is ERC20, Auth {
     {
         UNDERLYING = _UNDERLYING;
 
-        // TODO: Once we upgrade to 0.8.9 we can use 10**decimals
-        // instead which will save us an external call and SLOAD.
-        BASE_UNIT = 10**_UNDERLYING.decimals();
+        BASE_UNIT = 10**decimals;
     }
 
     /*///////////////////////////////////////////////////////////////
