@@ -226,19 +226,36 @@ contract Vault is ERC20, Auth {
                        TARGET FLOAT CONFIGURATION
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice A percent value representing part of the total underlying to keep in the Vault.
-    /// @dev A mantissa where 1e18 represents 100% and 0 represents 0%.
+    /// @notice The desired percentage of the Vault's holdings to keep as float.
+    /// @dev A fixed point number where 1e18 represents 100% and 0 represents 0%.
     uint256 public targetFloatPercent = 0.01e18;
 
-    /// @notice Allows governance to set a new float size.
-    /// @dev The new float size is a percentage mantissa scaled by 1e18.
-    /// @param newTargetFloatPercent The new target float size.percent
+    /// @notice Set a new target float percentage.
+    /// @param newTargetFloatPercent The new target float percentage.
     function setTargetFloatPercent(uint256 newTargetFloatPercent) external requiresAuth {
         // A target float percentage over 100% doesn't make sense.
         require(targetFloatPercent <= 1e18, "TARGET_TOO_HIGH");
 
         // Update the target float percentage.
         targetFloatPercent = newTargetFloatPercent;
+    }
+
+    /*///////////////////////////////////////////////////////////////
+                          FEE CONFIGURATION
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice The percentage of profit recognized each harvest to reserve as fees.
+    /// @dev A fixed point number where 1e18 represents 100% and 0 represents 0%.
+    uint256 public feePercent = 0.1e18;
+
+    /// @notice Set a new fee percentage.
+    /// @param newFeePercent The new fee percentage.
+    function setFeePercent(uint256 newFeePercent) external requiresAuth {
+        // A fee percentage over 100% doesn't make sense.
+        require(newFeePercent <= 1e18, "FEE_TOO_HIGH");
+
+        // Update the fee percentage.
+        feePercent = newFeePercent;
     }
 
     /*///////////////////////////////////////////////////////////////
