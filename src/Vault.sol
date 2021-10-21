@@ -40,11 +40,7 @@ contract Vault is ERC20, Auth {
             // ex: 18
             _UNDERLYING.decimals()
         )
-        Auth(
-            // Set the Vault's owner to
-            // the VaultFactory's owner:
-            VaultFactory(msg.sender).owner()
-        )
+        Auth(VaultFactory(msg.sender).owner(), VaultFactory(msg.sender).authority())
     {
         UNDERLYING = _UNDERLYING;
 

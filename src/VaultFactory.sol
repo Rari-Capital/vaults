@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.8.9;
 
-import {Auth} from "solmate/auth/Auth.sol";
 import {ERC20} from "solmate/erc20/ERC20.sol";
+import {Auth, Authority} from "solmate/auth/Auth.sol";
 import {Bytes32AddressLib} from "solmate/utils/Bytes32AddressLib.sol";
 
 import {Vault} from "./Vault.sol";
@@ -10,7 +10,7 @@ import {Vault} from "./Vault.sol";
 /// @title Rari Vault Factory
 /// @author Transmissions11 + JetJadeja
 /// @notice Factory which enables deploying a Vault contract for any ERC20 token.
-contract VaultFactory is Auth(msg.sender) {
+contract VaultFactory is Auth(msg.sender, Authority(address(0))) {
     using Bytes32AddressLib for address;
     using Bytes32AddressLib for bytes32;
 
