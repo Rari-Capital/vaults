@@ -27,7 +27,7 @@ contract Vault is ERC20, Auth {
 
     /// @notice The base unit of the underlying token and hence rvToken.
     /// @dev Equal to 10 ** decimals. Used for fixed point multiplication and division.
-    uint256 internal immutable BASE_UNIT;
+    uint256 public immutable BASE_UNIT;
 
     /// @notice Creates a new Vault that accepts a specific underlying token.
     /// @param _UNDERLYING The ERC20 compliant token the Vault should accept.
@@ -244,7 +244,11 @@ contract Vault is ERC20, Auth {
 
     /// @notice Set whether the Vault treats the underlying as WETH.
     /// @param newUnderlyingIsWETH Whether the Vault should treat the underlying as WETH.
+    /// @dev The underlying token must have 18 decimals, to match Ether's decimal scheme.
     function setUnderlyingIsWETH(bool newUnderlyingIsWETH) external requiresAuth {
+        // Ensure the underlying token's decimals match ETH.
+        require(UNDERLYING.decimals() == 18, "WRONG_DECIMALS");
+
         // Update whether the Vault treats the underlying as WETH.
         underlyingIsWETH = newUnderlyingIsWETH;
 
