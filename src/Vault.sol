@@ -48,6 +48,79 @@ contract Vault is ERC20, Auth {
     }
 
     /*///////////////////////////////////////////////////////////////
+                   UNDERLYING IS WETH CONFIGURATION
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Whether the Vault should treat the underlying token as WETH compatible.
+    /// @dev If enabled the Vault will allow trusting strategies that accept Ether.
+    bool public underlyingIsWETH = false;
+
+    /// @notice Emitted when whether the Vault should treat the underlying as WETH is updated.
+    /// @param newUnderlyingIsWETH Whether the Vault nows treats the underlying as WETH.
+    event UnderlyingIsWETHUpdated(bool newUnderlyingIsWETH);
+
+    /// @notice Set whether the Vault treats the underlying as WETH.
+    /// @param newUnderlyingIsWETH Whether the Vault should treat the underlying as WETH.
+    /// @dev The underlying token must have 18 decimals, to match Ether's decimal scheme.
+    function setUnderlyingIsWETH(bool newUnderlyingIsWETH) external requiresAuth {
+        // Ensure the underlying token's decimals match ETH.
+        require(UNDERLYING.decimals() == 18, "WRONG_DECIMALS");
+
+        // Update whether the Vault treats the underlying as WETH.
+        underlyingIsWETH = newUnderlyingIsWETH;
+
+        emit UnderlyingIsWETHUpdated(newUnderlyingIsWETH);
+    }
+
+    /*///////////////////////////////////////////////////////////////
+                          FEE CONFIGURATION
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice The percentage of profit recognized each harvest to reserve as fees.
+    /// @dev A fixed point number where 1e18 represents 100% and 0 represents 0%.
+    uint256 public feePercent = 0.1e18;
+
+    /// @notice Emitted when the fee percent is updated.
+    /// @param newFeePercent The updated fee percent.
+    event FeePercentUpdated(uint256 newFeePercent);
+
+    /// @notice Set a new fee percentage.
+    /// @param newFeePercent The new fee percentage.
+    function setFeePercent(uint256 newFeePercent) external requiresAuth {
+        // A fee percentage over 100% doesn't make sense.
+        require(newFeePercent <= 1e18, "FEE_TOO_HIGH");
+
+        // Update the fee percentage.
+        feePercent = newFeePercent;
+
+        emit FeePercentUpdated(newFeePercent);
+    }
+
+    /*///////////////////////////////////////////////////////////////
+                       TARGET FLOAT CONFIGURATION
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice The desired percentage of the Vault's holdings to keep as float.
+    /// @dev A fixed point number where 1e18 represents 100% and 0 represents 0%.
+    uint256 public targetFloatPercent = 0.01e18;
+
+    /// @notice Emitted when the target float percent is updated.
+    /// @param newTargetFloatPercent The updated target float percent delay.
+    event TargetFloatPercentUpdated(uint256 newTargetFloatPercent);
+
+    /// @notice Set a new target float percentage.
+    /// @param newTargetFloatPercent The new target float percentage.
+    function setTargetFloatPercent(uint256 newTargetFloatPercent) external requiresAuth {
+        // A target float percentage over 100% doesn't make sense.
+        require(targetFloatPercent <= 1e18, "TARGET_TOO_HIGH");
+
+        // Update the target float percentage.
+        targetFloatPercent = newTargetFloatPercent;
+
+        emit TargetFloatPercentUpdated(newTargetFloatPercent);
+    }
+
+    /*///////////////////////////////////////////////////////////////
                           STRATEGY STORAGE
     //////////////////////////////////////////////////////////////*/
 
@@ -132,7 +205,7 @@ contract Vault is ERC20, Auth {
     }
 
     /*///////////////////////////////////////////////////////////////
-                      WITHDRAWAL QUEUE CONFIGURATION
+                      WITHDRAWAL QUEUE MANAGEMENT
     //////////////////////////////////////////////////////////////*/
 
     /// @notice An ordered array of strategies representing the withdrawal queue.
@@ -248,79 +321,6 @@ contract Vault is ERC20, Auth {
         withdrawalQueue[index2] = newStrategy2;
 
         emit WithdrawalQueueIndexesSwapped(index1, index2, newStrategy1, newStrategy2);
-    }
-
-    /*///////////////////////////////////////////////////////////////
-                   UNDERLYING IS WETH CONFIGURATION
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Whether the Vault should treat the underlying token as WETH compatible.
-    /// @dev If enabled the Vault will allow trusting strategies that accept Ether.
-    bool public underlyingIsWETH = false;
-
-    /// @notice Emitted when whether the Vault should treat the underlying as WETH is updated.
-    /// @param newUnderlyingIsWETH Whether the Vault nows treats the underlying as WETH.
-    event UnderlyingIsWETHUpdated(bool newUnderlyingIsWETH);
-
-    /// @notice Set whether the Vault treats the underlying as WETH.
-    /// @param newUnderlyingIsWETH Whether the Vault should treat the underlying as WETH.
-    /// @dev The underlying token must have 18 decimals, to match Ether's decimal scheme.
-    function setUnderlyingIsWETH(bool newUnderlyingIsWETH) external requiresAuth {
-        // Ensure the underlying token's decimals match ETH.
-        require(UNDERLYING.decimals() == 18, "WRONG_DECIMALS");
-
-        // Update whether the Vault treats the underlying as WETH.
-        underlyingIsWETH = newUnderlyingIsWETH;
-
-        emit UnderlyingIsWETHUpdated(newUnderlyingIsWETH);
-    }
-
-    /*///////////////////////////////////////////////////////////////
-                          FEE CONFIGURATION
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice The percentage of profit recognized each harvest to reserve as fees.
-    /// @dev A fixed point number where 1e18 represents 100% and 0 represents 0%.
-    uint256 public feePercent = 0.1e18;
-
-    /// @notice Emitted when the fee percent is updated.
-    /// @param newFeePercent The updated fee percent.
-    event FeePercentUpdated(uint256 newFeePercent);
-
-    /// @notice Set a new fee percentage.
-    /// @param newFeePercent The new fee percentage.
-    function setFeePercent(uint256 newFeePercent) external requiresAuth {
-        // A fee percentage over 100% doesn't make sense.
-        require(newFeePercent <= 1e18, "FEE_TOO_HIGH");
-
-        // Update the fee percentage.
-        feePercent = newFeePercent;
-
-        emit FeePercentUpdated(newFeePercent);
-    }
-
-    /*///////////////////////////////////////////////////////////////
-                       TARGET FLOAT CONFIGURATION
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice The desired percentage of the Vault's holdings to keep as float.
-    /// @dev A fixed point number where 1e18 represents 100% and 0 represents 0%.
-    uint256 public targetFloatPercent = 0.01e18;
-
-    /// @notice Emitted when the target float percent is updated.
-    /// @param newTargetFloatPercent The updated target float percent delay.
-    event TargetFloatPercentUpdated(uint256 newTargetFloatPercent);
-
-    /// @notice Set a new target float percentage.
-    /// @param newTargetFloatPercent The new target float percentage.
-    function setTargetFloatPercent(uint256 newTargetFloatPercent) external requiresAuth {
-        // A target float percentage over 100% doesn't make sense.
-        require(targetFloatPercent <= 1e18, "TARGET_TOO_HIGH");
-
-        // Update the target float percentage.
-        targetFloatPercent = newTargetFloatPercent;
-
-        emit TargetFloatPercentUpdated(newTargetFloatPercent);
     }
 
     /*///////////////////////////////////////////////////////////////
