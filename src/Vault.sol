@@ -574,4 +574,7 @@ contract Vault is ERC20, Auth {
         // If we now have any ETH, meaning we withdrew from some ETH strategies, wrap it into WETH.
         if (ethBalance != 0 && underlyingIsWETH) WETH(address(UNDERLYING)).deposit{value: ethBalance}();
     }
+
+    /// @dev Required for the Vault to receive unwrapped ETH.
+    receive() external payable {}
 }

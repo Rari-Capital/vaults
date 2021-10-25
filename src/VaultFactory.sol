@@ -52,25 +52,27 @@ contract VaultFactory is Auth(msg.sender, Authority(address(0))) {
     function getVaultFromUnderlying(ERC20 underlying) external view returns (Vault) {
         return
             Vault(
-                keccak256(
-                    abi.encodePacked(
-                        // Prefix:
-                        bytes1(0xFF),
-                        // Creator:
-                        address(this),
-                        // Salt:
-                        address(underlying).fillLast12Bytes(),
-                        // Bytecode hash:
-                        keccak256(
-                            abi.encodePacked(
-                                // Deployment bytecode:
-                                type(Vault).creationCode,
-                                // Constructor arguments:
-                                abi.encode(underlying)
+                payable(
+                    keccak256(
+                        abi.encodePacked(
+                            // Prefix:
+                            bytes1(0xFF),
+                            // Creator:
+                            address(this),
+                            // Salt:
+                            address(underlying).fillLast12Bytes(),
+                            // Bytecode hash:
+                            keccak256(
+                                abi.encodePacked(
+                                    // Deployment bytecode:
+                                    type(Vault).creationCode,
+                                    // Constructor arguments:
+                                    abi.encode(underlying)
+                                )
                             )
                         )
-                    )
-                ).fromLast20Bytes() // Convert the create hash into an address.
+                    ).fromLast20Bytes() // Convert the create hash into an address.
+                )
             );
     }
 
