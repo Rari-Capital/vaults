@@ -48,63 +48,6 @@ contract Vault is ERC20, Auth {
     }
 
     /*///////////////////////////////////////////////////////////////
-                                 EVENTS
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Emitted after a successful deposit.
-    /// @param user The address that deposited into the Vault.
-    /// @param underlyingAmount The amount of underlying tokens that were deposited.
-    event Deposit(address indexed user, uint256 underlyingAmount);
-
-    /// @notice Emitted after a successful withdrawal.
-    /// @param user The address that withdrew from the Vault.
-    /// @param underlyingAmount The amount of underlying tokens that were withdrawn.
-    event Withdraw(address indexed user, uint256 underlyingAmount);
-
-    /// @notice Emitted after a successful harvest.
-    /// @param strategy The strategy that was harvested.
-    /// @param lockedProfit The amount of locked profit after the harvest.
-    event Harvest(Strategy indexed strategy, uint256 lockedProfit);
-
-    /// @notice Emitted after the Vault deposits into a strategy contract.
-    /// @param strategy The strategy that was deposited into.
-    /// @param underlyingAmount The amount of underlying tokens that were deposited.
-    event StrategyDeposit(Strategy indexed strategy, uint256 underlyingAmount);
-
-    /// @notice Emitted after the Vault withdraws funds from a strategy contract.
-    /// @param strategy The strategy that was withdrawn from.
-    /// @param underlyingAmount The amount of underlying tokens that were withdrawn.
-    event StrategyWithdrawal(Strategy indexed strategy, uint256 underlyingAmount);
-
-    /// @notice Emitted when a strategy is set to trusted.
-    /// @param strategy The strategy that became trusted.
-    event StrategyTrusted(Strategy indexed strategy);
-
-    /// @notice Emitted when a strategy is set to untrusted.
-    /// @param strategy The strategy that became untrusted.
-    event StrategyDistrusted(Strategy indexed strategy);
-
-    /// @notice Emitted when the withdrawal queue is updated.
-    /// @param updatedWithdrawalQueue The updated withdrawal queue.
-    event WithdrawalQueueUpdated(Strategy[] updatedWithdrawalQueue);
-
-    /// @notice Emitted when the fee percent is updated.
-    /// @param newFeePercent The updated fee percent.
-    event FeePercentUpdated(uint256 newFeePercent);
-
-    /// @notice Emitted when the profit unlock delay is updated.
-    /// @param newProfitUnlockDelay The updated profit unlock delay.
-    event ProfitUnlockDelayUpdated(uint256 newProfitUnlockDelay);
-
-    /// @notice Emitted when the target float percent is updated.
-    /// @param newTargetFloatPercent The updated target float percent delay.
-    event TargetFloatPercentUpdated(uint256 newTargetFloatPercent);
-
-    /// @notice Emitted when whether the Vault should treat the underlying as WETH is updated.
-    /// @param newUnderlyingIsWETH Whether the Vault nows treats the underlying as WETH.
-    event UnderlyingIsWETHUpdated(bool newUnderlyingIsWETH);
-
-    /*///////////////////////////////////////////////////////////////
                           STRATEGY STORAGE
     //////////////////////////////////////////////////////////////*/
 
@@ -118,6 +61,14 @@ contract Vault is ERC20, Auth {
     /// @notice Maps strategies to a boolean representing if the strategy is trusted.
     /// @dev A strategy must be trusted for harvest to be called with it.
     mapping(Strategy => bool) public isStrategyTrusted;
+
+    /// @notice Emitted when a strategy is set to trusted.
+    /// @param strategy The strategy that became trusted.
+    event StrategyTrusted(Strategy indexed strategy);
+
+    /// @notice Emitted when a strategy is set to untrusted.
+    /// @param strategy The strategy that became untrusted.
+    event StrategyDistrusted(Strategy indexed strategy);
 
     /// @notice Store a strategy as trusted, enabling it to be harvested.
     /// @param strategy The strategy to make trusted.
@@ -164,6 +115,10 @@ contract Vault is ERC20, Auth {
     /// @dev Defaults to 6 hours. Cannot be 0 as it opens harvests to sandwich attacks.
     uint256 public profitUnlockDelay = 6 hours;
 
+    /// @notice Emitted when the profit unlock delay is updated.
+    /// @param newProfitUnlockDelay The updated profit unlock delay.
+    event ProfitUnlockDelayUpdated(uint256 newProfitUnlockDelay);
+
     /// @notice Set a new profit unlock delay delay.
     /// @param newProfitUnlockDelay The new profit unlock delay.
     function setProfitUnlockDelay(uint256 newProfitUnlockDelay) external requiresAuth {
@@ -192,46 +147,107 @@ contract Vault is ERC20, Auth {
         return withdrawalQueue;
     }
 
-    /// @notice Set a new withdrawal queue.
-    /// @param newQueue The updated withdrawal queue.
-    function setWithdrawalQueue(Strategy[] calldata newQueue) external requiresAuth {
-        withdrawalQueue = newQueue;
+    /// @notice Emitted when a strategy is pushed to the withdrawal queue.
+    /// @param pushedStrategy The strategy pushed to the withdrawal queue.
+    event WithdrawalQueuePushed(Strategy pushedStrategy);
 
-        emit WithdrawalQueueUpdated(newQueue);
-    }
+    /// @notice Emitted when a strategy is popped from the withdrawal queue.
+    /// @param poppedStrategy The strategy popped from the withdrawal queue.
+    event WithdrawalQueuePopped(Strategy poppedStrategy);
+
+    /// @notice Emitted when the withdrawal queue is replaced.
+    /// @param replacedWithdrawalQueue The replacement withdrawal queue.
+    event WithdrawalQueueReplaced(Strategy[] replacedWithdrawalQueue);
+
+    /// @notice Emitted when an index in the withdrawal queue is replaced.
+    /// @param index The index of the replaced strategy in the withdrawal queue.
+    /// @param replacedStrategy The strategy in the withdrawal queue that was replaced.
+    /// @param replacementStrategy The strategy that overrode the replaced strategy at the index.
+    event WithdrawalQueueIndexReplaced(uint256 index, Strategy replacedStrategy, Strategy replacementStrategy);
+
+    /// @notice Emitted when an index in the withdrawal queue is replaced with the tip.
+    /// @param index The index of the replaced strategy in the withdrawal queue.
+    /// @param replacedStrategy The strategy in the withdrawal queue replaced by the tip.
+    /// @param previousTipStrategy The previous tip of the queue that replaced the strategy.
+    event WithdrawalQueueIndexReplacedWithTip(uint256 index, Strategy replacedStrategy, Strategy previousTipStrategy);
+
+    /// @notice Emitted when the strategies at two indexes are swapped.
+    /// @param index1 One index involved in the swap
+    /// @param index2 The other index involved in the swap.
+    /// @param newStrategy1 The strategy (previously at index2) that replaced index1.
+    /// @param newStrategy2 The strategy (previously at index1) that replaced index2.
+    event WithdrawalQueueIndexesSwapped(uint256 index1, uint256 index2, Strategy newStrategy1, Strategy newStrategy2);
 
     /// @notice Push a single strategy to front of the withdrawal queue.
     /// @param strategy The strategy to be inserted at the front of the withdrawal queue.
     function pushToWithdrawalQueue(Strategy strategy) external requiresAuth {
-        // TODO: Optimize SLOADs?
-
         withdrawalQueue.push(strategy);
 
-        emit WithdrawalQueueUpdated(withdrawalQueue);
+        emit WithdrawalQueuePushed(strategy);
     }
 
     /// @notice Remove the strategy at the tip of the withdrawal queue.
     /// @dev Be careful, another authorized user could push a different strategy
     /// than expected to the queue while a popFromWithdrawalQueue transaction is pending.
     function popFromWithdrawalQueue() external requiresAuth {
-        // TODO: Optimize SLOADs?
+        // Get the (soon to be) popped strategy.
+        Strategy poppedStrategy = withdrawalQueue[withdrawalQueue.length - 1];
 
         withdrawalQueue.pop();
 
-        emit WithdrawalQueueUpdated(withdrawalQueue);
+        emit WithdrawalQueuePopped(poppedStrategy);
+    }
+
+    /// @notice Replace the withdrawal queue.
+    /// @param newQueue The replacement withdrawal queue.
+    function replaceWithdrawalQueue(Strategy[] calldata newQueue) external requiresAuth {
+        withdrawalQueue = newQueue;
+
+        emit WithdrawalQueueReplaced(newQueue);
+    }
+
+    /// @notice Replace an index in the withdrawal queue with another strategy.
+    /// @param index The index in the queue to replace.
+    /// @param replacementStrategy The strategy to override the index with.
+    function replaceWithdrawalQueueIndex(uint256 index, Strategy replacementStrategy) external {
+        // Get the (soon to be) replaced strategy.
+        Strategy replacedStrategy = withdrawalQueue[index];
+
+        withdrawalQueue[index] = replacementStrategy;
+
+        emit WithdrawalQueueIndexReplaced(index, replacedStrategy, replacementStrategy);
     }
 
     /// @notice Move the strategy at the tip of the queue to the specified index and pop the tip off the queue.
-    /// @dev The index specified must be less than current length of the withdrawal queue array.
+    /// @param index The index of the strategy in the withdrawal queue to replace with the tip.
     function replaceWithdrawalQueueIndexWithTip(uint256 index) external requiresAuth {
-        // Ensure the index is actually in the withdrawal queue array.
-        require(index < withdrawalQueue.length, "OUT_OF_BOUNDS");
+        // Get the (soon to be) previous tip and strategy we will replace at the index.
+        Strategy previousTipStrategy = withdrawalQueue[withdrawalQueue.length - 1];
+        Strategy replacedStrategy = withdrawalQueue[index];
 
         // Replace the index specified with the tip of the queue.
-        withdrawalQueue[index] = withdrawalQueue[withdrawalQueue.length - 1];
+        withdrawalQueue[index] = previousTipStrategy;
 
         // Remove the now duplicated tip from the array.
         withdrawalQueue.pop();
+
+        emit WithdrawalQueueIndexReplacedWithTip(index, replacedStrategy, previousTipStrategy);
+    }
+
+    /// @notice Swap two indexes in the withdrawal queue.
+    /// @param index1 One index involved in the swap
+    /// @param index2 The other index involved in the swap.
+    function swapWithdrawalQueueIndexes(uint256 index1, uint256 index2) external {
+        // TODO: OPTIMIZE AAAA
+
+        // Get the (soon to be) new strategies at each index.
+        Strategy newStrategy2 = withdrawalQueue[index1];
+        Strategy newStrategy1 = withdrawalQueue[index2];
+
+        withdrawalQueue[index1] = newStrategy1;
+        withdrawalQueue[index2] = newStrategy2;
+
+        emit WithdrawalQueueIndexesSwapped(index1, index2, newStrategy1, newStrategy2);
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -241,6 +257,10 @@ contract Vault is ERC20, Auth {
     /// @notice Whether the Vault should treat the underlying token as WETH compatible.
     /// @dev If enabled the Vault will allow trusting strategies that accept Ether.
     bool public underlyingIsWETH = false;
+
+    /// @notice Emitted when whether the Vault should treat the underlying as WETH is updated.
+    /// @param newUnderlyingIsWETH Whether the Vault nows treats the underlying as WETH.
+    event UnderlyingIsWETHUpdated(bool newUnderlyingIsWETH);
 
     /// @notice Set whether the Vault treats the underlying as WETH.
     /// @param newUnderlyingIsWETH Whether the Vault should treat the underlying as WETH.
@@ -263,6 +283,10 @@ contract Vault is ERC20, Auth {
     /// @dev A fixed point number where 1e18 represents 100% and 0 represents 0%.
     uint256 public feePercent = 0.1e18;
 
+    /// @notice Emitted when the fee percent is updated.
+    /// @param newFeePercent The updated fee percent.
+    event FeePercentUpdated(uint256 newFeePercent);
+
     /// @notice Set a new fee percentage.
     /// @param newFeePercent The new fee percentage.
     function setFeePercent(uint256 newFeePercent) external requiresAuth {
@@ -283,6 +307,10 @@ contract Vault is ERC20, Auth {
     /// @dev A fixed point number where 1e18 represents 100% and 0 represents 0%.
     uint256 public targetFloatPercent = 0.01e18;
 
+    /// @notice Emitted when the target float percent is updated.
+    /// @param newTargetFloatPercent The updated target float percent delay.
+    event TargetFloatPercentUpdated(uint256 newTargetFloatPercent);
+
     /// @notice Set a new target float percentage.
     /// @param newTargetFloatPercent The new target float percentage.
     function setTargetFloatPercent(uint256 newTargetFloatPercent) external requiresAuth {
@@ -298,6 +326,16 @@ contract Vault is ERC20, Auth {
     /*///////////////////////////////////////////////////////////////
                         DEPOSIT/WITHDRAWAL LOGIC
     //////////////////////////////////////////////////////////////*/
+
+    /// @notice Emitted after a successful deposit.
+    /// @param user The address that deposited into the Vault.
+    /// @param underlyingAmount The amount of underlying tokens that were deposited.
+    event Deposit(address indexed user, uint256 underlyingAmount);
+
+    /// @notice Emitted after a successful withdrawal.
+    /// @param user The address that withdrew from the Vault.
+    /// @param underlyingAmount The amount of underlying tokens that were withdrawn.
+    event Withdraw(address indexed user, uint256 underlyingAmount);
 
     /// @notice Deposit a specific amount of underlying tokens.
     /// @param underlyingAmount The amount of the underlying token to deposit.
@@ -421,6 +459,11 @@ contract Vault is ERC20, Auth {
                              HARVEST LOGIC
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Emitted after a successful harvest.
+    /// @param strategy The strategy that was harvested.
+    /// @param lockedProfit The amount of locked profit after the harvest.
+    event Harvest(Strategy indexed strategy, uint256 lockedProfit);
+
     /// @notice Harvest a trusted strategy.
     /// @param strategy The trusted strategy to harvest.
     function harvest(Strategy strategy) external {
@@ -457,6 +500,16 @@ contract Vault is ERC20, Auth {
     /*///////////////////////////////////////////////////////////////
                             REBALANCE LOGIC
     //////////////////////////////////////////////////////////////*/
+
+    /// @notice Emitted after the Vault deposits into a strategy contract.
+    /// @param strategy The strategy that was deposited into.
+    /// @param underlyingAmount The amount of underlying tokens that were deposited.
+    event StrategyDeposit(Strategy indexed strategy, uint256 underlyingAmount);
+
+    /// @notice Emitted after the Vault withdraws funds from a strategy contract.
+    /// @param strategy The strategy that was withdrawn from.
+    /// @param underlyingAmount The amount of underlying tokens that were withdrawn.
+    event StrategyWithdrawal(Strategy indexed strategy, uint256 underlyingAmount);
 
     /// @notice Deposit a specific amount of float into a trusted strategy.
     /// @param strategy The trusted strategy to deposit into.
@@ -555,18 +608,19 @@ contract Vault is ERC20, Auth {
 
             emit StrategyWithdrawal(strategy, amountToPull);
 
-            // If we depleted the strategy, remove it from the queue.
-            if (balanceOfStrategy[strategy] == 0) withdrawalQueue.pop();
+            // If we depleted the strategy, pop it from the queue.
+            if (balanceOfStrategy[strategy] == 0) {
+                withdrawalQueue.pop();
+
+                emit WithdrawalQueuePopped(strategy);
+            }
 
             // If we've pulled all we need, exit the loop.
             if (amountLeftToPull == 0) break;
         }
 
-        // Decrease totalStrategyHoldings to account for the withdrawals.
+        // Account for the withdrawals.
         totalStrategyHoldings -= underlyingAmount;
-
-        // If we went beyond the starting index, at least one item on the queue was popped.
-        if (currentIndex != startingIndex) emit WithdrawalQueueUpdated(withdrawalQueue);
 
         // Cache the Vault's balance of Ether.
         uint256 ethBalance = address(this).balance;
