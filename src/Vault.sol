@@ -6,8 +6,9 @@ import {ERC20} from "solmate/erc20/ERC20.sol";
 import {SafeERC20} from "solmate/erc20/SafeERC20.sol";
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 
-import {Strategy} from "./Strategy.sol";
-import {StrategyLib} from "./StrategyLib.sol";
+import {WETH} from "./interfaces/WETH.sol";
+import {Strategy, ERC20Strategy, ETHStrategy} from "./interfaces/Strategy.sol";
+
 import {VaultFactory} from "./VaultFactory.sol";
 
 /// @title Rari Vault (rvToken)
@@ -15,7 +16,6 @@ import {VaultFactory} from "./VaultFactory.sol";
 /// @notice Minimalist yield aggregator designed to support any ERC20 token.
 contract Vault is ERC20, Auth {
     using SafeERC20 for ERC20;
-    using StrategyLib for Strategy;
     using FixedPointMathLib for uint256;
 
     /*///////////////////////////////////////////////////////////////
@@ -84,13 +84,25 @@ contract Vault is ERC20, Auth {
     /// @param strategy The strategy that became untrusted.
     event StrategyDistrusted(Strategy indexed strategy);
 
+    /// @notice Emitted when the withdrawal queue is updated.
+    /// @param updatedWithdrawalQueue The updated withdrawal queue.
+    event WithdrawalQueueUpdated(Strategy[] updatedWithdrawalQueue);
+
+    /// @notice Emitted when the fee percent is updated.
+    /// @param newFeePercent The updated fee percent.
+    event FeePercentUpdated(uint256 newFeePercent);
+
     /// @notice Emitted when the profit unlock delay is updated.
     /// @param newProfitUnlockDelay The updated profit unlock delay.
     event ProfitUnlockDelayUpdated(uint256 newProfitUnlockDelay);
 
-    /// @notice Emitted when the withdrawal queue is updated.
-    /// @param updatedWithdrawalQueue The updated withdrawal queue.
-    event WithdrawalQueueUpdated(Strategy[] updatedWithdrawalQueue);
+    /// @notice Emitted when the target float percent is updated.
+    /// @param newTargetFloatPercent The updated target float percent delay.
+    event TargetFloatPercentUpdated(uint256 newTargetFloatPercent);
+
+    /// @notice Emitted when whether the Vault should treat the underlying as WETH is updated.
+    /// @param newUnderlyingIsWETH Whether the Vault nows treats the underlying as WETH.
+    event UnderlyingIsWETHUpdated(bool newUnderlyingIsWETH);
 
     /*///////////////////////////////////////////////////////////////
                           STRATEGY STORAGE
@@ -111,7 +123,11 @@ contract Vault is ERC20, Auth {
     /// @param strategy The strategy to make trusted.
     function trustStrategy(Strategy strategy) external requiresAuth {
         // Ensure the strategy accepts the correct underlying token.
-        require(strategy.underlying() == UNDERLYING, "WRONG_UNDERLYING");
+        // If the strategy accepts ETH the Vault should accept WETH, we'll handle wrapping when necessary.
+        require(
+            strategy.isCEther() ? underlyingIsWETH : ERC20Strategy(address(strategy)).underlying() == UNDERLYING,
+            "WRONG_UNDERLYING"
+        );
 
         // We don't allow trusting again to prevent emitting a useless event.
         require(!isStrategyTrusted[strategy], "ALREADY_TRUSTED");
@@ -219,21 +235,20 @@ contract Vault is ERC20, Auth {
     }
 
     /*///////////////////////////////////////////////////////////////
-                       TARGET FLOAT CONFIGURATION
+                   UNDERLYING IS WETH CONFIGURATION
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice The desired percentage of the Vault's holdings to keep as float.
-    /// @dev A fixed point number where 1e18 represents 100% and 0 represents 0%.
-    uint256 public targetFloatPercent = 0.01e18;
+    /// @notice Whether the Vault should treat the underlying token as WETH compatible.
+    /// @dev If enabled the Vault will allow trusting strategies that accept Ether.
+    bool public underlyingIsWETH = false;
 
-    /// @notice Set a new target float percentage.
-    /// @param newTargetFloatPercent The new target float percentage.
-    function setTargetFloatPercent(uint256 newTargetFloatPercent) external requiresAuth {
-        // A target float percentage over 100% doesn't make sense.
-        require(targetFloatPercent <= 1e18, "TARGET_TOO_HIGH");
+    /// @notice Set whether the Vault treats the underlying as WETH.
+    /// @param newUnderlyingIsWETH Whether the Vault should treat the underlying as WETH.
+    function setUnderlyingIsWETH(bool newUnderlyingIsWETH) external requiresAuth {
+        // Update whether the Vault treats the underlying as WETH.
+        underlyingIsWETH = newUnderlyingIsWETH;
 
-        // Update the target float percentage.
-        targetFloatPercent = newTargetFloatPercent;
+        emit UnderlyingIsWETHUpdated(newUnderlyingIsWETH);
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -252,6 +267,28 @@ contract Vault is ERC20, Auth {
 
         // Update the fee percentage.
         feePercent = newFeePercent;
+
+        emit FeePercentUpdated(newFeePercent);
+    }
+
+    /*///////////////////////////////////////////////////////////////
+                       TARGET FLOAT CONFIGURATION
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice The desired percentage of the Vault's holdings to keep as float.
+    /// @dev A fixed point number where 1e18 represents 100% and 0 represents 0%.
+    uint256 public targetFloatPercent = 0.01e18;
+
+    /// @notice Set a new target float percentage.
+    /// @param newTargetFloatPercent The new target float percentage.
+    function setTargetFloatPercent(uint256 newTargetFloatPercent) external requiresAuth {
+        // A target float percentage over 100% doesn't make sense.
+        require(targetFloatPercent <= 1e18, "TARGET_TOO_HIGH");
+
+        // Update the target float percentage.
+        targetFloatPercent = newTargetFloatPercent;
+
+        emit TargetFloatPercentUpdated(newTargetFloatPercent);
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -435,11 +472,20 @@ contract Vault is ERC20, Auth {
 
         emit StrategyDeposit(strategy, underlyingAmount);
 
-        // Approve underlyingAmount to the strategy so we can deposit.
-        UNDERLYING.safeApprove(address(strategy), underlyingAmount);
+        // We need to deposit differently if the strategy takes ETH.
+        if (strategy.isCEther()) {
+            // Unwrap the right amount of WETH.
+            WETH(address(UNDERLYING)).withdraw(underlyingAmount);
 
-        // Deposit into the strategy and revert if returns an error code.
-        require(strategy.mint(underlyingAmount) == 0, "MINT_FAILED");
+            // Deposit into the strategy and assume it will revert on error.
+            ETHStrategy(address(strategy)).mint{value: underlyingAmount}();
+        } else {
+            // Approve underlyingAmount to the strategy so we can deposit.
+            UNDERLYING.safeApprove(address(strategy), underlyingAmount);
+
+            // Deposit into the strategy and revert if it returns an error code.
+            require(ERC20Strategy(address(strategy)).mint(underlyingAmount) == 0, "MINT_FAILED");
+        }
     }
 
     /// @notice Withdraw a specific amount of underlying tokens from a strategy.
@@ -460,6 +506,9 @@ contract Vault is ERC20, Auth {
 
         // Withdraw from the strategy and revert if returns an error code.
         require(strategy.redeemUnderlying(underlyingAmount) == 0, "REDEEM_FAILED");
+
+        // Wrap the withdrawn Ether into WETH if necessary.
+        if (strategy.isCEther()) WETH(address(UNDERLYING)).deposit{value: underlyingAmount}();
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -494,7 +543,7 @@ contract Vault is ERC20, Auth {
             // Without this the next harvest would count the withdrawal as a loss.
             balanceOfStrategy[strategy] -= amountToPull;
 
-            // Adjust our goal based on how much we're able to pull from the strategy.
+            // Adjust our goal based on how much we can pull from the strategy.
             amountLeftToPull -= amountToPull;
 
             // Withdraw from the strategy and revert if returns an error code.
@@ -514,5 +563,11 @@ contract Vault is ERC20, Auth {
 
         // If we went beyond the starting index, at least one item on the queue was popped.
         if (currentIndex != startingIndex) emit WithdrawalQueueUpdated(withdrawalQueue);
+
+        // Cache the Vault's balance of Ether.
+        uint256 ethBalance = address(this).balance;
+
+        // If we now have any ETH, meaning we withdrew from some ETH strategies, wrap it into WETH.
+        if (ethBalance != 0 && underlyingIsWETH) WETH(address(UNDERLYING)).deposit{value: ethBalance}();
     }
 }

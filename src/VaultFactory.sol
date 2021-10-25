@@ -10,6 +10,7 @@ import {Vault} from "./Vault.sol";
 /// @title Rari Vault Factory
 /// @author Transmissions11 + JetJadeja
 /// @notice Factory which enables deploying a Vault contract for any ERC20 token.
+
 contract VaultFactory is Auth(msg.sender, Authority(address(0))) {
     using Bytes32AddressLib for address;
     using Bytes32AddressLib for bytes32;
@@ -50,29 +51,28 @@ contract VaultFactory is Auth(msg.sender, Authority(address(0))) {
     /// @return The Vault that supports this underlying token.
     /// @dev The Vault returned may not be deployed yet. Use isVaultDeployed to check.
     function getVaultFromUnderlying(ERC20 underlying) external view returns (Vault) {
-        // Compute the create2 hash.
-        bytes32 create2Hash = keccak256(
-            abi.encodePacked(
-                // Prefix:
-                bytes1(0xFF),
-                // Creator:
-                address(this),
-                // Salt:
-                address(underlying).fillLast12Bytes(),
-                // Bytecode hash:
+        return
+            Vault(
                 keccak256(
                     abi.encodePacked(
-                        // Deployment bytecode:
-                        type(Vault).creationCode,
-                        // Constructor arguments:
-                        abi.encode(underlying)
+                        // Prefix:
+                        bytes1(0xFF),
+                        // Creator:
+                        address(this),
+                        // Salt:
+                        address(underlying).fillLast12Bytes(),
+                        // Bytecode hash:
+                        keccak256(
+                            abi.encodePacked(
+                                // Deployment bytecode:
+                                type(Vault).creationCode,
+                                // Constructor arguments:
+                                abi.encode(underlying)
+                            )
+                        )
                     )
-                )
-            )
-        );
-
-        // Convert the create2 hash into a Vault address.
-        return Vault(create2Hash.fromLast20Bytes());
+                ).fromLast20Bytes() // Convert the create hash into an address.
+            );
     }
 
     /// @notice Returns if a vault at an address has been deployed yet.
