@@ -7,7 +7,7 @@ import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 
 import {ERC20Strategy} from "../../interfaces/Strategy.sol";
 
-contract MockStrategy is ERC20Strategy {
+contract MockStrategy is ERC20("Rari Vault Mock Strategy", "rvsMOCK", 18), ERC20Strategy {
     using SafeERC20 for ERC20;
     using FixedPointMathLib for uint256;
 
@@ -15,7 +15,7 @@ contract MockStrategy is ERC20Strategy {
                            STRATEGY FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    constructor(ERC20 _UNDERLYING) ERC20("Mock Strategy", "vsMOCK", 18) {
+    constructor(ERC20 _UNDERLYING) {
         UNDERLYING = _UNDERLYING;
 
         BASE_UNIT = 10**_UNDERLYING.decimals();

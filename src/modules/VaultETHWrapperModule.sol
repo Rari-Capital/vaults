@@ -103,4 +103,7 @@ contract VaultETHWrapperModule {
         // Transfer the unwrapped ETH to the caller.
         SafeERC20.safeTransferETH(msg.sender, withdrawnWETH);
     }
+
+    /// @dev Required for the module to receive unwrapped ETH.
+    receive() external payable {}
 }
