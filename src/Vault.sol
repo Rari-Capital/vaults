@@ -398,7 +398,7 @@ contract Vault is ERC20, Auth {
     function totalHoldings() public view returns (uint256) {
         // Subtract locked profit from the amount of total deposited tokens and add the float value.
         // We subtract locked profit from totalStrategyHoldings because maxLockedProfit is baked into it.
-        return totalFloat() + (totalStrategyHoldings - lockedProfit());
+        return totalFloat() + totalStrategyHoldings - lockedProfit();
     }
 
     /// @notice Calculate the current amount of locked profit.
