@@ -357,15 +357,9 @@ contract Vault is ERC20, Auth {
         // Get the Vault's total holdings, accounting for locked profit.
         uint256 holdings = float + totalStrategyHoldings - lockedProfit();
 
-        // Get the total supply of rvTokens.
-        uint256 rvTokenSupply = totalSupply;
-
-        // Calculate the exchange rate by diving the total holdings by the rvToken supply.
-        uint256 rateOfExchange = rvTokenSupply == 0 ? BASE_UNIT : holdings.fdiv(rvTokenSupply, BASE_UNIT);
-
         // Determine the equivalent amount of rvTokens and burn them.
         // This will revert if the user does not have enough rvTokens.
-        _burn(msg.sender, underlyingAmount.fdiv(rateOfExchange, BASE_UNIT));
+        _burn(msg.sender, underlyingAmount.fdiv(holdings.fdiv(totalSupply, BASE_UNIT), BASE_UNIT));
 
         emit Withdraw(msg.sender, underlyingAmount);
 
