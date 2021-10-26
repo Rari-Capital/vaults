@@ -383,17 +383,20 @@ contract Vault is ERC20, Auth {
         // We don't allow redeeming 0 to prevent emitting a useless event.
         require(rvTokenAmount != 0, "AMOUNT_CANNOT_BE_ZERO");
 
+        // Get the Vault's floating balance.
+        uint256 float = totalFloat();
+
+        // Get the Vault's total holdings, accounting for locked profit.
+        uint256 holdings = float + totalStrategyHoldings - lockedProfit();
+
         // Determine the equivalent amount of underlying tokens.
-        uint256 underlyingAmount = rvTokenAmount.fmul(exchangeRate(), BASE_UNIT);
+        uint256 underlyingAmount = rvTokenAmount.fmul(holdings.fdiv(totalSupply, BASE_UNIT), BASE_UNIT);
 
         // Burn the provided amount of rvTokens.
         // This will revert if the user does not have enough rvTokens.
         _burn(msg.sender, rvTokenAmount);
 
         emit Withdraw(msg.sender, underlyingAmount);
-
-        // Get the Vault's floating balance.
-        uint256 float = totalFloat();
 
         // If the amount is greater than the float, withdraw from strategies.
         if (underlyingAmount > float) {
@@ -418,6 +421,8 @@ contract Vault is ERC20, Auth {
     function balanceOfUnderlying(address account) external view returns (uint256) {
         return balanceOf[account].fmul(exchangeRate(), BASE_UNIT);
     }
+
+    // TODO: consider removing most of these we dont use em anywhere lol?
 
     /// @notice Returns the amount of underlying tokens an rvToken can be redeemed for.
     /// @return The amount of underlying tokens an rvToken can be redeemed for.
