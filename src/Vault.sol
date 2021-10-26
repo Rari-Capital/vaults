@@ -366,7 +366,7 @@ contract Vault is ERC20, Auth {
                 // The bare minimum we need for this withdrawal.
                 (underlyingAmount - float) +
                     // The amount needed to reach our target float percentage.
-                    (totalHoldings() - underlyingAmount).fmul(targetFloatPercent, 1e18)
+                    (float + totalStrategyHoldings - lockedProfit() - underlyingAmount).fmul(targetFloatPercent, 1e18)
             );
         }
 
@@ -398,7 +398,7 @@ contract Vault is ERC20, Auth {
                 // The bare minimum we need for this withdrawal.
                 (underlyingAmount - float) +
                     // The amount needed to reach our target float percentage.
-                    (totalHoldings() - underlyingAmount).fmul(targetFloatPercent, 1e18)
+                    (float + totalStrategyHoldings - lockedProfit() - underlyingAmount).fmul(targetFloatPercent, 1e18)
             );
         }
 
