@@ -311,8 +311,6 @@ contract Vault is ERC20, Auth {
     /// @param index1 One index involved in the swap
     /// @param index2 The other index involved in the swap.
     function swapWithdrawalQueueIndexes(uint256 index1, uint256 index2) external {
-        // TODO: OPTIMIZE AAAA
-
         // Get the (soon to be) new strategies at each index.
         Strategy newStrategy2 = withdrawalQueue[index1];
         Strategy newStrategy1 = withdrawalQueue[index2];
