@@ -637,7 +637,7 @@ contract Vault is ERC20, Auth {
         // Cache the Vault's balance of Ether.
         uint256 ethBalance = address(this).balance;
 
-        // If we now have any ETH, meaning we withdrew from some ETH strategies, wrap it into WETH.
+        // If the Vault's underlying token is WETH compatible and we have some ETH, wrap it into WETH.
         if (ethBalance != 0 && underlyingIsWETH) WETH(address(UNDERLYING)).deposit{value: ethBalance}();
     }
 
