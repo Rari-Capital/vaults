@@ -351,14 +351,23 @@ contract Vault is ERC20, Auth {
         // We don't allow withdrawing 0 to prevent emitting a useless event.
         require(underlyingAmount != 0, "AMOUNT_CANNOT_BE_ZERO");
 
-        // Determine the equivalent amount of rvTokens and burn them.
-        // This will revert if the user does not have enough rvTokens.
-        _burn(msg.sender, underlyingAmount.fdiv(exchangeRate(), BASE_UNIT));
-
-        emit Withdraw(msg.sender, underlyingAmount);
-
         // Get the Vault's floating balance.
         uint256 float = totalFloat();
+
+        // Get the Vault's total holdings, accounting for locked profit.
+        uint256 holdings = float + totalStrategyHoldings - lockedProfit();
+
+        // Get the total supply of rvTokens.
+        uint256 rvTokenSupply = totalSupply;
+
+        // Calculate the exchange rate by diving the total holdings by the rvToken supply.
+        uint256 rateOfExchange = rvTokenSupply == 0 ? BASE_UNIT : holdings.fdiv(rvTokenSupply, BASE_UNIT);
+
+        // Determine the equivalent amount of rvTokens and burn them.
+        // This will revert if the user does not have enough rvTokens.
+        _burn(msg.sender, underlyingAmount.fdiv(rateOfExchange, BASE_UNIT));
+
+        emit Withdraw(msg.sender, underlyingAmount);
 
         // If the amount is greater than the float, withdraw from strategies.
         if (underlyingAmount > float) {
@@ -366,7 +375,7 @@ contract Vault is ERC20, Auth {
                 // The bare minimum we need for this withdrawal.
                 (underlyingAmount - float) +
                     // The amount needed to reach our target float percentage.
-                    (float + totalStrategyHoldings - lockedProfit() - underlyingAmount).fmul(targetFloatPercent, 1e18)
+                    (holdings - underlyingAmount).fmul(targetFloatPercent, 1e18)
             );
         }
 
