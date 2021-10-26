@@ -582,7 +582,7 @@ contract Vault is ERC20, Auth {
     /// @param underlyingAmount The amount of underlying tokens to pull into float.
     /// @dev Automatically removes depleted strategies from the withdrawal queue.
     function pullFromWithdrawalQueue(uint256 underlyingAmount) internal {
-        // TODO: Cache variables to optimize SLOADs.
+        // TODO: caching withdrawal queue might still be cheaper if there's more items.
 
         // We will update this variable as we pull from strategies.
         uint256 amountLeftToPull = underlyingAmount;
@@ -600,11 +600,17 @@ contract Vault is ERC20, Auth {
             // Get the strategy at the current queue index.
             Strategy strategy = withdrawalQueue[currentIndex];
 
+            // Get the balance of the strategy before we withdraw from it.
+            uint256 strategyBalance = balanceOfStrategy[strategy];
+
             // We want to pull as much as we can from the strategy, but no more than we need.
-            uint256 amountToPull = FixedPointMathLib.min(amountLeftToPull, balanceOfStrategy[strategy]);
+            uint256 amountToPull = FixedPointMathLib.min(amountLeftToPull, strategyBalance);
+
+            // Compute the balance of the strategy that will remain after we withdraw.
+            uint256 strategyBalanceAfterWithdrawal = strategyBalance - amountToPull;
 
             // Without this the next harvest would count the withdrawal as a loss.
-            balanceOfStrategy[strategy] -= amountToPull;
+            balanceOfStrategy[strategy] = strategyBalanceAfterWithdrawal;
 
             // Adjust our goal based on how much we can pull from the strategy.
             amountLeftToPull -= amountToPull;
@@ -615,7 +621,7 @@ contract Vault is ERC20, Auth {
             emit StrategyWithdrawal(strategy, amountToPull);
 
             // If we depleted the strategy, pop it from the queue.
-            if (balanceOfStrategy[strategy] == 0) {
+            if (strategyBalanceAfterWithdrawal == 0) {
                 withdrawalQueue.pop();
 
                 emit WithdrawalQueuePopped(strategy);
