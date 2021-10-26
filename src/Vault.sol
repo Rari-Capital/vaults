@@ -357,12 +357,14 @@ contract Vault is ERC20, Auth {
 
         emit Withdraw(msg.sender, underlyingAmount);
 
+        // Get the Vault's floating balance.
+        uint256 float = totalFloat();
+
         // If the amount is greater than the float, withdraw from strategies.
-        // TODO: Optimize double calls to totalFloat()? One is also done in totalHoldings.
-        if (underlyingAmount > totalFloat()) {
+        if (underlyingAmount > float) {
             pullFromWithdrawalQueue(
                 // The bare minimum we need for this withdrawal.
-                (underlyingAmount - totalFloat()) +
+                (underlyingAmount - float) +
                     // The amount needed to reach our target float percentage.
                     (totalHoldings() - underlyingAmount).fmul(targetFloatPercent, 1e18)
             );
@@ -387,12 +389,14 @@ contract Vault is ERC20, Auth {
 
         emit Withdraw(msg.sender, underlyingAmount);
 
+        // Get the Vault's floating balance.
+        uint256 float = totalFloat();
+
         // If the amount is greater than the float, withdraw from strategies.
-        // TODO: Optimize double calls to totalFloat()? One is also done in totalHoldings.
-        if (underlyingAmount > totalFloat()) {
+        if (underlyingAmount > float) {
             pullFromWithdrawalQueue(
                 // The bare minimum we need for this withdrawal.
-                (underlyingAmount - totalFloat()) +
+                (underlyingAmount - float) +
                     // The amount needed to reach our target float percentage.
                     (totalHoldings() - underlyingAmount).fmul(targetFloatPercent, 1e18)
             );
