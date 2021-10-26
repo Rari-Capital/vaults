@@ -442,11 +442,18 @@ contract Vault is ERC20, Auth {
     /// @notice Calculate the current amount of locked profit.
     /// @return The current amount of locked profit.
     function lockedProfit() public view returns (uint256) {
-        // TODO: Cache SLOADs?
-        return
-            block.timestamp >= lastHarvest + profitUnlockDelay
-                ? 0 // If profit unlock delay has passed, there is no locked profit.
-                : maxLockedProfit - (maxLockedProfit * (block.timestamp - lastHarvest)) / profitUnlockDelay;
+        // Get the last harvest and unlock delay.
+        uint256 previousHarvest = lastHarvest;
+        uint256 unlockDelay = profitUnlockDelay;
+
+        // If the unlock delay has passed, there is no locked profit.
+        if (block.timestamp >= previousHarvest + unlockDelay) return 0;
+
+        // Get the maximum amount we could return.
+        uint256 maximumLockedProfit = maxLockedProfit;
+
+        // Compute how much profit remains locked based on our last harvest and unlock delay.
+        return maximumLockedProfit - (maximumLockedProfit * (block.timestamp - previousHarvest)) / unlockDelay;
     }
 
     /// @notice Returns the amount of underlying tokens that idly sit in the Vault.
