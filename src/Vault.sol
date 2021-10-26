@@ -48,6 +48,30 @@ contract Vault is ERC20, Auth {
     }
 
     /*///////////////////////////////////////////////////////////////
+                          FEE CONFIGURATION
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice The percentage of profit recognized each harvest to reserve as fees.
+    /// @dev A fixed point number where 1e18 represents 100% and 0 represents 0%.
+    uint256 public feePercent = 0.1e18;
+
+    /// @notice Emitted when the fee percent is updated.
+    /// @param newFeePercent The updated fee percent.
+    event FeePercentUpdated(uint256 newFeePercent);
+
+    /// @notice Set a new fee percentage.
+    /// @param newFeePercent The new fee percentage.
+    function setFeePercent(uint256 newFeePercent) external requiresAuth {
+        // A fee percentage over 100% doesn't make sense.
+        require(newFeePercent <= 1e18, "FEE_TOO_HIGH");
+
+        // Update the fee percentage.
+        feePercent = newFeePercent;
+
+        emit FeePercentUpdated(newFeePercent);
+    }
+
+    /*///////////////////////////////////////////////////////////////
                    UNDERLYING IS WETH CONFIGURATION
     //////////////////////////////////////////////////////////////*/
 
@@ -70,30 +94,6 @@ contract Vault is ERC20, Auth {
         underlyingIsWETH = newUnderlyingIsWETH;
 
         emit UnderlyingIsWETHUpdated(newUnderlyingIsWETH);
-    }
-
-    /*///////////////////////////////////////////////////////////////
-                          FEE CONFIGURATION
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice The percentage of profit recognized each harvest to reserve as fees.
-    /// @dev A fixed point number where 1e18 represents 100% and 0 represents 0%.
-    uint256 public feePercent = 0.1e18;
-
-    /// @notice Emitted when the fee percent is updated.
-    /// @param newFeePercent The updated fee percent.
-    event FeePercentUpdated(uint256 newFeePercent);
-
-    /// @notice Set a new fee percentage.
-    /// @param newFeePercent The new fee percentage.
-    function setFeePercent(uint256 newFeePercent) external requiresAuth {
-        // A fee percentage over 100% doesn't make sense.
-        require(newFeePercent <= 1e18, "FEE_TOO_HIGH");
-
-        // Update the fee percentage.
-        feePercent = newFeePercent;
-
-        emit FeePercentUpdated(newFeePercent);
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -153,9 +153,6 @@ contract Vault is ERC20, Auth {
             "WRONG_UNDERLYING"
         );
 
-        // We don't allow trusting again to prevent emitting a useless event.
-        require(!isStrategyTrusted[strategy], "ALREADY_TRUSTED");
-
         // Store the strategy as trusted.
         isStrategyTrusted[strategy] = true;
 
@@ -165,9 +162,6 @@ contract Vault is ERC20, Auth {
     /// @notice Store a strategy as untrusted, disabling it from being harvested.
     /// @param strategy The strategy to make untrusted.
     function distrustStrategy(Strategy strategy) external requiresAuth {
-        // We don't allow untrusting again to prevent emitting a useless event.
-        require(isStrategyTrusted[strategy], "ALREADY_UNTRUSTED");
-
         // Store the strategy as untrusted.
         isStrategyTrusted[strategy] = false;
 
@@ -524,7 +518,7 @@ contract Vault is ERC20, Auth {
         // A strategy must be trusted before it can be deposited into.
         require(isStrategyTrusted[strategy], "UNTRUSTED_STRATEGY");
 
-        // We don't allow exiting 0 to prevent emitting a useless event.
+        // We don't allow depositing 0 to prevent emitting a useless event.
         require(underlyingAmount != 0, "AMOUNT_CANNOT_BE_ZERO");
 
         // Without this the next harvest would count the deposit as profit.
@@ -556,7 +550,7 @@ contract Vault is ERC20, Auth {
     /// @param underlyingAmount  The amount of underlying tokens to withdraw.
     /// @dev Withdrawing from a strategy will not remove it from the withdrawal queue.
     function withdrawFromStrategy(Strategy strategy, uint256 underlyingAmount) external requiresAuth {
-        // We don't allow exiting 0 to prevent emitting a useless event.
+        // We don't allow withdrawing 0 to prevent emitting a useless event.
         require(underlyingAmount != 0, "AMOUNT_CANNOT_BE_ZERO");
 
         // Without this the next harvest would count the withdrawal as a loss.
