@@ -576,8 +576,6 @@ contract Vault is ERC20, Auth {
     /// @param underlyingAmount The amount of underlying tokens to pull into float.
     /// @dev Automatically removes depleted strategies from the withdrawal queue.
     function pullFromWithdrawalQueue(uint256 underlyingAmount) internal {
-        // TODO: caching withdrawal queue might still be cheaper if there's more items.
-
         // We will update this variable as we pull from strategies.
         uint256 amountLeftToPull = underlyingAmount;
 
