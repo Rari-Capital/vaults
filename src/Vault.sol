@@ -294,6 +294,8 @@ contract Vault is ERC20, Auth {
     /// @notice Move the strategy at the tip of the queue to the specified index and pop the tip off the queue.
     /// @param index The index of the strategy in the withdrawal queue to replace with the tip.
     function replaceWithdrawalQueueIndexWithTip(uint256 index) external requiresAuth {
+        // TODO: with a longer withdrawal queue is it cheaper to cache withdrawal queue array?
+
         // Get the (soon to be) previous tip and strategy we will replace at the index.
         Strategy previousTipStrategy = withdrawalQueue[withdrawalQueue.length - 1];
         Strategy replacedStrategy = withdrawalQueue[index];
@@ -311,6 +313,8 @@ contract Vault is ERC20, Auth {
     /// @param index1 One index involved in the swap
     /// @param index2 The other index involved in the swap.
     function swapWithdrawalQueueIndexes(uint256 index1, uint256 index2) external {
+        // TODO: with a longer withdrawal queue is it cheaper to cache withdrawal queue array?
+
         // Get the (soon to be) new strategies at each index.
         Strategy newStrategy2 = withdrawalQueue[index1];
         Strategy newStrategy1 = withdrawalQueue[index2];
