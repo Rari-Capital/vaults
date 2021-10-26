@@ -493,7 +493,6 @@ contract Vault is ERC20, Auth {
         // Set lastHarvest to the current timestamp.
         lastHarvest = block.timestamp;
 
-        // TODO: Cache SLOAD here?
         emit Harvest(strategy, maxLockedProfit);
     }
 
