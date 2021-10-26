@@ -354,12 +354,20 @@ contract Vault is ERC20, Auth {
         // Get the Vault's floating balance.
         uint256 float = UNDERLYING.balanceOf(address(this));
 
-        // Get the Vault's total holdings, accounting for locked profit.
+        // Equivalent to totalHoldings, inlined so we can use cached float.
         uint256 holdings = float + totalStrategyHoldings - lockedProfit();
 
         // Determine the equivalent amount of rvTokens and burn them.
         // This will revert if the user does not have enough rvTokens.
-        _burn(msg.sender, underlyingAmount.fdiv(holdings.fdiv(totalSupply, BASE_UNIT), BASE_UNIT));
+        _burn(
+            msg.sender,
+            underlyingAmount.fdiv(
+                // Equivalent to exchangeRate, inlined
+                // so we can use our cached holdings.
+                holdings.fdiv(totalSupply, BASE_UNIT),
+                BASE_UNIT
+            )
+        );
 
         emit Withdraw(msg.sender, underlyingAmount);
 
@@ -386,11 +394,16 @@ contract Vault is ERC20, Auth {
         // Get the Vault's floating balance.
         uint256 float = UNDERLYING.balanceOf(address(this));
 
-        // Get the Vault's total holdings, accounting for locked profit.
+        // Equivalent to totalHoldings, inlined so we can use cached float.
         uint256 holdings = float + totalStrategyHoldings - lockedProfit();
 
         // Determine the equivalent amount of underlying tokens.
-        uint256 underlyingAmount = rvTokenAmount.fmul(holdings.fdiv(totalSupply, BASE_UNIT), BASE_UNIT);
+        uint256 underlyingAmount = rvTokenAmount.fmul(
+            // Equivalent to exchangeRate, inlined
+            // so we can use our cached holdings.
+            holdings.fdiv(totalSupply, BASE_UNIT),
+            BASE_UNIT
+        );
 
         // Burn the provided amount of rvTokens.
         // This will revert if the user does not have enough rvTokens.
@@ -421,8 +434,6 @@ contract Vault is ERC20, Auth {
     function balanceOfUnderlying(address account) external view returns (uint256) {
         return balanceOf[account].fmul(exchangeRate(), BASE_UNIT);
     }
-
-    // TODO: consider removing most of these we dont use em anywhere lol?
 
     /// @notice Returns the amount of underlying tokens an rvToken can be redeemed for.
     /// @return The amount of underlying tokens an rvToken can be redeemed for.
