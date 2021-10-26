@@ -228,9 +228,9 @@ contract Vault is ERC20, Auth {
     /// @param poppedStrategy The strategy popped from the withdrawal queue.
     event WithdrawalQueuePopped(Strategy poppedStrategy);
 
-    /// @notice Emitted when the withdrawal queue is replaced.
-    /// @param replacedWithdrawalQueue The replacement withdrawal queue.
-    event WithdrawalQueueReplaced(Strategy[] replacedWithdrawalQueue);
+    /// @notice Emitted when the withdrawal queue is updated.
+    /// @param replacedWithdrawalQueue The new withdrawal queue.
+    event WithdrawalQueueSet(Strategy[] replacedWithdrawalQueue);
 
     /// @notice Emitted when an index in the withdrawal queue is replaced.
     /// @param index The index of the replaced strategy in the withdrawal queue.
@@ -271,12 +271,12 @@ contract Vault is ERC20, Auth {
         emit WithdrawalQueuePopped(poppedStrategy);
     }
 
-    /// @notice Replace the withdrawal queue.
-    /// @param newQueue The replacement withdrawal queue.
-    function replaceWithdrawalQueue(Strategy[] calldata newQueue) external requiresAuth {
+    /// @notice Set the withdrawal queue.
+    /// @param newQueue The new withdrawal queue.
+    function setWithdrawalQueue(Strategy[] calldata newQueue) external requiresAuth {
         withdrawalQueue = newQueue;
 
-        emit WithdrawalQueueReplaced(newQueue);
+        emit WithdrawalQueueSet(newQueue);
     }
 
     /// @notice Replace an index in the withdrawal queue with another strategy.

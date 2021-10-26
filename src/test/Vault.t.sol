@@ -7,6 +7,8 @@ import {DSTestPlus} from "./utils/DSTestPlus.sol";
 
 import {MockStrategy} from "./mocks/MockStrategy.sol";
 
+import {Strategy} from "../interfaces/Strategy.sol";
+
 import {Vault} from "../Vault.sol";
 import {VaultFactory} from "../VaultFactory.sol";
 
@@ -448,5 +450,91 @@ contract VaultsTest is DSTestPlus {
 
         vault.redeem(1e18);
         assertEq(underlying.balanceOf(address(this)), 1.5e18);
+    }
+
+    /*///////////////////////////////////////////////////////////////
+                        WITHDRAWAL QUEUE TESTS
+    //////////////////////////////////////////////////////////////*/
+
+    function testPushingToWithdrawalQueue() public {
+        vault.pushToWithdrawalQueue(Strategy(address(69)));
+        vault.pushToWithdrawalQueue(Strategy(address(420)));
+        vault.pushToWithdrawalQueue(Strategy(address(1337)));
+        vault.pushToWithdrawalQueue(Strategy(address(69420)));
+
+        assertEq(vault.getWithdrawalQueue().length, 4);
+
+        assertEq(address(vault.withdrawalQueue(0)), address(69));
+        assertEq(address(vault.withdrawalQueue(1)), address(420));
+        assertEq(address(vault.withdrawalQueue(2)), address(1337));
+        assertEq(address(vault.withdrawalQueue(3)), address(69420));
+    }
+
+    function testPoppingFromWithdrawalQueue() public {
+        vault.pushToWithdrawalQueue(Strategy(address(69)));
+        vault.pushToWithdrawalQueue(Strategy(address(420)));
+        vault.pushToWithdrawalQueue(Strategy(address(1337)));
+        vault.pushToWithdrawalQueue(Strategy(address(69420)));
+
+        vault.popFromWithdrawalQueue();
+
+        assertEq(vault.getWithdrawalQueue().length, 3);
+
+        vault.popFromWithdrawalQueue();
+
+        assertEq(vault.getWithdrawalQueue().length, 2);
+
+        vault.popFromWithdrawalQueue();
+
+        assertEq(vault.getWithdrawalQueue().length, 1);
+
+        vault.popFromWithdrawalQueue();
+
+        assertEq(vault.getWithdrawalQueue().length, 0);
+    }
+
+    function testReplaceWithdrawalQueueIndex() public {
+        Strategy[] memory newQueue = new Strategy[](4);
+        newQueue[0] = Strategy(address(1));
+        newQueue[1] = Strategy(address(2));
+        newQueue[2] = Strategy(address(3));
+        newQueue[3] = Strategy(address(4));
+
+        vault.setWithdrawalQueue(newQueue);
+
+        vault.replaceWithdrawalQueueIndex(1, Strategy(address(420)));
+
+        assertEq(vault.getWithdrawalQueue().length, 4);
+        assertEq(address(vault.withdrawalQueue(1)), address(420));
+    }
+
+    function testReplaceWithdrawalQueueIndexWithTip() public {
+        Strategy[] memory newQueue = new Strategy[](4);
+        newQueue[0] = Strategy(address(1001));
+        newQueue[1] = Strategy(address(1002));
+        newQueue[2] = Strategy(address(1003));
+        newQueue[3] = Strategy(address(1004));
+        vault.setWithdrawalQueue(newQueue);
+
+        vault.replaceWithdrawalQueueIndexWithTip(1);
+
+        assertEq(vault.getWithdrawalQueue().length, 3);
+        assertEq(address(vault.withdrawalQueue(2)), address(1003));
+        assertEq(address(vault.withdrawalQueue(1)), address(1004));
+    }
+
+    function testSwapWithdrawalQueueIndexes() public {
+        Strategy[] memory newQueue = new Strategy[](4);
+        newQueue[0] = Strategy(address(1001));
+        newQueue[1] = Strategy(address(1002));
+        newQueue[2] = Strategy(address(1003));
+        newQueue[3] = Strategy(address(1004));
+        vault.setWithdrawalQueue(newQueue);
+
+        vault.swapWithdrawalQueueIndexes(1, 2);
+
+        assertEq(vault.getWithdrawalQueue().length, 4);
+        assertEq(address(vault.withdrawalQueue(1)), address(1003));
+        assertEq(address(vault.withdrawalQueue(2)), address(1002));
     }
 }
