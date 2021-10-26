@@ -421,12 +421,14 @@ contract Vault is ERC20, Auth {
     /// @notice Returns the amount of underlying tokens an rvToken can be redeemed for.
     /// @return The amount of underlying tokens an rvToken can be redeemed for.
     function exchangeRate() public view returns (uint256) {
-        // If there are no rvTokens in circulation, return an exchange rate of 1:1.
-        if (totalSupply == 0) return BASE_UNIT;
+        // Get the total supply of rvTokens.
+        uint256 rvTokenSupply = totalSupply;
 
-        // TODO: Optimize double SLOAD of totalSupply here?
+        // If there are no rvTokens in circulation, return an exchange rate of 1:1.
+        if (rvTokenSupply == 0) return BASE_UNIT;
+
         // Calculate the exchange rate by diving the total holdings by the rvToken supply.
-        return totalHoldings().fdiv(totalSupply, BASE_UNIT);
+        return totalHoldings().fdiv(rvTokenSupply, BASE_UNIT);
     }
 
     /// @notice Calculate the total amount of tokens the Vault currently holds for depositors.
