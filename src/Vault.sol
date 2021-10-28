@@ -412,9 +412,10 @@ contract Vault is ERC20, Auth {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Returns a user's Vault balance in underlying tokens.
+    /// @param user The user to query for a balance.
     /// @return The user's Vault balance in underlying tokens.
-    function balanceOfUnderlying(address account) external view returns (uint256) {
-        return balanceOf[account].fmul(exchangeRate(), BASE_UNIT);
+    function balanceOfUnderlying(address user) external view returns (uint256) {
+        return balanceOf[user].fmul(exchangeRate(), BASE_UNIT);
     }
 
     /// @notice Returns the amount of underlying tokens an rvToken can be redeemed for.
