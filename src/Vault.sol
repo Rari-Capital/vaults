@@ -614,33 +614,40 @@ contract Vault is ERC20, Auth {
             // We want to pull as much as we can from the strategy, but no more than we need.
             uint256 amountToPull = FixedPointMathLib.min(amountLeftToPull, strategyBalance);
 
-            // Compute the balance of the strategy that will remain after we withdraw.
-            uint256 strategyBalanceAfterWithdrawal = strategyBalance - amountToPull;
+            unchecked {
+                // Compute the balance of the strategy that will remain after we withdraw.
+                // Cannot overflow, as we cap the amount to pull at the strategy's balance.
+                uint256 strategyBalanceAfterWithdrawal = strategyBalance - amountToPull;
 
-            // Without this the next harvest would count the withdrawal as a loss.
-            balanceOfStrategy[strategy] = strategyBalanceAfterWithdrawal;
+                // Without this the next harvest would count the withdrawal as a loss.
+                balanceOfStrategy[strategy] = strategyBalanceAfterWithdrawal;
 
-            // Adjust our goal based on how much we can pull from the strategy.
-            amountLeftToPull -= amountToPull;
+                // Adjust our goal based on how much we can pull from the strategy.
+                // Cannot overflow as we cap the amount to pull at the amount left to pull.
+                amountLeftToPull -= amountToPull;
 
-            // Withdraw from the strategy and revert if returns an error code.
-            require(strategy.redeemUnderlying(amountToPull) == 0, "REDEEM_FAILED");
+                // Withdraw from the strategy and revert if returns an error code.
+                require(strategy.redeemUnderlying(amountToPull) == 0, "REDEEM_FAILED");
 
-            emit StrategyWithdrawal(strategy, amountToPull);
+                emit StrategyWithdrawal(strategy, amountToPull);
 
-            // If we depleted the strategy, pop it from the queue.
-            if (strategyBalanceAfterWithdrawal == 0) {
-                withdrawalQueue.pop();
+                // If we depleted the strategy, pop it from the queue.
+                if (strategyBalanceAfterWithdrawal == 0) {
+                    withdrawalQueue.pop();
 
-                emit WithdrawalQueuePopped(strategy);
+                    emit WithdrawalQueuePopped(strategy);
+                }
             }
 
             // If we've pulled all we need, exit the loop.
             if (amountLeftToPull == 0) break;
         }
 
-        // Account for the withdrawals.
-        totalStrategyHoldings -= underlyingAmount;
+        unchecked {
+            // Account for the withdrawals done in the loop above.
+            // Cannot overflow as the balances of some strategies cannot exceed the sum of all.
+            totalStrategyHoldings -= underlyingAmount;
+        }
 
         // Cache the Vault's balance of Ether.
         uint256 ethBalance = address(this).balance;
