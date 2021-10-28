@@ -357,21 +357,8 @@ contract Vault is ERC20, Auth {
 
         emit Withdraw(msg.sender, underlyingAmount);
 
-        // Get the Vault's floating balance.
-        uint256 float = totalFloat();
-
-        // If the amount is greater than the float, withdraw from strategies.
-        if (underlyingAmount > float) {
-            pullFromWithdrawalQueue(
-                // The bare minimum we need for this withdrawal.
-                (underlyingAmount - float) +
-                    // The amount needed to reach our target float percentage.
-                    (totalHoldings() - underlyingAmount).fmul(targetFloatPercent, 1e18)
-            );
-        }
-
-        // Transfer the provided amount of underlying tokens.
-        UNDERLYING.safeTransfer(msg.sender, underlyingAmount);
+        // Withdraw from strategies (if needed) and transfer.
+        transferUnderlyingTo(msg.sender, underlyingAmount);
     }
 
     /// @notice Redeem a specific amount of rvTokens for underlying tokens.
@@ -389,6 +376,15 @@ contract Vault is ERC20, Auth {
 
         emit Withdraw(msg.sender, underlyingAmount);
 
+        // Withdraw from strategies (if needed) and transfer.
+        transferUnderlyingTo(msg.sender, underlyingAmount);
+    }
+
+    /// @dev Transfers a specific amount of underlying tokens held in strategies and/or float to a recipient.
+    /// @dev Only withdraws from strategies if needed and maintains the target float percentage if possible.
+    /// @param recipient The user to transfer the underlying tokens to.
+    /// @param underlyingAmount The amount of underlying tokens to transfer.
+    function transferUnderlyingTo(address recipient, uint256 underlyingAmount) internal {
         // Get the Vault's floating balance.
         uint256 float = totalFloat();
 
@@ -402,8 +398,8 @@ contract Vault is ERC20, Auth {
             );
         }
 
-        // Transfer the determined amount of underlying tokens.
-        UNDERLYING.safeTransfer(msg.sender, underlyingAmount);
+        // Transfer the provided amount of underlying tokens.
+        UNDERLYING.safeTransfer(recipient, underlyingAmount);
     }
 
     /*///////////////////////////////////////////////////////////////
