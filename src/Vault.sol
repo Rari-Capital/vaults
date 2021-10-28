@@ -351,25 +351,14 @@ contract Vault is ERC20, Auth {
         // We don't allow withdrawing 0 to prevent emitting a useless event.
         require(underlyingAmount != 0, "AMOUNT_CANNOT_BE_ZERO");
 
-        // Get the Vault's floating balance.
-        uint256 float = UNDERLYING.balanceOf(address(this));
-
-        // Equivalent to totalHoldings, inlined so we can use cached float.
-        uint256 holdings = float + totalStrategyHoldings - lockedProfit();
-
         // Determine the equivalent amount of rvTokens and burn them.
         // This will revert if the user does not have enough rvTokens.
-        _burn(
-            msg.sender,
-            underlyingAmount.fdiv(
-                // Equivalent to exchangeRate, inlined
-                // so we can use our cached holdings.
-                holdings.fdiv(totalSupply, BASE_UNIT),
-                BASE_UNIT
-            )
-        );
+        _burn(msg.sender, underlyingAmount.fdiv(exchangeRate(), BASE_UNIT));
 
         emit Withdraw(msg.sender, underlyingAmount);
+
+        // Get the Vault's floating balance.
+        uint256 float = totalFloat();
 
         // If the amount is greater than the float, withdraw from strategies.
         if (underlyingAmount > float) {
@@ -377,7 +366,7 @@ contract Vault is ERC20, Auth {
                 // The bare minimum we need for this withdrawal.
                 (underlyingAmount - float) +
                     // The amount needed to reach our target float percentage.
-                    (holdings - underlyingAmount).fmul(targetFloatPercent, 1e18)
+                    (totalHoldings() - underlyingAmount).fmul(targetFloatPercent, 1e18)
             );
         }
 
@@ -391,19 +380,8 @@ contract Vault is ERC20, Auth {
         // We don't allow redeeming 0 to prevent emitting a useless event.
         require(rvTokenAmount != 0, "AMOUNT_CANNOT_BE_ZERO");
 
-        // Get the Vault's floating balance.
-        uint256 float = UNDERLYING.balanceOf(address(this));
-
-        // Equivalent to totalHoldings, inlined so we can use cached float.
-        uint256 holdings = float + totalStrategyHoldings - lockedProfit();
-
         // Determine the equivalent amount of underlying tokens.
-        uint256 underlyingAmount = rvTokenAmount.fmul(
-            // Equivalent to exchangeRate, inlined
-            // so we can use our cached holdings.
-            holdings.fdiv(totalSupply, BASE_UNIT),
-            BASE_UNIT
-        );
+        uint256 underlyingAmount = rvTokenAmount.fmul(exchangeRate(), BASE_UNIT);
 
         // Burn the provided amount of rvTokens.
         // This will revert if the user does not have enough rvTokens.
@@ -411,13 +389,16 @@ contract Vault is ERC20, Auth {
 
         emit Withdraw(msg.sender, underlyingAmount);
 
+        // Get the Vault's floating balance.
+        uint256 float = totalFloat();
+
         // If the amount is greater than the float, withdraw from strategies.
         if (underlyingAmount > float) {
             pullFromWithdrawalQueue(
                 // The bare minimum we need for this withdrawal.
                 (underlyingAmount - float) +
                     // The amount needed to reach our target float percentage.
-                    (float + holdings - lockedProfit() - underlyingAmount).fmul(targetFloatPercent, 1e18)
+                    (totalHoldings() - underlyingAmount).fmul(targetFloatPercent, 1e18)
             );
         }
 
@@ -453,7 +434,7 @@ contract Vault is ERC20, Auth {
     function totalHoldings() public view returns (uint256) {
         // Subtract locked profit from the amount of total deposited tokens and add the float value.
         // We subtract locked profit from totalStrategyHoldings because maxLockedProfit is baked into it.
-        return UNDERLYING.balanceOf(address(this)) + totalStrategyHoldings - lockedProfit();
+        return totalFloat() + totalStrategyHoldings - lockedProfit();
     }
 
     /// @notice Calculate the current amount of locked profit.
@@ -471,6 +452,12 @@ contract Vault is ERC20, Auth {
 
         // Compute how much profit remains locked based on our last harvest and unlock delay.
         return maximumLockedProfit - (maximumLockedProfit * (block.timestamp - previousHarvest)) / unlockDelay;
+    }
+
+    /// @notice Returns the amount of underlying tokens that idly sit in the Vault.
+    /// @return The amount of underlying tokens that sit idly in the Vault.
+    function totalFloat() public view returns (uint256) {
+        return UNDERLYING.balanceOf(address(this));
     }
 
     /*///////////////////////////////////////////////////////////////
