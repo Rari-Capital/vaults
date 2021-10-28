@@ -448,8 +448,11 @@ contract Vault is ERC20, Auth {
         // Get the maximum amount we could return.
         uint256 maximumLockedProfit = maxLockedProfit;
 
-        // Compute how much profit remains locked based on our last harvest and unlock delay.
-        return maximumLockedProfit - (maximumLockedProfit * (block.timestamp - previousHarvest)) / unlockDelay;
+        unchecked {
+            // Compute how much profit remains locked based on our last harvest and unlock delay.
+            // It's impossible for the previous harvest to be in the future, so this will never overflow.
+            return maximumLockedProfit - (maximumLockedProfit * (block.timestamp - previousHarvest)) / unlockDelay;
+        }
     }
 
     /// @notice Returns the amount of underlying tokens that idly sit in the Vault.
@@ -523,11 +526,14 @@ contract Vault is ERC20, Auth {
         // We don't allow depositing 0 to prevent emitting a useless event.
         require(underlyingAmount != 0, "AMOUNT_CANNOT_BE_ZERO");
 
-        // Without this the next harvest would count the deposit as profit.
-        balanceOfStrategy[strategy] += underlyingAmount;
-
         // Increase totalStrategyHoldings to account for the deposit.
         totalStrategyHoldings += underlyingAmount;
+
+        unchecked {
+            // Without this the next harvest would count the deposit as profit.
+            // Cannot overflow as the balance of one strategy can't exceed the sum of all.
+            balanceOfStrategy[strategy] += underlyingAmount;
+        }
 
         emit StrategyDeposit(strategy, underlyingAmount);
 
@@ -558,8 +564,11 @@ contract Vault is ERC20, Auth {
         // Without this the next harvest would count the withdrawal as a loss.
         balanceOfStrategy[strategy] -= underlyingAmount;
 
-        // Decrease totalStrategyHoldings to account for the withdrawal.
-        totalStrategyHoldings -= underlyingAmount;
+        unchecked {
+            // Decrease totalStrategyHoldings to account for the withdrawal.
+            // Cannot overflow as the balance of one strategy will never exceed the sum of all.
+            totalStrategyHoldings -= underlyingAmount;
+        }
 
         emit StrategyWithdrawal(strategy, underlyingAmount);
 
