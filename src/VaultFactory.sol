@@ -18,36 +18,35 @@ contract VaultFactory is Auth(msg.sender, Authority(address(0))) {
                                  EVENTS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Emitted when `deployVault` is called.
-    /// @param underlying The underlying token used in the vault.
-    /// @param vault The new vault deployed that accepts the underlying token.
-    event VaultDeployed(ERC20 underlying, Vault vault);
+    /// @notice Emitted when a new Vault is deployed.
+    /// @param vault The newly deployed Vault contract.
+    /// @param underlying The underlying token the new Vault accepts.
+    event VaultDeployed(Vault vault, ERC20 underlying);
 
     /*///////////////////////////////////////////////////////////////
                           VAULT DEPLOYMENT LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Deploy a new Vault contract that supports a specific underlying asset.
-    /// @dev This will revert if a vault with the token has already been created.
-    /// @param underlying Address of the ERC20 token that the Vault will earn yield on.
-    /// @return vault The newly deployed Vault contract.
+    /// @notice Deploy a new Vault which supports a specific underlying token.
+    /// @dev This will revert if a Vault that accepts the same underlying token has already been deployed.
+    /// @param underlying The ERC20 token that the Vault should accept.
+    /// @return vault The newly deployed Vault contract which accepts the provided underlying token.
     function deployVault(ERC20 underlying) external returns (Vault vault) {
-        // Use the create2 opcode to deploy a Vault contract.
-        // This will revert if a vault with this underlying has already been
-        // deployed, as the salt would be the same and we can't deploy with it twice.
+        // Use the CREATE2 opcode to deploy a new Vault contract.
+        // This will revert if a Vault which accepts this underlying token has already
+        // been deployed, as the salt would be the same and we can't deploy with it twice.
         vault = new Vault{salt: address(underlying).fillLast12Bytes()}(underlying);
 
-        emit VaultDeployed(underlying, vault);
+        emit VaultDeployed(vault, underlying);
     }
 
     /*///////////////////////////////////////////////////////////////
                             VAULT LOOKUP LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Computes a Vault's address from its underlying token.
-    /// @dev The Vault returned may not have been deployed yet.
-    /// @param underlying The underlying ERC20 token the Vault earns yield on.
-    /// @return The Vault that supports this underlying token.
+    /// @notice Computes a Vault's address from its accepted underlying token.
+    /// @param underlying The ERC20 token that the Vault should accept.
+    /// @return The address of a Vault which accepts the provided underlying token.
     /// @dev The Vault returned may not be deployed yet. Use isVaultDeployed to check.
     function getVaultFromUnderlying(ERC20 underlying) external view returns (Vault) {
         return
@@ -76,11 +75,11 @@ contract VaultFactory is Auth(msg.sender, Authority(address(0))) {
             );
     }
 
-    /// @notice Returns if a vault at an address has been deployed yet.
-    /// @dev This function is useful to check the return value of
-    /// getVaultFromUnderlying, as it may return vaults that have not been deployed yet.
-    /// @param vault The address of the vault that may not have been deployed.
-    /// @return A bool indicated whether the vault has been deployed already.
+    /// @notice Returns if a Vault at an address has already been deployed.
+    /// @param vault The address of a Vault which may not have been deployed yet.
+    /// @return A boolean indicating whether the Vault has been deployed already.
+    /// @dev This function is useful to check the return values of getVaultFromUnderlying,
+    /// as it does not check that the Vault addresses it computes have been deployed yet.
     function isVaultDeployed(Vault vault) external view returns (bool) {
         return address(vault).code.length > 0;
     }
