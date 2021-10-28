@@ -192,6 +192,9 @@ contract Vault is ERC20, Auth {
         // An unlock delay of 0 makes harvests vulnerable to sandwich attacks.
         require(profitUnlockDelay != 0, "DELAY_CANNOT_BE_ZERO");
 
+        // A target float percentage over 1 year doesn't make sense.
+        require(profitUnlockDelay <= 365 days, "DELAY_TOO_LONG");
+
         // Update the profit unlock delay.
         profitUnlockDelay = newProfitUnlockDelay;
 
@@ -448,7 +451,7 @@ contract Vault is ERC20, Auth {
 
         unchecked {
             // If the unlock delay has passed, there is no locked profit.
-            // Can't overflow on human timescales, unless unlockDelay is crazy.
+            // Cannot overflow on human timescales since unlockDelay is capped.
             if (block.timestamp >= previousHarvest + unlockDelay) return 0;
 
             // Get the maximum amount we could return.
