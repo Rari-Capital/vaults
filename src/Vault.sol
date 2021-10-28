@@ -619,7 +619,7 @@ contract Vault is ERC20, Auth {
 
             unchecked {
                 // Compute the balance of the strategy that will remain after we withdraw.
-                // Cannot overflow, as we cap the amount to pull at the strategy's balance.
+                // Cannot overflow as we cap the amount to pull at the strategy's balance.
                 uint256 strategyBalanceAfterWithdrawal = strategyBalance - amountToPull;
 
                 // Without this the next harvest would count the withdrawal as a loss.
