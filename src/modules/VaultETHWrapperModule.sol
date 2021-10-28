@@ -20,7 +20,7 @@ contract VaultETHWrapperModule {
     /// @param vault The WETH compatible Vault to deposit into.
     /// @dev The caller must attach the amount they want to deposit as msg.value.
     function depositETHIntoVault(Vault vault) external payable {
-        // Ensure the Vault accepts WETH.
+        // Ensure the Vault's underlying token is WETH compatible.
         require(vault.underlyingIsWETH(), "UNDERLYING_NOT_WETH");
 
         // Get the Vault's underlying as WETH.
@@ -47,11 +47,12 @@ contract VaultETHWrapperModule {
     /// @param underlyingAmount The amount of ETH to withdraw from the Vault.
     /// @dev The caller must approve the equivalent amount of rvTokens to the module.
     function withdrawETHFromVault(Vault vault, uint256 underlyingAmount) external {
-        // Ensure the Vault accepts WETH.
+        // Ensure the Vault's underlying token is WETH compatible.
         require(vault.underlyingIsWETH(), "UNDERLYING_NOT_WETH");
 
         // Compute the amount of rvTokens equivalent to the underlying amount.
-        uint256 rvTokenAmount = underlyingAmount.fdiv(vault.exchangeRate(), vault.BASE_UNIT());
+        // We know the Vault's base unit is 1e18 as it's required if underlyingIsWETH returns true.
+        uint256 rvTokenAmount = underlyingAmount.fdiv(vault.exchangeRate(), 1e18);
 
         // Get the Vault's rvToken.
         ERC20 rvToken = ERC20(vault);
