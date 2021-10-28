@@ -94,8 +94,6 @@ contract VaultETHWrapperModule {
         WETH weth = WETH(address(vault.UNDERLYING()));
 
         // Get how much WETH we redeemed.
-        // If someone sent WETH to the Vault outside of a
-        // redeem, it will transfer that surplus to the caller.
         uint256 withdrawnWETH = weth.balanceOf(address(this));
 
         // Convert the WETH into ETH.
