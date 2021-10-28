@@ -427,12 +427,16 @@ contract Vault is ERC20, Auth {
         return totalHoldings().fdiv(rvTokenSupply, BASE_UNIT);
     }
 
-    /// @notice Calculate the total amount of tokens the Vault currently holds for depositors.
-    /// @return The total amount of tokens the Vault currently holds for depositors.
-    function totalHoldings() public view returns (uint256) {
-        // Subtract locked profit from the amount of total deposited tokens and add the float value.
-        // We subtract locked profit from totalStrategyHoldings because maxLockedProfit is baked into it.
-        return totalFloat() + totalStrategyHoldings - lockedProfit();
+    /// @notice Calculate the total amount of underlying tokens the Vault holds.
+    /// @return totalUnderlyingHeld The total amount of underlying tokens the Vault holds.
+    function totalHoldings() public view returns (uint256 totalUnderlyingHeld) {
+        unchecked {
+            // Cannot underflow as locked profit can't exceed total strategy holdings.
+            totalUnderlyingHeld = totalStrategyHoldings - lockedProfit();
+        }
+
+        // Include oru floating balance in the total.
+        totalUnderlyingHeld += totalFloat();
     }
 
     /// @notice Calculate the current amount of locked profit.
@@ -442,15 +446,16 @@ contract Vault is ERC20, Auth {
         uint256 previousHarvest = lastHarvest;
         uint256 unlockDelay = profitUnlockDelay;
 
-        // If the unlock delay has passed, there is no locked profit.
-        if (block.timestamp >= previousHarvest + unlockDelay) return 0;
-
-        // Get the maximum amount we could return.
-        uint256 maximumLockedProfit = maxLockedProfit;
-
         unchecked {
+            // If the unlock delay has passed, there is no locked profit.
+            // Can't overflow on human timescales, unless unlockDelay is crazy.
+            if (block.timestamp >= previousHarvest + unlockDelay) return 0;
+
+            // Get the maximum amount we could return.
+            uint256 maximumLockedProfit = maxLockedProfit;
+
             // Compute how much profit remains locked based on our last harvest and unlock delay.
-            // It's impossible for the previous harvest to be in the future, so this will never overflow.
+            // It's impossible for the previous harvest to be in the future, so this will never underflow.
             return maximumLockedProfit - (maximumLockedProfit * (block.timestamp - previousHarvest)) / unlockDelay;
         }
     }
@@ -566,7 +571,7 @@ contract Vault is ERC20, Auth {
 
         unchecked {
             // Decrease totalStrategyHoldings to account for the withdrawal.
-            // Cannot overflow as the balance of one strategy will never exceed the sum of all.
+            // Cannot underflow as the balance of one strategy will never exceed the sum of all.
             totalStrategyHoldings -= underlyingAmount;
         }
 
