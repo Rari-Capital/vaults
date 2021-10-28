@@ -70,7 +70,7 @@ contract VaultFactory is Auth(msg.sender, Authority(address(0))) {
                                 )
                             )
                         )
-                    ).fromLast20Bytes() // Convert the create hash into an address.
+                    ).fromLast20Bytes() // Convert the CREATE2 hash into an address.
                 )
             );
     }
