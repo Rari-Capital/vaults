@@ -243,10 +243,21 @@ contract VaultsTest is DSTestPlus {
         underlying.approve(address(vault), 0.5e18);
 
         vault.deposit(0.5e18);
-
         vault.trustStrategy(strategy1);
-
         vault.depositIntoStrategy(strategy1, 0.5e18);
+
+        vault.withdrawFromStrategy(strategy1, 1e18);
+    }
+
+    function testFailWithdrawFromStrategyWithoutTrust() public {
+        underlying.mint(address(this), 1e18);
+        underlying.approve(address(vault), 1e18);
+
+        vault.deposit(1e18);
+        vault.trustStrategy(strategy1);
+        vault.depositIntoStrategy(strategy1, 1e18);
+
+        vault.distrustStrategy(strategy1);
 
         vault.withdrawFromStrategy(strategy1, 1e18);
     }
@@ -258,6 +269,8 @@ contract VaultsTest is DSTestPlus {
     }
 
     function testFailWithdrawFromStrategyWithNoBalance() public {
+        vault.trustStrategy(strategy1);
+
         vault.withdrawFromStrategy(strategy1, 1e18);
     }
 
@@ -268,6 +281,8 @@ contract VaultsTest is DSTestPlus {
     }
 
     function testFailWithdrawFromStrategyZero() public {
+        vault.trustStrategy(strategy1);
+
         vault.withdrawFromStrategy(strategy1, 0);
     }
 
