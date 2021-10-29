@@ -560,6 +560,9 @@ contract Vault is ERC20, Auth {
     /// @param underlyingAmount  The amount of underlying tokens to withdraw.
     /// @dev Withdrawing from a strategy will not remove it from the withdrawal queue.
     function withdrawFromStrategy(Strategy strategy, uint256 underlyingAmount) external requiresAuth {
+        // A strategy must be trusted before it can be withdrawn from.
+        require(isStrategyTrusted[strategy], "UNTRUSTED_STRATEGY");
+        
         // Without this the next harvest would count the withdrawal as a loss.
         balanceOfStrategy[strategy] -= underlyingAmount;
 
