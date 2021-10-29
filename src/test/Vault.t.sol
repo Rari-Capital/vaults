@@ -261,6 +261,16 @@ contract VaultsTest is DSTestPlus {
         vault.withdrawFromStrategy(strategy1, 1e18);
     }
 
+    function testFailDepositIntoStrategyZero() public {
+        vault.trustStrategy(strategy1);
+
+        vault.depositIntoStrategy(strategy1, 0);
+    }
+
+    function testFailWithdrawFromStrategyZero() public {
+        vault.withdrawFromStrategy(strategy1, 0);
+    }
+
     /*///////////////////////////////////////////////////////////////
                          BASIC HARVEST TESTS
     //////////////////////////////////////////////////////////////*/
