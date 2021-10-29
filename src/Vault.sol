@@ -528,9 +528,6 @@ contract Vault is ERC20, Auth {
         // A strategy must be trusted before it can be deposited into.
         require(isStrategyTrusted[strategy], "UNTRUSTED_STRATEGY");
 
-        // We don't allow depositing 0 to prevent emitting a useless event.
-        require(underlyingAmount != 0, "AMOUNT_CANNOT_BE_ZERO");
-
         // Increase totalStrategyHoldings to account for the deposit.
         totalStrategyHoldings += underlyingAmount;
 
@@ -563,9 +560,6 @@ contract Vault is ERC20, Auth {
     /// @param underlyingAmount  The amount of underlying tokens to withdraw.
     /// @dev Withdrawing from a strategy will not remove it from the withdrawal queue.
     function withdrawFromStrategy(Strategy strategy, uint256 underlyingAmount) external requiresAuth {
-        // We don't allow withdrawing 0 to prevent emitting a useless event.
-        require(underlyingAmount != 0, "AMOUNT_CANNOT_BE_ZERO");
-
         // Without this the next harvest would count the withdrawal as a loss.
         balanceOfStrategy[strategy] -= underlyingAmount;
 
