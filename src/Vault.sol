@@ -439,7 +439,7 @@ contract Vault is ERC20, Auth {
             totalUnderlyingHeld = totalStrategyHoldings - lockedProfit();
         }
 
-        // Include oru floating balance in the total.
+        // Include our floating balance in the total.
         totalUnderlyingHeld += totalFloat();
     }
 
