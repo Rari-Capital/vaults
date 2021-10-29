@@ -11,7 +11,7 @@ import {Vault} from "../Vault.sol";
 
 /// @title Vault ETH Wrapper Module
 /// @author Transmissions11 + JetJadeja
-/// @notice Wrapper for using ETH with a WETH Vault.
+/// @notice Module for using ETH with a WETH Vault.
 contract VaultETHWrapperModule {
     using SafeERC20 for ERC20;
     using FixedPointMathLib for uint256;
