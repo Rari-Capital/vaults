@@ -3,7 +3,7 @@ pragma solidity 0.8.9;
 
 import {Auth} from "solmate/auth/Auth.sol";
 import {ERC20} from "solmate/erc20/ERC20.sol";
-import {SafeERC20} from "solmate/erc20/SafeERC20.sol";
+import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 
 import {WETH} from "./interfaces/WETH.sol";
@@ -15,7 +15,7 @@ import {VaultFactory} from "./VaultFactory.sol";
 /// @author Transmissions11 + JetJadeja
 /// @notice Minimalist yield aggregator designed to support any ERC20 token.
 contract Vault is ERC20, Auth {
-    using SafeERC20 for ERC20;
+    using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
 
     /*///////////////////////////////////////////////////////////////

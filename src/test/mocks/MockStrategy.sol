@@ -2,13 +2,13 @@
 pragma solidity 0.8.9;
 
 import {ERC20} from "solmate/erc20/ERC20.sol";
-import {SafeERC20} from "solmate/erc20/SafeERC20.sol";
+import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 
 import {ERC20Strategy} from "../../interfaces/Strategy.sol";
 
 contract MockStrategy is ERC20("Mock cToken Strategy", "cMOCK", 18), ERC20Strategy {
-    using SafeERC20 for ERC20;
+    using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
 
     /*///////////////////////////////////////////////////////////////

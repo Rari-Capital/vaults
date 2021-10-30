@@ -2,11 +2,13 @@
 pragma solidity 0.8.9;
 
 import {ERC20} from "solmate/erc20/ERC20.sol";
-import {SafeERC20} from "solmate/erc20/SafeERC20.sol";
+import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
 
 import {WETH} from "../../interfaces/WETH.sol";
 
 contract MockWETH is ERC20("Mock Wrapped Ether", "MWETH", 18), WETH {
+    using SafeTransferLib for address;
+
     event Deposit(address indexed from, uint256 amount);
 
     event Withdrawal(address indexed to, uint256 amount);
@@ -20,7 +22,7 @@ contract MockWETH is ERC20("Mock Wrapped Ether", "MWETH", 18), WETH {
     function withdraw(uint256 amount) external override {
         _burn(msg.sender, amount);
 
-        SafeERC20.safeTransferETH(msg.sender, amount);
+        msg.sender.safeTransferETH(amount);
 
         emit Withdrawal(msg.sender, amount);
     }

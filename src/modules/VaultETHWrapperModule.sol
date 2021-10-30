@@ -2,7 +2,7 @@
 pragma solidity 0.8.9;
 
 import {ERC20} from "solmate/erc20/ERC20.sol";
-import {SafeERC20} from "solmate/erc20/SafeERC20.sol";
+import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 
 import {WETH} from "../interfaces/WETH.sol";
@@ -13,7 +13,8 @@ import {Vault} from "../Vault.sol";
 /// @author Transmissions11 + JetJadeja
 /// @notice Module for using ETH with a WETH Vault.
 contract VaultETHWrapperModule {
-    using SafeERC20 for ERC20;
+    using SafeTransferLib for ERC20;
+    using SafeTransferLib for address;
     using FixedPointMathLib for uint256;
 
     /// @notice Deposit ETH into a WETH compatible Vault.
@@ -70,7 +71,7 @@ contract VaultETHWrapperModule {
         weth.withdraw(underlyingAmount);
 
         // Transfer the unwrapped ETH to the caller.
-        SafeERC20.safeTransferETH(msg.sender, underlyingAmount);
+        msg.sender.safeTransferETH(underlyingAmount);
     }
 
     /// @notice Redeem ETH from a WETH compatible Vault.
@@ -100,7 +101,7 @@ contract VaultETHWrapperModule {
         weth.withdraw(withdrawnWETH);
 
         // Transfer the unwrapped ETH to the caller.
-        SafeERC20.safeTransferETH(msg.sender, withdrawnWETH);
+        msg.sender.safeTransferETH(withdrawnWETH);
     }
 
     /// @dev Required for the module to receive unwrapped ETH.
