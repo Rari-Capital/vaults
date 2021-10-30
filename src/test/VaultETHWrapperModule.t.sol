@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.8.9;
 
-import {DSTestPlus} from "./utils/DSTestPlus.sol";
+import {WETH} from "solmate/tokens/WETH.sol";
 
-import {MockWETH} from "./mocks/MockWETH.sol";
+import {DSTestPlus} from "./utils/DSTestPlus.sol";
 
 import {VaultETHWrapperModule} from "../modules/VaultETHWrapperModule.sol";
 
@@ -12,12 +12,12 @@ import {VaultFactory} from "../VaultFactory.sol";
 
 contract VaultETHWrapperModuleTest is DSTestPlus {
     Vault vault;
-    MockWETH underlying;
+    WETH underlying;
 
     VaultETHWrapperModule vaultETHWrapperModule;
 
     function setUp() public {
-        underlying = new MockWETH();
+        underlying = new WETH();
         vault = new VaultFactory().deployVault(underlying);
 
         vaultETHWrapperModule = new VaultETHWrapperModule();

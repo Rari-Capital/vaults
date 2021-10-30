@@ -2,11 +2,11 @@
 pragma solidity 0.8.9;
 
 import {Auth} from "solmate/auth/Auth.sol";
-import {ERC20} from "solmate/erc20/ERC20.sol";
+import {WETH} from "solmate/tokens/WETH.sol";
+import {ERC20} from "solmate/tokens/ERC20.sol";
 import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 
-import {WETH} from "./interfaces/WETH.sol";
 import {Strategy, ERC20Strategy, ETHStrategy} from "./interfaces/Strategy.sol";
 
 import {VaultFactory} from "./VaultFactory.sol";
@@ -545,7 +545,7 @@ contract Vault is ERC20, Auth {
         // We need to deposit differently if the strategy takes ETH.
         if (strategy.isCEther()) {
             // Unwrap the right amount of WETH.
-            WETH(address(UNDERLYING)).withdraw(underlyingAmount);
+            WETH(payable(address(UNDERLYING))).withdraw(underlyingAmount);
 
             // Deposit into the strategy and assume it will revert on error.
             ETHStrategy(address(strategy)).mint{value: underlyingAmount}();
@@ -584,7 +584,7 @@ contract Vault is ERC20, Auth {
         require(strategy.redeemUnderlying(underlyingAmount) == 0, "REDEEM_FAILED");
 
         // Wrap the withdrawn Ether into WETH if necessary.
-        if (strategy.isCEther()) WETH(address(UNDERLYING)).deposit{value: underlyingAmount}();
+        if (strategy.isCEther()) WETH(payable(address(UNDERLYING))).deposit{value: underlyingAmount}();
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -656,7 +656,7 @@ contract Vault is ERC20, Auth {
         uint256 ethBalance = address(this).balance;
 
         // If the Vault's underlying token is WETH compatible and we have some ETH, wrap it into WETH.
-        if (ethBalance != 0 && underlyingIsWETH) WETH(address(UNDERLYING)).deposit{value: ethBalance}();
+        if (ethBalance != 0 && underlyingIsWETH) WETH(payable(address(UNDERLYING))).deposit{value: ethBalance}();
     }
 
     /// @dev Required for the Vault to receive unwrapped ETH.

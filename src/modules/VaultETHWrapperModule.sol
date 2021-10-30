@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.8.9;
 
-import {ERC20} from "solmate/erc20/ERC20.sol";
+import {WETH} from "solmate/tokens/WETH.sol";
+import {ERC20} from "solmate/tokens/ERC20.sol";
 import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
-
-import {WETH} from "../interfaces/WETH.sol";
 
 import {Vault} from "../Vault.sol";
 
@@ -25,7 +24,7 @@ contract VaultETHWrapperModule {
         require(vault.underlyingIsWETH(), "UNDERLYING_NOT_WETH");
 
         // Get the Vault's underlying as WETH.
-        WETH weth = WETH(address(vault.UNDERLYING()));
+        WETH weth = WETH(payable(address(vault.UNDERLYING())));
 
         // Wrap the ETH into WETH.
         weth.deposit{value: msg.value}();
@@ -65,7 +64,7 @@ contract VaultETHWrapperModule {
         vault.withdraw(underlyingAmount);
 
         // Get the Vault's underlying as WETH.
-        WETH weth = WETH(address(vault.UNDERLYING()));
+        WETH weth = WETH(payable(address(vault.UNDERLYING())));
 
         // Convert the WETH into ETH.
         weth.withdraw(underlyingAmount);
@@ -92,7 +91,7 @@ contract VaultETHWrapperModule {
         vault.redeem(rvTokenAmount);
 
         // Get the Vault's underlying as WETH.
-        WETH weth = WETH(address(vault.UNDERLYING()));
+        WETH weth = WETH(payable(address(vault.UNDERLYING())));
 
         // Get how much WETH we redeemed.
         uint256 withdrawnWETH = weth.balanceOf(address(this));

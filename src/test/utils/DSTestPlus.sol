@@ -2,7 +2,7 @@
 pragma solidity 0.8.9;
 
 import {DSTestPlus as DSTest} from "solmate/test/utils/DSTestPlus.sol";
-import {ERC20} from "solmate/erc20/ERC20.sol";
+import {ERC20} from "solmate/tokens/ERC20.sol";
 
 import {Vault} from "../../Vault.sol";
 
