@@ -508,7 +508,7 @@ contract Vault is ERC20, Auth {
     }
 
     /*///////////////////////////////////////////////////////////////
-                            REBALANCE LOGIC
+                    STRATEGY DEPOSIT/WITHDRAWAL LOGIC
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Emitted after the Vault deposits into a strategy contract.
@@ -588,7 +588,7 @@ contract Vault is ERC20, Auth {
     }
 
     /*///////////////////////////////////////////////////////////////
-                       STRATEGY WITHDRAWAL LOGIC
+                        WITHDRAWAL QUEUE LOGIC
     //////////////////////////////////////////////////////////////*/
 
     /// @dev Withdraw a specific amount of underlying tokens from strategies in the withdrawal queue.
