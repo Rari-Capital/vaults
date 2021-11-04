@@ -478,6 +478,7 @@ contract Vault is ERC20, Auth {
     /// @param strategy The strategy that was harvested.
     /// @param profitAccrued The amount of profit accrued by the harvest.
     /// @param feesAccrued The amount of fees accrued during the harvest.
+    /// @dev If profitAccrued is 0 that could mean the strategy registered a loss.
     event Harvest(Strategy indexed strategy, uint256 profitAccrued, uint256 feesAccrued);
 
     /// @notice Harvest a trusted strategy.
