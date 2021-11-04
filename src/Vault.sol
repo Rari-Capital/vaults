@@ -525,6 +525,18 @@ contract Vault is ERC20, Auth {
     }
 
     /*///////////////////////////////////////////////////////////////
+                             FEE CLAIM LOGIC
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Claims fees accrued from harvests.
+    /// @param fvTokenAmount The amount of fvTokens to claim.
+    /// @dev Accrued fees are measured as fvTokens held by the Vault.
+    function claimFees(uint256 fvTokenAmount) external requiresAuth {
+        // Transfer the provided amount of fvTokens to the caller.
+        ERC20(this).transfer(msg.sender, fvTokenAmount);
+    }
+
+    /*///////////////////////////////////////////////////////////////
                     STRATEGY DEPOSIT/WITHDRAWAL LOGIC
     //////////////////////////////////////////////////////////////*/
 
