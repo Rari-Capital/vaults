@@ -55,8 +55,8 @@ contract Vault is ERC20, Auth {
     /// @dev A fixed point number where 1e18 represents 100% and 0 represents 0%.
     uint256 public feePercent = 0.1e18;
 
-    /// @notice Emitted when the fee percent is updated.
-    /// @param newFeePercent The updated fee percent.
+    /// @notice Emitted when the fee percentage is updated.
+    /// @param newFeePercent The new fee percentage.
     event FeePercentUpdated(uint256 newFeePercent);
 
     /// @notice Set a new fee percentage.
@@ -104,8 +104,8 @@ contract Vault is ERC20, Auth {
     /// @dev A fixed point number where 1e18 represents 100% and 0 represents 0%.
     uint256 public targetFloatPercent = 0.01e18;
 
-    /// @notice Emitted when the target float percent is updated.
-    /// @param newTargetFloatPercent The updated target float percent delay.
+    /// @notice Emitted when the target float percentage is updated.
+    /// @param newTargetFloatPercent The updated target float percentage.
     event TargetFloatPercentUpdated(uint256 newTargetFloatPercent);
 
     /// @notice Set a new target float percentage.
@@ -476,35 +476,51 @@ contract Vault is ERC20, Auth {
 
     /// @notice Emitted after a successful harvest.
     /// @param strategy The strategy that was harvested.
-    /// @param lockedProfit The amount of locked profit after the harvest.
-    event Harvest(Strategy indexed strategy, uint256 lockedProfit);
+    /// @param profitAccrued The amount of profit accrued by the harvest.
+    /// @param feesAccrued The amount of fees accrued during the harvest.
+    event Harvest(Strategy indexed strategy, uint256 profitAccrued, uint256 feesAccrued);
 
     /// @notice Harvest a trusted strategy.
     /// @param strategy The trusted strategy to harvest.
     function harvest(Strategy strategy) external {
-        // If an untrusted strategy could be harvested a malicious user could
-        // construct a fake strategy that over-reports holdings to manipulate share price.
+        // If an untrusted strategy could be harvested a malicious user could use
+        // a fake strategy that over-reports holdings to manipulate the exchange rate.
         require(isStrategyTrusted[strategy], "UNTRUSTED_STRATEGY");
 
+        // TODO: require timestamp is within 10 mins of last one or way after.
+        // do we do relavtive or to fixed time. fixed time is cheaper in theory but relative migth be fine if we pack
+        // TODO: optimize the tf out of this we'll be calling it a lot.
+
+        // Get the strategy's previous and current balance.
         uint256 balanceLastHarvest = balanceOfStrategy[strategy];
         uint256 balanceThisHarvest = strategy.balanceOfUnderlying(address(this));
 
-        // Update our stored balance for the strategy.
-        balanceOfStrategy[strategy] = balanceThisHarvest;
+        // Compute the profit since last harvest. Will be 0 if it it had a net loss.
+        uint256 profitAccrued = balanceThisHarvest > balanceLastHarvest
+            ? balanceThisHarvest - balanceLastHarvest // Profits since last harvest.
+            : 0; // If the strategy registered a net loss we don't have any new profit.
+
+        // Compute fees as the fee percent multiplied by the profit.
+        uint256 feesAccrued = profitAccrued.fmul(feePercent, 1e18);
+
+        // If we accrued any fees, mint an equivalent amount of fvTokens.
+        // Authorized users can claim the newly minted fvTokens at a later time.
+        if (feesAccrued != 0) _mint(address(this), feesAccrued.fdiv(exchangeRate(), BASE_UNIT));
 
         // Increase/decrease totalStrategyHoldings based on the profit/loss registered.
         // We cannot wrap the subtraction in parenthesis as it would underflow if the strategy had a loss.
         totalStrategyHoldings = totalStrategyHoldings + balanceThisHarvest - balanceLastHarvest;
 
-        // Update maxLockedProfit to include any new profit.
-        maxLockedProfit = lockedProfit() + balanceThisHarvest > balanceLastHarvest
-            ? balanceThisHarvest - balanceLastHarvest // Profits since last harvest.
-            : 0; // If the strategy registered a net loss we don't have any new profit to lock.
+        // Update our stored balance for the strategy.
+        balanceOfStrategy[strategy] = balanceThisHarvest;
 
-        // Set lastHarvest to the current timestamp.
+        // Update the max amount of locked profit.
+        maxLockedProfit = profitAccrued - feesAccrued;
+
+        // Update the last harvest timestamp.
         lastHarvest = block.timestamp;
 
-        emit Harvest(strategy, maxLockedProfit);
+        emit Harvest(strategy, profitAccrued, feesAccrued);
     }
 
     /*///////////////////////////////////////////////////////////////
