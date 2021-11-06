@@ -694,6 +694,43 @@ contract Vault is ERC20, Auth {
         if (ethBalance != 0 && underlyingIsWETH) WETH(payable(address(UNDERLYING))).deposit{value: ethBalance}();
     }
 
+    /*///////////////////////////////////////////////////////////////
+                         SEIZE STRATEGY LOGIC
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Emitted after a strategy is seized.
+    /// @param strategy The strategy that was seized.
+    event StrategySeized(Strategy indexed strategy);
+
+    /// @notice Seizes a strategy.
+    /// @param strategy The strategy to seize.
+    /// @dev Intended for use in emergencies or other extraneous situations where the
+    /// strategy requires interaction outside of the Vault's standard operating procedures.
+    function seizeStrategy(Strategy strategy) external requiresAuth {
+        // Get balance the strategy last reported holding.
+        uint256 strategyBalance = balanceOfStrategy[strategy];
+
+        // If the strategy's balance exceeds the Vault's total
+        // holdings, instantly unlock any remaining locked profit.
+        // Only necessary if the strategy has a lot of unlocked profit.
+        if (totalHoldings() >= strategyBalance) maxLockedProfit = 0;
+
+        // Decrease the total by the strategy's balance.
+        totalStrategyHoldings - strategyBalance;
+
+        // Set the strategy's balance to 0.
+        balanceOfStrategy[strategy] = 0;
+
+        emit StrategySeized(strategy);
+
+        // Transfer all of the strategy's tokens to the caller.
+        ERC20(strategy).safeTransfer(msg.sender, strategy.balanceOf(address(this)));
+    }
+
+    /*///////////////////////////////////////////////////////////////
+                          RECIEVE ETHER LOGIC
+    //////////////////////////////////////////////////////////////*/
+
     /// @dev Required for the Vault to receive unwrapped ETH.
     receive() external payable {}
 }
