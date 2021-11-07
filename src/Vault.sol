@@ -63,7 +63,7 @@ contract Vault is ERC20, Auth {
 
     /// @notice Whether the Vault has been initialized yet.
     /// @dev Can go from false to true, never from true to false.
-    bool isInitialized;
+    bool internal isInitialized;
 
     /// @notice Initializes the Vault, enabling it to receive deposits.
     /// @dev All critical parameters must already be set before calling.
