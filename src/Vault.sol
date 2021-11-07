@@ -185,12 +185,18 @@ contract Vault is ERC20, Auth {
     /// @dev Includes maxLockedProfit, must be correctly subtracted to compute available/free holdings.
     uint256 public totalStrategyHoldings;
 
-    /// @notice Maps strategies to the amount of underlying tokens they held last harvest.
-    mapping(Strategy => uint256) public balanceOfStrategy;
+    /// @dev Packed struct of strategy data.
+    /// @param trusted Whether the strategy is trusted.
+    /// @param balance The amount of underlying tokens held in the strategy.
+    struct StrategyData {
+        // Used to determine if the Vault will operate on a strategy.
+        bool trusted;
+        // Used to determine profit and loss during harvests of the strategy.
+        uint248 balance;
+    }
 
-    /// @notice Maps strategies to a boolean representing if the strategy is trusted.
-    /// @dev A strategy must be trusted for harvest to be called with it.
-    mapping(Strategy => bool) public isStrategyTrusted;
+    /// @notice Maps strategies to data the Vault holds on them.
+    mapping(Strategy => StrategyData) public getStrategyData;
 
     /*///////////////////////////////////////////////////////////////
                              HARVEST STORAGE
@@ -392,7 +398,7 @@ contract Vault is ERC20, Auth {
     function harvest(Strategy strategy) external {
         // If an untrusted strategy could be harvested a malicious user could use
         // a fake strategy that over-reports holdings to manipulate the exchange rate.
-        require(isStrategyTrusted[strategy], "UNTRUSTED_STRATEGY");
+        require(getStrategyData[strategy].trusted, "UNTRUSTED_STRATEGY");
 
         // If this is the first harvest after the last window:
         if (block.timestamp >= lastHarvest + harvestDelay) {
@@ -407,7 +413,7 @@ contract Vault is ERC20, Auth {
         uint256 strategyHoldings = totalStrategyHoldings;
 
         // Get the strategy's previous and current balance.
-        uint256 balanceLastHarvest = balanceOfStrategy[strategy];
+        uint256 balanceLastHarvest = getStrategyData[strategy].balance;
         uint256 balanceThisHarvest = strategy.balanceOfUnderlying(address(this));
 
         // Compute the profit since last harvest. Will be 0 if it it had a net loss.
@@ -436,7 +442,7 @@ contract Vault is ERC20, Auth {
         totalStrategyHoldings = strategyHoldings + balanceThisHarvest - balanceLastHarvest;
 
         // Update our stored balance for the strategy.
-        balanceOfStrategy[strategy] = balanceThisHarvest;
+        getStrategyData[strategy].balance = uint248(balanceThisHarvest);
 
         // Update the max amount of locked profit.
         maxLockedProfit = uint128(profitAccrued - feesAccrued);
@@ -480,7 +486,7 @@ contract Vault is ERC20, Auth {
     /// @param underlyingAmount The amount of underlying tokens in float to deposit.
     function depositIntoStrategy(Strategy strategy, uint256 underlyingAmount) external requiresAuth {
         // A strategy must be trusted before it can be deposited into.
-        require(isStrategyTrusted[strategy], "UNTRUSTED_STRATEGY");
+        require(getStrategyData[strategy].trusted, "UNTRUSTED_STRATEGY");
 
         // We don't allow depositing 0 to prevent emitting a useless event.
         require(underlyingAmount != 0, "AMOUNT_CANNOT_BE_ZERO");
@@ -491,7 +497,7 @@ contract Vault is ERC20, Auth {
         unchecked {
             // Without this the next harvest would count the deposit as profit.
             // Cannot overflow as the balance of one strategy can't exceed the sum of all.
-            balanceOfStrategy[strategy] += underlyingAmount;
+            getStrategyData[strategy].balance += uint248(underlyingAmount);
         }
 
         emit StrategyDeposit(strategy, underlyingAmount);
@@ -518,13 +524,13 @@ contract Vault is ERC20, Auth {
     /// @dev Withdrawing from a strategy will not remove it from the withdrawal queue.
     function withdrawFromStrategy(Strategy strategy, uint256 underlyingAmount) external requiresAuth {
         // A strategy must be trusted before it can be withdrawn from.
-        require(isStrategyTrusted[strategy], "UNTRUSTED_STRATEGY");
+        require(getStrategyData[strategy].trusted, "UNTRUSTED_STRATEGY");
 
         // We don't allow withdrawing 0 to prevent emitting a useless event.
         require(underlyingAmount != 0, "AMOUNT_CANNOT_BE_ZERO");
 
         // Without this the next harvest would count the withdrawal as a loss.
-        balanceOfStrategy[strategy] -= underlyingAmount;
+        getStrategyData[strategy].balance -= uint248(underlyingAmount);
 
         unchecked {
             // Decrease totalStrategyHoldings to account for the withdrawal.
@@ -564,7 +570,7 @@ contract Vault is ERC20, Auth {
         );
 
         // Store the strategy as trusted.
-        isStrategyTrusted[strategy] = true;
+        getStrategyData[strategy].trusted = true;
 
         emit StrategyTrusted(strategy);
     }
@@ -573,7 +579,7 @@ contract Vault is ERC20, Auth {
     /// @param strategy The strategy to make untrusted.
     function distrustStrategy(Strategy strategy) external requiresAuth {
         // Store the strategy as untrusted.
-        isStrategyTrusted[strategy] = false;
+        getStrategyData[strategy].trusted = false;
 
         emit StrategyDistrusted(strategy);
     }
@@ -634,7 +640,7 @@ contract Vault is ERC20, Auth {
             Strategy strategy = withdrawalQueue[currentIndex];
 
             // Get the balance of the strategy before we withdraw from it.
-            uint256 strategyBalance = balanceOfStrategy[strategy];
+            uint256 strategyBalance = getStrategyData[strategy].balance;
 
             // We want to pull as much as we can from the strategy, but no more than we need.
             uint256 amountToPull = FixedPointMathLib.min(amountLeftToPull, strategyBalance);
@@ -645,7 +651,7 @@ contract Vault is ERC20, Auth {
                 uint256 strategyBalanceAfterWithdrawal = strategyBalance - amountToPull;
 
                 // Without this the next harvest would count the withdrawal as a loss.
-                balanceOfStrategy[strategy] = strategyBalanceAfterWithdrawal;
+                getStrategyData[strategy].balance = uint248(strategyBalanceAfterWithdrawal);
 
                 // Adjust our goal based on how much we can pull from the strategy.
                 // Cannot overflow as we cap the amount to pull at the amount left to pull.
@@ -783,10 +789,10 @@ contract Vault is ERC20, Auth {
     /// strategy requires interaction outside of the Vault's standard operating procedures.
     function seizeStrategy(Strategy strategy) external requiresAuth {
         // A strategy must be trusted before it can be seized.
-        require(isStrategyTrusted[strategy], "UNTRUSTED_STRATEGY");
+        require(getStrategyData[strategy].trusted, "UNTRUSTED_STRATEGY");
 
         // Get balance the strategy last reported holding.
-        uint256 strategyBalance = balanceOfStrategy[strategy];
+        uint256 strategyBalance = getStrategyData[strategy].balance;
 
         // If the strategy's balance exceeds the Vault's total
         // holdings, instantly unlock any remaining locked profit.
@@ -797,7 +803,7 @@ contract Vault is ERC20, Auth {
         totalStrategyHoldings - strategyBalance;
 
         // Set the strategy's balance to 0.
-        balanceOfStrategy[strategy] = 0;
+        getStrategyData[strategy].balance = 0;
 
         emit StrategySeized(strategy);
 
