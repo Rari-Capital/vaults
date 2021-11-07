@@ -789,24 +789,6 @@ contract Vault is ERC20, Auth {
     }
 
     /*///////////////////////////////////////////////////////////////
-                             FEE CLAIM LOGIC
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Emitted after fees are claimed.
-    /// @param fvTokenAmount The amount of fvTokens that were claimed.
-    event FeesClaimed(uint256 fvTokenAmount);
-
-    /// @notice Claims fees accrued from harvests.
-    /// @param fvTokenAmount The amount of fvTokens to claim.
-    /// @dev Accrued fees are measured as fvTokens held by the Vault.
-    function claimFees(uint256 fvTokenAmount) external requiresAuth {
-        // Transfer the provided amount of fvTokens to the caller.
-        ERC20(this).safeTransfer(msg.sender, fvTokenAmount);
-
-        emit FeesClaimed(fvTokenAmount);
-    }
-
-    /*///////////////////////////////////////////////////////////////
                          SEIZE STRATEGY LOGIC
     //////////////////////////////////////////////////////////////*/
 
@@ -843,7 +825,25 @@ contract Vault is ERC20, Auth {
     }
 
     /*///////////////////////////////////////////////////////////////
-                           INITILIZATION LOGIC
+                             FEE CLAIM LOGIC
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Emitted after fees are claimed.
+    /// @param fvTokenAmount The amount of fvTokens that were claimed.
+    event FeesClaimed(uint256 fvTokenAmount);
+
+    /// @notice Claims fees accrued from harvests.
+    /// @param fvTokenAmount The amount of fvTokens to claim.
+    /// @dev Accrued fees are measured as fvTokens held by the Vault.
+    function claimFees(uint256 fvTokenAmount) external requiresAuth {
+        // Transfer the provided amount of fvTokens to the caller.
+        ERC20(this).safeTransfer(msg.sender, fvTokenAmount);
+
+        emit FeesClaimed(fvTokenAmount);
+    }
+
+    /*///////////////////////////////////////////////////////////////
+                          INITIALIZATION LOGIC
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Emitted when the Vault is initialized.
