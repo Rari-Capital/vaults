@@ -231,7 +231,7 @@ contract Vault is ERC20, Auth {
     uint128 public maxLockedProfit;
 
     /*///////////////////////////////////////////////////////////////
-                      WITHDRAWAL QUEUE STORAGE
+                        WITHDRAWAL QUEUE STORAGE
     //////////////////////////////////////////////////////////////*/
 
     /// @notice An ordered array of strategies representing the withdrawal queue.
@@ -566,7 +566,7 @@ contract Vault is ERC20, Auth {
     }
 
     /*///////////////////////////////////////////////////////////////
-                        STRATEGY TRUST LOGIC
+                      STRATEGY TRUST/DISTRUST LOGIC
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Emitted when a strategy is set to trusted.
@@ -603,7 +603,7 @@ contract Vault is ERC20, Auth {
     }
 
     /*///////////////////////////////////////////////////////////////
-                        WITHDRAWAL QUEUE LOGIC
+                         WITHDRAWAL QUEUE LOGIC
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Emitted when a strategy is pushed to the withdrawal queue.
