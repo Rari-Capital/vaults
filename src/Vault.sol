@@ -499,7 +499,7 @@ contract Vault is ERC20, Auth {
         unchecked {
             // Without this the next harvest would count the deposit as profit.
             // Cannot overflow as the balance of one strategy can't exceed the sum of all.
-            getStrategyData[strategy].balance += uint248(underlyingAmount);
+            getStrategyData[strategy].balance += underlyingAmount.safeCastTo224();
         }
 
         emit StrategyDeposit(strategy, underlyingAmount);
@@ -532,7 +532,7 @@ contract Vault is ERC20, Auth {
         require(underlyingAmount != 0, "AMOUNT_CANNOT_BE_ZERO");
 
         // Without this the next harvest would count the withdrawal as a loss.
-        getStrategyData[strategy].balance -= uint248(underlyingAmount);
+        getStrategyData[strategy].balance -= underlyingAmount.safeCastTo224();
 
         unchecked {
             // Decrease totalStrategyHoldings to account for the withdrawal.
@@ -653,7 +653,7 @@ contract Vault is ERC20, Auth {
                 uint256 strategyBalanceAfterWithdrawal = strategyBalance - amountToPull;
 
                 // Without this the next harvest would count the withdrawal as a loss.
-                getStrategyData[strategy].balance = uint248(strategyBalanceAfterWithdrawal);
+                getStrategyData[strategy].balance = strategyBalanceAfterWithdrawal.safeCastTo224();
 
                 // Adjust our goal based on how much we can pull from the strategy.
                 // Cannot overflow as we cap the amount to pull at the amount left to pull.
