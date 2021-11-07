@@ -442,6 +442,7 @@ contract Vault is ERC20, Auth {
         totalStrategyHoldings = strategyHoldings + balanceThisHarvest - balanceLastHarvest;
 
         // Update our stored balance for the strategy.
+        // TODO: need safecast here
         getStrategyData[strategy].balance = uint248(balanceThisHarvest);
 
         // Update the max amount of locked profit.
