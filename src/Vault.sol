@@ -581,7 +581,7 @@ contract Vault is ERC20, Auth {
     /// @param strategy The strategy to make trusted.
     function trustStrategy(Strategy strategy) external requiresAuth {
         // Ensure the strategy accepts the correct underlying token.
-        // If the strategy accepts ETH the Vault should accept WETH, we'll handle wrapping when necessary.
+        // If the strategy accepts ETH the Vault should accept WETH, it'll handle wrapping when necessary.
         require(
             strategy.isCEther() ? underlyingIsWETH : ERC20Strategy(address(strategy)).underlying() == UNDERLYING,
             "WRONG_UNDERLYING"
