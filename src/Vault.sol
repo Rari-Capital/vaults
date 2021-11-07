@@ -48,7 +48,7 @@ contract Vault is ERC20, Auth {
     }
 
     /*///////////////////////////////////////////////////////////////
-                          FEE CONFIGURATION
+                           FEE CONFIGURATION
     //////////////////////////////////////////////////////////////*/
 
     /// @notice The percentage of profit recognized each harvest to reserve as fees.
@@ -56,7 +56,7 @@ contract Vault is ERC20, Auth {
     uint256 public feePercent = 0.1e18;
 
     /// @notice Emitted when the fee percentage is updated.
-    /// @param newFeePercent The new fee percentage.
+    /// @param newFeePercent The updated fee percentage.
     event FeePercentUpdated(uint256 newFeePercent);
 
     /// @notice Set a new fee percentage.
@@ -121,6 +121,74 @@ contract Vault is ERC20, Auth {
     }
 
     /*///////////////////////////////////////////////////////////////
+                      HARVEST DELAY CONFIGURATION
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Emitted when the harvest delay is updated.
+    /// @param newHarvestDelay The updated harvest delay.
+    event HarvestDelayUpdated(uint256 newHarvestDelay);
+
+    /// @notice Emitted when the harvest delay is scheduled to be updated next harvest.
+    /// @param newHarvestDelay The scheduled updated harvest delay.
+    event HarvestDelayUpdateScheduled(uint256 newHarvestDelay);
+
+    /// @notice The period in seconds over which locked profit is unlocked.
+    /// @dev Cannot be 0 as it opens harvests up to sandwich attacks.
+    uint256 public harvestDelay;
+
+    /// @notice The value that will replace harvestDelay next harvest.
+    /// @dev In the case that the next delay is 0, no update will be applied.
+    uint256 public nextHarvestDelay;
+
+    // TODO: packing these two uints above might be a good idea.!!
+    // TODO: packing these two uints above might be a good idea.!!
+    // TODO: packing these two uints above might be a good idea.!!
+    // TODO: packing these two uints above might be a good idea.!!
+    // TODO: packing these two uints above might be a good idea.!!
+    // TODO: packing these two uints above might be a good idea.!!
+
+    /// @notice Set a new harvest delay delay to be applied next harvest.
+    /// @param newHarvestDelay The new harvest delay to set.
+    function scheduleHarvestUnlockDelayUpdate(uint256 newHarvestDelay) external requiresAuth {
+        // A harvest delay of 0 makes harvests vulnerable to sandwich attacks.
+        require(newHarvestDelay != 0, "DELAY_CANNOT_BE_ZERO");
+
+        // A target harvest delay over 1 year doesn't make sense.
+        require(newHarvestDelay <= 365 days, "DELAY_TOO_LONG");
+
+        // Set the next harvest delay.
+        // The update actually be applied next harvest.
+        nextHarvestDelay = newHarvestDelay;
+
+        emit HarvestDelayUpdateScheduled(newHarvestDelay);
+    }
+
+    /*///////////////////////////////////////////////////////////////
+                      HARVEST WINDOW CONFIGURATION
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice The period in seconds during which multiple harvests can occur
+    /// regardless if they are taking place before the harvest delay has elapsed.
+    /// @dev Longer harvest delays open up the Vault to profit distribution DOS attacks.
+    uint256 public harvestWindow;
+
+    //// @notice Emitted when the harvest window is updated.
+    //// @param newHarvestWindow The updated harvest window.
+    event HarvestWindowUpdated(uint256 newHarvestWindow);
+
+    /// @notice Set a new harvest window.
+    /// @param newHarvestWindow The new harvest window.
+    function setHarvestWindow(uint256 newHarvestWindow) external requiresAuth {
+        // A harvest window longer than the harvest delay doesn't make sense.
+        require(newHarvestWindow <= harvestDelay, "WINDOW_TOO_LONG");
+
+        // Update the harvest window.
+        harvestWindow = newHarvestWindow;
+
+        emit HarvestWindowUpdated(newHarvestWindow);
+    }
+
+    /*///////////////////////////////////////////////////////////////
                           STRATEGY STORAGE
     //////////////////////////////////////////////////////////////*/
 
@@ -135,74 +203,24 @@ contract Vault is ERC20, Auth {
     /// @dev A strategy must be trusted for harvest to be called with it.
     mapping(Strategy => bool) public isStrategyTrusted;
 
-    /// @notice Emitted when a strategy is set to trusted.
-    /// @param strategy The strategy that became trusted.
-    event StrategyTrusted(Strategy indexed strategy);
-
-    /// @notice Emitted when a strategy is set to untrusted.
-    /// @param strategy The strategy that became untrusted.
-    event StrategyDistrusted(Strategy indexed strategy);
-
-    /// @notice Store a strategy as trusted, enabling it to be harvested.
-    /// @param strategy The strategy to make trusted.
-    function trustStrategy(Strategy strategy) external requiresAuth {
-        // Ensure the strategy accepts the correct underlying token.
-        // If the strategy accepts ETH the Vault should accept WETH, we'll handle wrapping when necessary.
-        require(
-            strategy.isCEther() ? underlyingIsWETH : ERC20Strategy(address(strategy)).underlying() == UNDERLYING,
-            "WRONG_UNDERLYING"
-        );
-
-        // Store the strategy as trusted.
-        isStrategyTrusted[strategy] = true;
-
-        emit StrategyTrusted(strategy);
-    }
-
-    /// @notice Store a strategy as untrusted, disabling it from being harvested.
-    /// @param strategy The strategy to make untrusted.
-    function distrustStrategy(Strategy strategy) external requiresAuth {
-        // Store the strategy as untrusted.
-        isStrategyTrusted[strategy] = false;
-
-        emit StrategyDistrusted(strategy);
-    }
-
     /*///////////////////////////////////////////////////////////////
                              HARVEST STORAGE
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice A timestamp representing when the last harvest occurred.
+    // TODO: pack????
+
+    /// @notice A timestamp representing when the first harvest in the most recent harvest window occurred.
+    /// @dev May be equal to lastHarvest if there was/has only been one harvest in the most last/current window.
+    uint256 public lastHarvestWindowStart;
+
+    /// @notice A timestamp representing when the most recent harvest occurred.
     uint256 public lastHarvest;
 
     /// @notice The amount of locked profit at the end of the last harvest.
     uint256 public maxLockedProfit;
 
-    /// @notice The approximate period in seconds over which locked profits are unlocked.
-    /// @dev Defaults to 6 hours. Cannot be 0 as it opens harvests to sandwich attacks.
-    uint256 public profitUnlockDelay = 6 hours;
-
-    /// @notice Emitted when the profit unlock delay is updated.
-    /// @param newProfitUnlockDelay The updated profit unlock delay.
-    event ProfitUnlockDelayUpdated(uint256 newProfitUnlockDelay);
-
-    /// @notice Set a new profit unlock delay delay.
-    /// @param newProfitUnlockDelay The new profit unlock delay.
-    function setProfitUnlockDelay(uint256 newProfitUnlockDelay) external requiresAuth {
-        // An unlock delay of 0 makes harvests vulnerable to sandwich attacks.
-        require(profitUnlockDelay != 0, "DELAY_CANNOT_BE_ZERO");
-
-        // A target float percentage over 1 year doesn't make sense.
-        require(profitUnlockDelay <= 365 days, "DELAY_TOO_LONG");
-
-        // Update the profit unlock delay.
-        profitUnlockDelay = newProfitUnlockDelay;
-
-        emit ProfitUnlockDelayUpdated(newProfitUnlockDelay);
-    }
-
     /*///////////////////////////////////////////////////////////////
-                      WITHDRAWAL QUEUE MANAGEMENT
+                      WITHDRAWAL QUEUE STORAGE
     //////////////////////////////////////////////////////////////*/
 
     /// @notice An ordered array of strategies representing the withdrawal queue.
@@ -215,107 +233,6 @@ contract Vault is ERC20, Auth {
     /// but we need a way to allow external contracts and users to access the whole array.
     function getWithdrawalQueue() external view returns (Strategy[] memory) {
         return withdrawalQueue;
-    }
-
-    /// @notice Emitted when a strategy is pushed to the withdrawal queue.
-    /// @param pushedStrategy The strategy pushed to the withdrawal queue.
-    event WithdrawalQueuePushed(Strategy pushedStrategy);
-
-    /// @notice Emitted when a strategy is popped from the withdrawal queue.
-    /// @param poppedStrategy The strategy popped from the withdrawal queue.
-    event WithdrawalQueuePopped(Strategy poppedStrategy);
-
-    /// @notice Emitted when the withdrawal queue is updated.
-    /// @param replacedWithdrawalQueue The new withdrawal queue.
-    event WithdrawalQueueSet(Strategy[] replacedWithdrawalQueue);
-
-    /// @notice Emitted when an index in the withdrawal queue is replaced.
-    /// @param index The index of the replaced strategy in the withdrawal queue.
-    /// @param replacedStrategy The strategy in the withdrawal queue that was replaced.
-    /// @param replacementStrategy The strategy that overrode the replaced strategy at the index.
-    event WithdrawalQueueIndexReplaced(uint256 index, Strategy replacedStrategy, Strategy replacementStrategy);
-
-    /// @notice Emitted when an index in the withdrawal queue is replaced with the tip.
-    /// @param index The index of the replaced strategy in the withdrawal queue.
-    /// @param replacedStrategy The strategy in the withdrawal queue replaced by the tip.
-    /// @param previousTipStrategy The previous tip of the queue that replaced the strategy.
-    event WithdrawalQueueIndexReplacedWithTip(uint256 index, Strategy replacedStrategy, Strategy previousTipStrategy);
-
-    /// @notice Emitted when the strategies at two indexes are swapped.
-    /// @param index1 One index involved in the swap
-    /// @param index2 The other index involved in the swap.
-    /// @param newStrategy1 The strategy (previously at index2) that replaced index1.
-    /// @param newStrategy2 The strategy (previously at index1) that replaced index2.
-    event WithdrawalQueueIndexesSwapped(uint256 index1, uint256 index2, Strategy newStrategy1, Strategy newStrategy2);
-
-    /// @notice Push a single strategy to front of the withdrawal queue.
-    /// @param strategy The strategy to be inserted at the front of the withdrawal queue.
-    function pushToWithdrawalQueue(Strategy strategy) external requiresAuth {
-        withdrawalQueue.push(strategy);
-
-        emit WithdrawalQueuePushed(strategy);
-    }
-
-    /// @notice Remove the strategy at the tip of the withdrawal queue.
-    /// @dev Be careful, another authorized user could push a different strategy
-    /// than expected to the queue while a popFromWithdrawalQueue transaction is pending.
-    function popFromWithdrawalQueue() external requiresAuth {
-        // Get the (soon to be) popped strategy.
-        Strategy poppedStrategy = withdrawalQueue[withdrawalQueue.length - 1];
-
-        withdrawalQueue.pop();
-
-        emit WithdrawalQueuePopped(poppedStrategy);
-    }
-
-    /// @notice Set the withdrawal queue.
-    /// @param newQueue The new withdrawal queue.
-    function setWithdrawalQueue(Strategy[] calldata newQueue) external requiresAuth {
-        withdrawalQueue = newQueue;
-
-        emit WithdrawalQueueSet(newQueue);
-    }
-
-    /// @notice Replace an index in the withdrawal queue with another strategy.
-    /// @param index The index in the queue to replace.
-    /// @param replacementStrategy The strategy to override the index with.
-    function replaceWithdrawalQueueIndex(uint256 index, Strategy replacementStrategy) external {
-        // Get the (soon to be) replaced strategy.
-        Strategy replacedStrategy = withdrawalQueue[index];
-
-        withdrawalQueue[index] = replacementStrategy;
-
-        emit WithdrawalQueueIndexReplaced(index, replacedStrategy, replacementStrategy);
-    }
-
-    /// @notice Move the strategy at the tip of the queue to the specified index and pop the tip off the queue.
-    /// @param index The index of the strategy in the withdrawal queue to replace with the tip.
-    function replaceWithdrawalQueueIndexWithTip(uint256 index) external requiresAuth {
-        // Get the (soon to be) previous tip and strategy we will replace at the index.
-        Strategy previousTipStrategy = withdrawalQueue[withdrawalQueue.length - 1];
-        Strategy replacedStrategy = withdrawalQueue[index];
-
-        // Replace the index specified with the tip of the queue.
-        withdrawalQueue[index] = previousTipStrategy;
-
-        // Remove the now duplicated tip from the array.
-        withdrawalQueue.pop();
-
-        emit WithdrawalQueueIndexReplacedWithTip(index, replacedStrategy, previousTipStrategy);
-    }
-
-    /// @notice Swap two indexes in the withdrawal queue.
-    /// @param index1 One index involved in the swap
-    /// @param index2 The other index involved in the swap.
-    function swapWithdrawalQueueIndexes(uint256 index1, uint256 index2) external {
-        // Get the (soon to be) new strategies at each index.
-        Strategy newStrategy2 = withdrawalQueue[index1];
-        Strategy newStrategy1 = withdrawalQueue[index2];
-
-        withdrawalQueue[index1] = newStrategy1;
-        withdrawalQueue[index2] = newStrategy2;
-
-        emit WithdrawalQueueIndexesSwapped(index1, index2, newStrategy1, newStrategy2);
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -446,21 +363,21 @@ contract Vault is ERC20, Auth {
     /// @notice Calculate the current amount of locked profit.
     /// @return The current amount of locked profit.
     function lockedProfit() public view returns (uint256) {
-        // Get the last harvest and unlock delay.
+        // Get the last harvest and harvest delay.
         uint256 previousHarvest = lastHarvest;
-        uint256 unlockDelay = profitUnlockDelay;
+        uint256 harvestInterval = harvestDelay;
 
         unchecked {
-            // If the unlock delay has passed, there is no locked profit.
-            // Cannot overflow on human timescales since unlockDelay is capped.
-            if (block.timestamp >= previousHarvest + unlockDelay) return 0;
+            // If the harvest delay has passed, there is no locked profit.
+            // Cannot overflow on human timescales since harvestInterval is capped.
+            if (block.timestamp >= previousHarvest + harvestInterval) return 0;
 
             // Get the maximum amount we could return.
             uint256 maximumLockedProfit = maxLockedProfit;
 
-            // Compute how much profit remains locked based on our last harvest and unlock delay.
+            // Compute how much profit remains locked based on the last harvest and harvest delay.
             // It's impossible for the previous harvest to be in the future, so this will never underflow.
-            return maximumLockedProfit - (maximumLockedProfit * (block.timestamp - previousHarvest)) / unlockDelay;
+            return maximumLockedProfit - (maximumLockedProfit * (block.timestamp - previousHarvest)) / harvestInterval;
         }
     }
 
@@ -483,14 +400,21 @@ contract Vault is ERC20, Auth {
 
     /// @notice Harvest a trusted strategy.
     /// @param strategy The trusted strategy to harvest.
+    /// @dev Heavily optimized at the cost of some readability, as this function must
+    /// be called frequently by altruistic actors for the Vault to function as intended.
     function harvest(Strategy strategy) external {
         // If an untrusted strategy could be harvested a malicious user could use
         // a fake strategy that over-reports holdings to manipulate the exchange rate.
         require(isStrategyTrusted[strategy], "UNTRUSTED_STRATEGY");
 
-        // TODO: require timestamp is within 10 mins of last one or way after.
-        // do we do relavtive or to fixed time. fixed time is cheaper in theory but relative migth be fine if we pack
-        // TODO: optimize the tf out of this we'll be calling it a lot.
+        // If this is the first harvest after the last window:
+        if (block.timestamp >= lastHarvest + harvestDelay) {
+            // Update the lastHarvestWindowStart.
+            lastHarvestWindowStart = lastHarvest;
+        } else {
+            // We know this harvest is not the first in the window so we need to ensure it's within it.
+            require(block.timestamp <= lastHarvestWindowStart + harvestWindow, "BAD_HARVEST_TIME");
+        }
 
         // Get the strategy's previous and current balance.
         uint256 balanceLastHarvest = balanceOfStrategy[strategy];
@@ -506,6 +430,7 @@ contract Vault is ERC20, Auth {
 
         // If we accrued any fees, mint an equivalent amount of fvTokens.
         // Authorized users can claim the newly minted fvTokens at a later time.
+        // TODO: factoring out exchange rate manually is probably gonna give us the most savings!
         if (feesAccrued != 0) _mint(address(this), feesAccrued.fdiv(exchangeRate(), BASE_UNIT));
 
         // Increase/decrease totalStrategyHoldings based on the profit/loss registered.
@@ -515,31 +440,39 @@ contract Vault is ERC20, Auth {
         // Update our stored balance for the strategy.
         balanceOfStrategy[strategy] = balanceThisHarvest;
 
+        // TODO: can we pack these uwu
+
         // Update the max amount of locked profit.
         maxLockedProfit = profitAccrued - feesAccrued;
 
         // Update the last harvest timestamp.
         lastHarvest = block.timestamp;
 
+        // TODO: can we pack these uwu
+
+        // Get the next harvest delay.
+        uint256 newHarvestDelay = nextHarvestDelay;
+
+        // If the next harvest delay is not 0:
+        if (newHarvestDelay != 0) {
+            // TODO: can we pack these uwu
+
+            // TODO: can we pack these uwu
+
+            // Update the harvest delay.
+            harvestDelay = newHarvestDelay;
+
+            // Reset the next harvest delay.
+            newHarvestDelay = 0;
+
+            // TODO: can we pack these uwu
+
+            // TODO: can we pack these uwu
+
+            emit HarvestDelayUpdated(newHarvestDelay);
+        }
+
         emit Harvest(strategy, profitAccrued, feesAccrued);
-    }
-
-    /*///////////////////////////////////////////////////////////////
-                             FEE CLAIM LOGIC
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Emitted after fees are claimed.
-    /// @param fvTokenAmount The amount of fvTokens that were claimed.
-    event FeesClaimed(uint256 fvTokenAmount);
-
-    /// @notice Claims fees accrued from harvests.
-    /// @param fvTokenAmount The amount of fvTokens to claim.
-    /// @dev Accrued fees are measured as fvTokens held by the Vault.
-    function claimFees(uint256 fvTokenAmount) external requiresAuth {
-        // Transfer the provided amount of fvTokens to the caller.
-        ERC20(this).safeTransfer(msg.sender, fvTokenAmount);
-
-        emit FeesClaimed(fvTokenAmount);
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -623,8 +556,76 @@ contract Vault is ERC20, Auth {
     }
 
     /*///////////////////////////////////////////////////////////////
+                        STRATEGY TRUST LOGIC
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Emitted when a strategy is set to trusted.
+    /// @param strategy The strategy that became trusted.
+    event StrategyTrusted(Strategy indexed strategy);
+
+    /// @notice Emitted when a strategy is set to untrusted.
+    /// @param strategy The strategy that became untrusted.
+    event StrategyDistrusted(Strategy indexed strategy);
+
+    /// @notice Store a strategy as trusted, enabling it to be harvested.
+    /// @param strategy The strategy to make trusted.
+    function trustStrategy(Strategy strategy) external requiresAuth {
+        // Ensure the strategy accepts the correct underlying token.
+        // If the strategy accepts ETH the Vault should accept WETH, we'll handle wrapping when necessary.
+        require(
+            strategy.isCEther() ? underlyingIsWETH : ERC20Strategy(address(strategy)).underlying() == UNDERLYING,
+            "WRONG_UNDERLYING"
+        );
+
+        // Store the strategy as trusted.
+        isStrategyTrusted[strategy] = true;
+
+        emit StrategyTrusted(strategy);
+    }
+
+    /// @notice Store a strategy as untrusted, disabling it from being harvested.
+    /// @param strategy The strategy to make untrusted.
+    function distrustStrategy(Strategy strategy) external requiresAuth {
+        // Store the strategy as untrusted.
+        isStrategyTrusted[strategy] = false;
+
+        emit StrategyDistrusted(strategy);
+    }
+
+    /*///////////////////////////////////////////////////////////////
                         WITHDRAWAL QUEUE LOGIC
     //////////////////////////////////////////////////////////////*/
+
+    /// @notice Emitted when a strategy is pushed to the withdrawal queue.
+    /// @param pushedStrategy The strategy pushed to the withdrawal queue.
+    event WithdrawalQueuePushed(Strategy pushedStrategy);
+
+    /// @notice Emitted when a strategy is popped from the withdrawal queue.
+    /// @param poppedStrategy The strategy popped from the withdrawal queue.
+    event WithdrawalQueuePopped(Strategy poppedStrategy);
+
+    /// @notice Emitted when the withdrawal queue is updated.
+    /// @param replacedWithdrawalQueue The new withdrawal queue.
+    event WithdrawalQueueSet(Strategy[] replacedWithdrawalQueue);
+
+    /// @notice Emitted when an index in the withdrawal queue is replaced.
+    /// @param index The index of the replaced strategy in the withdrawal queue.
+    /// @param replacedStrategy The strategy in the withdrawal queue that was replaced.
+    /// @param replacementStrategy The strategy that overrode the replaced strategy at the index.
+    event WithdrawalQueueIndexReplaced(uint256 index, Strategy replacedStrategy, Strategy replacementStrategy);
+
+    /// @notice Emitted when an index in the withdrawal queue is replaced with the tip.
+    /// @param index The index of the replaced strategy in the withdrawal queue.
+    /// @param replacedStrategy The strategy in the withdrawal queue replaced by the tip.
+    /// @param previousTipStrategy The previous tip of the queue that replaced the strategy.
+    event WithdrawalQueueIndexReplacedWithTip(uint256 index, Strategy replacedStrategy, Strategy previousTipStrategy);
+
+    /// @notice Emitted when the strategies at two indexes are swapped.
+    /// @param index1 One index involved in the swap
+    /// @param index2 The other index involved in the swap.
+    /// @param newStrategy1 The strategy (previously at index2) that replaced index1.
+    /// @param newStrategy2 The strategy (previously at index1) that replaced index2.
+    event WithdrawalQueueIndexesSwapped(uint256 index1, uint256 index2, Strategy newStrategy1, Strategy newStrategy2);
 
     /// @dev Withdraw a specific amount of underlying tokens from strategies in the withdrawal queue.
     /// @param underlyingAmount The amount of underlying tokens to pull into float.
@@ -694,6 +695,94 @@ contract Vault is ERC20, Auth {
         if (ethBalance != 0 && underlyingIsWETH) WETH(payable(address(UNDERLYING))).deposit{value: ethBalance}();
     }
 
+    /// @notice Push a single strategy to front of the withdrawal queue.
+    /// @param strategy The strategy to be inserted at the front of the withdrawal queue.
+    function pushToWithdrawalQueue(Strategy strategy) external requiresAuth {
+        withdrawalQueue.push(strategy);
+
+        emit WithdrawalQueuePushed(strategy);
+    }
+
+    /// @notice Remove the strategy at the tip of the withdrawal queue.
+    /// @dev Be careful, another authorized user could push a different strategy
+    /// than expected to the queue while a popFromWithdrawalQueue transaction is pending.
+    function popFromWithdrawalQueue() external requiresAuth {
+        // Get the (soon to be) popped strategy.
+        Strategy poppedStrategy = withdrawalQueue[withdrawalQueue.length - 1];
+
+        withdrawalQueue.pop();
+
+        emit WithdrawalQueuePopped(poppedStrategy);
+    }
+
+    /// @notice Set the withdrawal queue.
+    /// @param newQueue The new withdrawal queue.
+    function setWithdrawalQueue(Strategy[] calldata newQueue) external requiresAuth {
+        withdrawalQueue = newQueue;
+
+        emit WithdrawalQueueSet(newQueue);
+    }
+
+    /// @notice Replace an index in the withdrawal queue with another strategy.
+    /// @param index The index in the queue to replace.
+    /// @param replacementStrategy The strategy to override the index with.
+    function replaceWithdrawalQueueIndex(uint256 index, Strategy replacementStrategy) external {
+        // Get the (soon to be) replaced strategy.
+        Strategy replacedStrategy = withdrawalQueue[index];
+
+        withdrawalQueue[index] = replacementStrategy;
+
+        emit WithdrawalQueueIndexReplaced(index, replacedStrategy, replacementStrategy);
+    }
+
+    /// @notice Move the strategy at the tip of the queue to the specified index and pop the tip off the queue.
+    /// @param index The index of the strategy in the withdrawal queue to replace with the tip.
+    function replaceWithdrawalQueueIndexWithTip(uint256 index) external requiresAuth {
+        // Get the (soon to be) previous tip and strategy we will replace at the index.
+        Strategy previousTipStrategy = withdrawalQueue[withdrawalQueue.length - 1];
+        Strategy replacedStrategy = withdrawalQueue[index];
+
+        // Replace the index specified with the tip of the queue.
+        withdrawalQueue[index] = previousTipStrategy;
+
+        // Remove the now duplicated tip from the array.
+        withdrawalQueue.pop();
+
+        emit WithdrawalQueueIndexReplacedWithTip(index, replacedStrategy, previousTipStrategy);
+    }
+
+    /// @notice Swap two indexes in the withdrawal queue.
+    /// @param index1 One index involved in the swap
+    /// @param index2 The other index involved in the swap.
+    function swapWithdrawalQueueIndexes(uint256 index1, uint256 index2) external {
+        // Get the (soon to be) new strategies at each index.
+        Strategy newStrategy2 = withdrawalQueue[index1];
+        Strategy newStrategy1 = withdrawalQueue[index2];
+
+        withdrawalQueue[index1] = newStrategy1;
+        withdrawalQueue[index2] = newStrategy2;
+
+        emit WithdrawalQueueIndexesSwapped(index1, index2, newStrategy1, newStrategy2);
+    }
+
+    /*///////////////////////////////////////////////////////////////
+                             FEE CLAIM LOGIC
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Emitted after fees are claimed.
+    /// @param fvTokenAmount The amount of fvTokens that were claimed.
+    event FeesClaimed(uint256 fvTokenAmount);
+
+    /// @notice Claims fees accrued from harvests.
+    /// @param fvTokenAmount The amount of fvTokens to claim.
+    /// @dev Accrued fees are measured as fvTokens held by the Vault.
+    function claimFees(uint256 fvTokenAmount) external requiresAuth {
+        // Transfer the provided amount of fvTokens to the caller.
+        ERC20(this).safeTransfer(msg.sender, fvTokenAmount);
+
+        emit FeesClaimed(fvTokenAmount);
+    }
+
     /*///////////////////////////////////////////////////////////////
                          SEIZE STRATEGY LOGIC
     //////////////////////////////////////////////////////////////*/
@@ -707,6 +796,9 @@ contract Vault is ERC20, Auth {
     /// @dev Intended for use in emergencies or other extraneous situations where the
     /// strategy requires interaction outside of the Vault's standard operating procedures.
     function seizeStrategy(Strategy strategy) external requiresAuth {
+        // A strategy must be trusted before it can be seized.
+        require(isStrategyTrusted[strategy], "UNTRUSTED_STRATEGY");
+
         // Get balance the strategy last reported holding.
         uint256 strategyBalance = balanceOfStrategy[strategy];
 
