@@ -1,9 +1,141 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.8.9;
 
+import {Auth, Authority} from "solmate/auth/Auth.sol";
+
+import {Vault} from "../Vault.sol";
+
 /// @title Vault Configuration Module
 /// @author Transmissions11 + JetJadeja
 /// @notice Module for configuring Vault parameters.
-contract VaultConfigurationModule {
+contract VaultConfigurationModule is Auth(msg.sender, Authority(address(0))) {
+    /*///////////////////////////////////////////////////////////////
+                  CUSTOM VAULT PARAMETER CONFIGURATION
+    //////////////////////////////////////////////////////////////*/
 
+    /// @notice Maps Vaults to their custom fee percentage.
+    /// @dev Will be 0 if there is no custom fee percentage for the Vault.
+    mapping(Vault => uint256) getVaultCustomFeePercent;
+
+    /// @notice Maps Vaults to their custom harvest delay.
+    /// @dev Will be 0 if there is no custom harvest delay for the Vault.
+    mapping(Vault => uint64) getVaultCustomHarvestDelay;
+
+    /// @notice Maps Vaults to their custom harvest window.
+    /// @dev Will be 0 if there is no custom harvest window for the Vault.
+    mapping(Vault => uint128) getVaultCustomHarvestWindow;
+
+    /// @notice Maps Vaults to their custom target float percentage.
+    /// @dev Will be 0 if there is no custom target float percentage for the Vault.
+    mapping(Vault => uint256) getVaultCustomTargetFloatPercent;
+
+    /// @notice Sets the custom fee percentage for the Vault.
+    /// @param vault The Vault to set the custom fee percentage for.
+    /// @param customFeePercent The new custom fee percentage to set.
+    function setVaultCustomFeePercent(Vault vault, uint256 customFeePercent) external requiresAuth {
+        getVaultCustomFeePercent[vault] = customFeePercent;
+    }
+
+    /// @notice Sets the custom harvest delay for the Vault.
+    /// @param vault The Vault to set the custom harvest delay for.
+    /// @param customHarvestDelay The new custom harvest delay to set.
+    function setVaultCustomHarvestDelay(Vault vault, uint64 customHarvestDelay) external requiresAuth {
+        getVaultCustomHarvestDelay[vault] = customHarvestDelay;
+    }
+
+    /// @notice Sets the custom harvest window for the Vault.
+    /// @param vault The Vault to set the custom harvest window for.
+    /// @param customHarvestWindow The new custom harvest window to set.
+    function setVaultCustomHarvestWindow(Vault vault, uint128 customHarvestWindow) external requiresAuth {
+        getVaultCustomHarvestWindow[vault] = customHarvestWindow;
+    }
+
+    /// @notice Sets the custom target float percentage for the Vault.
+    /// @param vault The Vault to set the custom target float percentage for.
+    /// @param customTargetFloatPercent The new custom target float percentage to set.
+    function setVaultCustomTargetFloatPercent(Vault vault, uint256 customTargetFloatPercent) external requiresAuth {
+        getVaultCustomTargetFloatPercent[vault] = customTargetFloatPercent;
+    }
+
+    /*///////////////////////////////////////////////////////////////
+                  DEFAULT VAULT PARAMETER CONFIGURATION
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice The default fee percentage for Vaults.
+    uint256 public defaultFeePercent;
+
+    /// @notice The default harvest delay for Vaults.
+    uint64 public defaultHarvestDelay;
+
+    /// @notice The default harvest window for Vaults.
+    uint128 public defaultHarvestWindow;
+
+    /// @notice The default target float percentage for Vaults.
+    uint256 public defaultTargetFloatPercent;
+
+    /// @notice Sets the default fee percentage for Vaults.
+    /// @param newDefaultFeePercent The new default fee percentage to set.
+    function setDefaultFeePercent(uint256 newDefaultFeePercent) external requiresAuth {
+        defaultFeePercent = newDefaultFeePercent;
+    }
+
+    /// @notice Sets the default harvest delay for Vaults.
+    /// @param newDefaultHarvestDelay The new default harvest delay to set.
+    function setDefaultHarvestDelay(uint64 newDefaultHarvestDelay) external requiresAuth {
+        defaultHarvestDelay = newDefaultHarvestDelay;
+    }
+
+    /// @notice Sets the default harvest window for Vaults.
+    /// @param newDefaultHarvestWindow The new default harvest window to set.
+    function setDefaultHarvestWindow(uint128 newDefaultHarvestWindow) external requiresAuth {
+        defaultHarvestWindow = newDefaultHarvestWindow;
+    }
+
+    /// @notice Sets the default target float percentage for Vaults.
+    /// @param newDefaultTargetFloatPercent The new default target float percentage to set.
+    function setDefaultTargetFloatPercent(uint256 newDefaultTargetFloatPercent) external requiresAuth {
+        defaultTargetFloatPercent = newDefaultTargetFloatPercent;
+    }
+
+    /*///////////////////////////////////////////////////////////////
+                       VAULT PARAMETER SYNC LOGIC
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Syncs a Vault's fee percentage with either the Vault's custom fee
+    /// percentage or the default fee percentage if a custom percentage is not set.
+    /// @param vault The Vault to sync the fee percentage for.
+    function syncFeePercent(Vault vault) external {
+        uint256 customFeePercent = getVaultCustomFeePercent[vault];
+
+        vault.setFeePercent(customFeePercent == 0 ? defaultFeePercent : customFeePercent);
+    }
+
+    /// @notice Syncs a Vault's harvest delay with either the Vault's custom
+    /// harvest delay or the default harvest delay if a custom delay is not set.
+    /// @param vault The Vault to sync the harvest delay for.
+    function syncHarvestDelay(Vault vault) external {
+        uint64 customHarvestDelay = getVaultCustomHarvestDelay[vault];
+
+        vault.setHarvestDelay(customHarvestDelay == 0 ? defaultHarvestDelay : customHarvestDelay);
+    }
+
+    /// @notice Syncs a Vault's harvest window with either the Vault's custom
+    /// harvest window or the default harvest window if a custom window is not set.
+    /// @param vault The Vault to sync the harvest window for.
+    function syncHarvestWindow(Vault vault) external {
+        uint128 customHarvestWindow = getVaultCustomHarvestWindow[vault];
+
+        vault.setHarvestWindow(customHarvestWindow == 0 ? defaultHarvestWindow : customHarvestWindow);
+    }
+
+    /// @notice Syncs a Vault's target float percentage with either the Vault's custom target
+    /// float percentage or the default target float percentage if a custom percentage is not set.
+    /// @param vault The Vault to sync the target float percentage for.
+    function syncTargetFloatPercent(Vault vault) external {
+        uint256 customTargetFloatPercent = getVaultCustomTargetFloatPercent[vault];
+
+        vault.setTargetFloatPercent(
+            customTargetFloatPercent == 0 ? defaultTargetFloatPercent : customTargetFloatPercent
+        );
+    }
 }
