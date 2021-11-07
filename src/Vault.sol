@@ -608,11 +608,11 @@ contract Vault is ERC20, Auth {
 
     /// @notice Emitted when a strategy is pushed to the withdrawal queue.
     /// @param pushedStrategy The strategy pushed to the withdrawal queue.
-    event WithdrawalQueuePushed(Strategy pushedStrategy);
+    event WithdrawalQueuePushed(Strategy indexed pushedStrategy);
 
     /// @notice Emitted when a strategy is popped from the withdrawal queue.
     /// @param poppedStrategy The strategy popped from the withdrawal queue.
-    event WithdrawalQueuePopped(Strategy poppedStrategy);
+    event WithdrawalQueuePopped(Strategy indexed poppedStrategy);
 
     /// @notice Emitted when the withdrawal queue is updated.
     /// @param replacedWithdrawalQueue The new withdrawal queue.
@@ -622,20 +622,33 @@ contract Vault is ERC20, Auth {
     /// @param index The index of the replaced strategy in the withdrawal queue.
     /// @param replacedStrategy The strategy in the withdrawal queue that was replaced.
     /// @param replacementStrategy The strategy that overrode the replaced strategy at the index.
-    event WithdrawalQueueIndexReplaced(uint256 index, Strategy replacedStrategy, Strategy replacementStrategy);
+    event WithdrawalQueueIndexReplaced(
+        uint256 index,
+        Strategy indexed replacedStrategy,
+        Strategy indexed replacementStrategy
+    );
 
     /// @notice Emitted when an index in the withdrawal queue is replaced with the tip.
     /// @param index The index of the replaced strategy in the withdrawal queue.
     /// @param replacedStrategy The strategy in the withdrawal queue replaced by the tip.
     /// @param previousTipStrategy The previous tip of the queue that replaced the strategy.
-    event WithdrawalQueueIndexReplacedWithTip(uint256 index, Strategy replacedStrategy, Strategy previousTipStrategy);
+    event WithdrawalQueueIndexReplacedWithTip(
+        uint256 index,
+        Strategy replacedStrategy,
+        Strategy indexed previousTipStrategy
+    );
 
     /// @notice Emitted when the strategies at two indexes are swapped.
     /// @param index1 One index involved in the swap
     /// @param index2 The other index involved in the swap.
     /// @param newStrategy1 The strategy (previously at index2) that replaced index1.
     /// @param newStrategy2 The strategy (previously at index1) that replaced index2.
-    event WithdrawalQueueIndexesSwapped(uint256 index1, uint256 index2, Strategy newStrategy1, Strategy newStrategy2);
+    event WithdrawalQueueIndexesSwapped(
+        uint256 index1,
+        uint256 index2,
+        Strategy indexed newStrategy1,
+        Strategy indexed newStrategy2
+    );
 
     /// @dev Withdraw a specific amount of underlying tokens from strategies in the withdrawal queue.
     /// @param underlyingAmount The amount of underlying tokens to pull into float.

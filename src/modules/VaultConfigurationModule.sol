@@ -25,22 +25,22 @@ contract VaultConfigurationModule is Auth {
     /// @notice Emitted when a Vault has its custom fee percentage set/updated.
     /// @param vault The Vault that had its custom fee percentage set/updated.
     /// @param newCustomFeePercent The new custom fee percentage for the Vault.
-    event CustomFeePercentUpdated(Vault vault, uint256 newCustomFeePercent);
+    event CustomFeePercentUpdated(Vault indexed vault, uint256 newCustomFeePercent);
 
     /// @notice Emitted when a Vault has its custom harvest delay set/updated.
     /// @param vault The Vault that had its custom harvest delay set/updated.
     /// @param newCustomHarvestDelay The new custom harvest delay for the Vault.
-    event CustomHarvestDelayUpdated(Vault vault, uint256 newCustomHarvestDelay);
+    event CustomHarvestDelayUpdated(Vault indexed vault, uint256 newCustomHarvestDelay);
 
     /// @notice Emitted when a Vault has its custom harvest window set/updated.
     /// @param vault The Vault that had its custom harvest window set/updated.
     /// @param newCustomHarvestWindow The new custom harvest window for the Vault.
-    event CustomHarvestWindowUpdated(Vault vault, uint256 newCustomHarvestWindow);
+    event CustomHarvestWindowUpdated(Vault indexed vault, uint256 newCustomHarvestWindow);
 
     /// @notice Emitted when a Vault has its custom target float percentage set/updated.
     /// @param vault The Vault that had its custom target float percentage set/updated.
     /// @param newCustomTargetFloatPercent The new custom target float percentage for the Vault.
-    event CustomTargetFloatPercentUpdated(Vault vault, uint256 newCustomTargetFloatPercent);
+    event CustomTargetFloatPercentUpdated(Vault indexed vault, uint256 newCustomTargetFloatPercent);
 
     /// @notice Maps Vaults to their custom fee percentage.
     /// @dev Will be 0 if there is no custom fee percentage for the Vault.
