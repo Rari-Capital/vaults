@@ -27,7 +27,7 @@ contract VaultFactory is Auth(msg.sender, Authority(address(0))) {
                           VAULT DEPLOYMENT LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Deploy a new Vault which supports a specific underlying token.
+    /// @notice Deploys a new Vault which supports a specific underlying token.
     /// @dev This will revert if a Vault that accepts the same underlying token has already been deployed.
     /// @param underlying The ERC20 token that the Vault should accept.
     /// @return vault The newly deployed Vault contract which accepts the provided underlying token.
