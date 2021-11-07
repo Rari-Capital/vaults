@@ -311,6 +311,7 @@ contract Vault is ERC20, Auth {
 
             // Pull the desired amount from the withdrawal queue.
             pullFromWithdrawalQueue(floatDelta + targetFloatDelta);
+            // TODO: need safe cast?
         }
 
         // Transfer the provided amount of underlying tokens.
