@@ -55,32 +55,6 @@ contract Vault is ERC20, Auth {
     }
 
     /*///////////////////////////////////////////////////////////////
-                           INITILIZATION LOGIC
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Emitted when the Vault is initialized.
-    event Initialized();
-
-    /// @notice Whether the Vault has been initialized yet.
-    /// @dev Can go from false to true, never from true to false.
-    bool internal isInitialized;
-
-    /// @notice Initializes the Vault, enabling it to receive deposits.
-    /// @dev All critical parameters must already be set before calling.
-    function initialize() external requiresAuth {
-        // Ensure the Vault has not already been initialized.
-        require(!isInitialized, "ALREADY_INITIALIZED");
-
-        // Mark the Vault as initialized.
-        isInitialized = true;
-
-        // Open for deposits.
-        totalSupply = 0;
-
-        emit Initialized();
-    }
-
-    /*///////////////////////////////////////////////////////////////
                            FEE CONFIGURATION
     //////////////////////////////////////////////////////////////*/
 
@@ -853,6 +827,32 @@ contract Vault is ERC20, Auth {
 
         // Transfer all of the strategy's tokens to the caller.
         ERC20(strategy).safeTransfer(msg.sender, strategy.balanceOf(address(this)));
+    }
+
+    /*///////////////////////////////////////////////////////////////
+                           INITILIZATION LOGIC
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Emitted when the Vault is initialized.
+    event Initialized();
+
+    /// @notice Whether the Vault has been initialized yet.
+    /// @dev Can go from false to true, never from true to false.
+    bool public isInitialized;
+
+    /// @notice Initializes the Vault, enabling it to receive deposits.
+    /// @dev All critical parameters must already be set before calling.
+    function initialize() external requiresAuth {
+        // Ensure the Vault has not already been initialized.
+        require(!isInitialized, "ALREADY_INITIALIZED");
+
+        // Mark the Vault as initialized.
+        isInitialized = true;
+
+        // Open for deposits.
+        totalSupply = 0;
+
+        emit Initialized();
     }
 
     /*///////////////////////////////////////////////////////////////
