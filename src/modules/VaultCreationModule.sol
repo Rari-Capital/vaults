@@ -12,7 +12,7 @@ import {VaultConfigurationModule} from "./VaultConfigurationModule.sol";
 /// @title Rari Vault Creation Module
 /// @author Transmissions11 and JetJadeja
 /// @notice Module for creating and configuring new Vaults.
-contract VaultCreationModule is Auth(msg.sender, Authority(address(0))) {
+contract VaultCreationModule is Auth {
     /// @notice The Vault factory instance to deploy with.
     VaultFactory public immutable FACTORY;
 
@@ -22,7 +22,14 @@ contract VaultCreationModule is Auth(msg.sender, Authority(address(0))) {
     /// @notice Creates a Vault creation module.
     /// @param _FACTORY The Vault factory instance the module should deploy with.
     /// @param _configModule The Vault configuration module the module should configure with.
-    constructor(VaultFactory _FACTORY, VaultConfigurationModule _configModule) {
+    /// @param _owner The owner of the module.
+    /// @param _auth The authority of the module.
+    constructor(
+        VaultFactory _FACTORY,
+        VaultConfigurationModule _configModule,
+        address _owner,
+        Authority _authority
+    ) Auth(_owner, _authority) {
         FACTORY = _FACTORY;
 
         configModule = _configModule;

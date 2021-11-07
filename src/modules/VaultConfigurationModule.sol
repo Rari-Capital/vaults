@@ -8,7 +8,16 @@ import {Vault} from "../Vault.sol";
 /// @title Rari Vault Configuration Module
 /// @author Transmissions11 and JetJadeja
 /// @notice Module for configuring Vault parameters.
-contract VaultConfigurationModule is Auth(msg.sender, Authority(address(0))) {
+contract VaultConfigurationModule is Auth {
+    /*///////////////////////////////////////////////////////////////
+                               CONSTRUCTOR
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Creates a Vault configuration module.
+    /// @param _owner The owner of the module.
+    /// @param _authority The authority of the module.
+    constructor(address _owner, Authority _authority) Auth(_owner, _authority) {}
+
     /*///////////////////////////////////////////////////////////////
                   CUSTOM VAULT PARAMETER CONFIGURATION
     //////////////////////////////////////////////////////////////*/

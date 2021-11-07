@@ -2,12 +2,11 @@
 pragma solidity 0.8.9;
 
 import {Auth, Authority} from "solmate/auth/Auth.sol";
-import {RolesAuthority} from "solmate/auth/authorities/RolesAuthority.sol";
 
 /// @title Rari Vault Authority Module
 /// @notice Module for managing access to secured Vault operations.
 /// @author Modified from Solmate (https://github.com/Rari-Capital/solmate/blob/main/src/auth/authorities/RolesAuthority.sol)
-contract VaultAuthorityModule is Auth(msg.sender, Authority(address(0))), Authority {
+contract VaultAuthorityModule is Auth, Authority {
     /*///////////////////////////////////////////////////////////////
                                   EVENTS
     //////////////////////////////////////////////////////////////*/
@@ -19,6 +18,15 @@ contract VaultAuthorityModule is Auth(msg.sender, Authority(address(0))), Author
     event UserRoleUpdated(address indexed user, uint8 indexed role, bool enabled);
 
     event RoleCapabilityUpdated(uint8 indexed role, bytes4 indexed functionSig, bool enabled);
+
+    /*///////////////////////////////////////////////////////////////
+                               CONSTRUCTOR
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Creates a Vault configuration module.
+    /// @param _owner The owner of the module.
+    /// @param _authority The authority of the module.
+    constructor(address _owner, Authority _authority) Auth(_owner, _authority) {}
 
     /*///////////////////////////////////////////////////////////////
                        CUSTOM TARGET AUTHORITY STORAGE
