@@ -17,6 +17,7 @@ import {VaultFactory} from "./VaultFactory.sol";
 /// @notice Minimalist yield aggregator designed to support any ERC20 token.
 contract Vault is ERC20, Auth {
     using SafeCastLib for uint256;
+    using SafeCastLib for uint128;
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
 
@@ -446,8 +447,8 @@ contract Vault is ERC20, Auth {
         // Update our stored balance for the strategy.
         getStrategyData[strategy].balance = balanceThisHarvest.safeCastTo224();
 
-        // Update the max amount of locked profit.
-        maxLockedProfit = uint128(profitAccrued - feesAccrued);
+        // Update the max amount of locked profit
+        maxLockedProfit = (profitAccrued - feesAccrued).safeCastTo128();
 
         // Update the last harvest timestamp.
         lastHarvest = uint64(block.timestamp);
