@@ -50,7 +50,7 @@ contract Vault is ERC20, Auth {
         BASE_UNIT = 10**decimals;
 
         // Prevent minting of fvTokens until
-        // the Vault is properly initialized.
+        // the Vault is initialize is called.
         totalSupply = type(uint256).max;
     }
 
