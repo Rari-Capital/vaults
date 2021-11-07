@@ -71,6 +71,9 @@ contract Vault is ERC20, Auth {
         // Ensure the Vault has not already been initialized.
         require(!isInitialized, "ALREADY_INITIALIZED");
 
+        // Mark the Vault as initialized.
+        isInitialized = true;
+
         // Open for deposits.
         totalSupply = 0;
 
