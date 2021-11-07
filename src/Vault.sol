@@ -13,7 +13,7 @@ import {Strategy, ERC20Strategy, ETHStrategy} from "./interfaces/Strategy.sol";
 import {VaultFactory} from "./VaultFactory.sol";
 
 /// @title Rari Vault (rvToken)
-/// @author Transmissions11 + JetJadeja
+/// @author Transmissions11 and JetJadeja
 /// @notice Minimalist yield aggregator designed to support any ERC20 token.
 contract Vault is ERC20, Auth {
     using SafeCastLib for uint256;

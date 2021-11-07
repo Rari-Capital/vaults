@@ -4,7 +4,7 @@ pragma solidity 0.8.9;
 import {Auth, Authority} from "solmate/auth/Auth.sol";
 import {RolesAuthority} from "solmate/auth/authorities/RolesAuthority.sol";
 
-/// @title Vault Authority Module
+/// @title Rari Vault Authority Module
 /// @notice Module for managing access to secured Vault operations.
 /// @author Modified from Solmate (https://github.com/Rari-Capital/solmate/blob/main/src/auth/authorities/RolesAuthority.sol)
 contract VaultAuthorityModule is Auth(msg.sender, Authority(address(0))), Authority {

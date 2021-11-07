@@ -9,8 +9,8 @@ import {VaultFactory} from "../VaultFactory.sol";
 
 import {VaultConfigurationModule} from "./VaultConfigurationModule.sol";
 
-/// @title Vault Creation Module
-/// @author Transmissions11 + JetJadeja
+/// @title Rari Vault Creation Module
+/// @author Transmissions11 and JetJadeja
 /// @notice Module for creating and configuring new Vaults.
 contract VaultCreationModule is Auth(msg.sender, Authority(address(0))) {
     /// @notice The Vault factory instance to deploy with.

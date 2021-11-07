@@ -5,8 +5,8 @@ import {Auth, Authority} from "solmate/auth/Auth.sol";
 
 import {Vault} from "../Vault.sol";
 
-/// @title Vault Configuration Module
-/// @author Transmissions11 + JetJadeja
+/// @title Rari Vault Configuration Module
+/// @author Transmissions11 and JetJadeja
 /// @notice Module for configuring Vault parameters.
 contract VaultConfigurationModule is Auth(msg.sender, Authority(address(0))) {
     /*///////////////////////////////////////////////////////////////

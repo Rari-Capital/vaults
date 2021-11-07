@@ -8,7 +8,7 @@ import {Bytes32AddressLib} from "solmate/utils/Bytes32AddressLib.sol";
 import {Vault} from "./Vault.sol";
 
 /// @title Rari Vault Factory
-/// @author Transmissions11 + JetJadeja
+/// @author Transmissions11 and JetJadeja
 /// @notice Factory which enables deploying a Vault contract for any ERC20 token.
 contract VaultFactory is Auth(msg.sender, Authority(address(0))) {
     using Bytes32AddressLib for address;
