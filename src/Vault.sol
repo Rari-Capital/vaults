@@ -499,7 +499,6 @@ contract Vault is ERC20, Auth {
         unchecked {
             // Without this the next harvest would count the deposit as profit.
             // Cannot overflow as the balance of one strategy can't exceed the sum of all.
-            // TODO: wait can we just make this checked again and not need to cast
             getStrategyData[strategy].balance += underlyingAmount.safeCastTo224();
         }
 
