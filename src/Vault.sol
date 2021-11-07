@@ -446,7 +446,7 @@ contract Vault is ERC20, Auth {
             harvestDelay = newHarvestDelay;
 
             // Reset the next harvest delay.
-            newHarvestDelay = 0;
+            nextHarvestDelay = 0;
 
             emit HarvestDelayUpdated(newHarvestDelay);
         }
