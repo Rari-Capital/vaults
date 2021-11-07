@@ -23,7 +23,7 @@ contract VaultCreationModule is Auth {
     /// @param _FACTORY The Vault factory instance the module should deploy with.
     /// @param _configModule The Vault configuration module the module should configure with.
     /// @param _owner The owner of the module.
-    /// @param _auth The authority of the module.
+    /// @param _authority The authority of the module.
     constructor(
         VaultFactory _FACTORY,
         VaultConfigurationModule _configModule,
