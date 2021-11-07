@@ -310,8 +310,8 @@ contract Vault is ERC20, Auth {
             uint256 targetFloatDelta = (totalHoldings() - underlyingAmount).fmul(targetFloatPercent, 1e18);
 
             // Pull the desired amount from the withdrawal queue.
-            pullFromWithdrawalQueue(floatDelta + targetFloatDelta);
             // TODO: need safe cast?
+            pullFromWithdrawalQueue(floatDelta + targetFloatDelta);
         }
 
         // Transfer the provided amount of underlying tokens.
