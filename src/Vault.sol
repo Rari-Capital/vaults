@@ -121,28 +121,49 @@ contract Vault is ERC20, Auth {
     }
 
     /*///////////////////////////////////////////////////////////////
-                      HARVEST DELAY CONFIGURATION
+                        HARVEST CONFIGURATION
     //////////////////////////////////////////////////////////////*/
+
+    //// @notice Emitted when the harvest window is updated.
+    //// @param newHarvestWindow The updated harvest window.
+    event HarvestWindowUpdated(uint128 newHarvestWindow);
 
     /// @notice Emitted when the harvest delay is updated.
     /// @param newHarvestDelay The updated harvest delay.
-    event HarvestDelayUpdated(uint128 newHarvestDelay);
+    event HarvestDelayUpdated(uint64 newHarvestDelay);
 
     /// @notice Emitted when the harvest delay is scheduled to be updated next harvest.
     /// @param newHarvestDelay The scheduled updated harvest delay.
-    event HarvestDelayUpdateScheduled(uint128 newHarvestDelay);
+    event HarvestDelayUpdateScheduled(uint64 newHarvestDelay);
+
+    /// @notice The period in seconds during which multiple harvests can occur
+    /// regardless if they are taking place before the harvest delay has elapsed.
+    /// @dev Longer harvest delays open up the Vault to profit distribution DOS attacks.
+    uint128 public harvestWindow = 5 minutes;
 
     /// @notice The period in seconds over which locked profit is unlocked.
     /// @dev Cannot be 0 as it opens harvests up to sandwich attacks.
-    uint128 public harvestDelay = 6 hours;
+    uint64 public harvestDelay = 6 hours;
 
     /// @notice The value that will replace harvestDelay next harvest.
     /// @dev In the case that the next delay is 0, no update will be applied.
-    uint128 public nextHarvestDelay;
+    uint64 public nextHarvestDelay;
+
+    /// @notice Set a new harvest window.
+    /// @param newHarvestWindow The new harvest window.
+    function setHarvestWindow(uint128 newHarvestWindow) external requiresAuth {
+        // A harvest window longer than the harvest delay doesn't make sense.
+        require(newHarvestWindow <= harvestDelay, "WINDOW_TOO_LONG");
+
+        // Update the harvest window.
+        harvestWindow = newHarvestWindow;
+
+        emit HarvestWindowUpdated(newHarvestWindow);
+    }
 
     /// @notice Set a new harvest delay delay to be applied next harvest.
     /// @param newHarvestDelay The new harvest delay to set.
-    function scheduleHarvestUnlockDelayUpdate(uint128 newHarvestDelay) external requiresAuth {
+    function scheduleHarvestUnlockDelayUpdate(uint64 newHarvestDelay) external requiresAuth {
         // A harvest delay of 0 makes harvests vulnerable to sandwich attacks.
         require(newHarvestDelay != 0, "DELAY_CANNOT_BE_ZERO");
 
@@ -154,31 +175,6 @@ contract Vault is ERC20, Auth {
         nextHarvestDelay = newHarvestDelay;
 
         emit HarvestDelayUpdateScheduled(newHarvestDelay);
-    }
-
-    /*///////////////////////////////////////////////////////////////
-                      HARVEST WINDOW CONFIGURATION
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice The period in seconds during which multiple harvests can occur
-    /// regardless if they are taking place before the harvest delay has elapsed.
-    /// @dev Longer harvest delays open up the Vault to profit distribution DOS attacks.
-    uint256 public harvestWindow = 5 minutes;
-
-    //// @notice Emitted when the harvest window is updated.
-    //// @param newHarvestWindow The updated harvest window.
-    event HarvestWindowUpdated(uint256 newHarvestWindow);
-
-    /// @notice Set a new harvest window.
-    /// @param newHarvestWindow The new harvest window.
-    function setHarvestWindow(uint256 newHarvestWindow) external requiresAuth {
-        // A harvest window longer than the harvest delay doesn't make sense.
-        require(newHarvestWindow <= harvestDelay, "WINDOW_TOO_LONG");
-
-        // Update the harvest window.
-        harvestWindow = newHarvestWindow;
-
-        emit HarvestWindowUpdated(newHarvestWindow);
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -438,7 +434,7 @@ contract Vault is ERC20, Auth {
         lastHarvest = uint64(block.timestamp);
 
         // Get the next harvest delay.
-        uint128 newHarvestDelay = nextHarvestDelay;
+        uint64 newHarvestDelay = nextHarvestDelay;
 
         // If the next harvest delay is not 0:
         if (newHarvestDelay != 0) {
