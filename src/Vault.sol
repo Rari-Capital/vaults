@@ -711,7 +711,7 @@ contract Vault is ERC20, Auth {
             totalStrategyHoldings -= underlyingAmount;
         }
 
-        // Cache the Vault's balance of Ether.
+        // Cache the Vault's balance of ETH.
         uint256 ethBalance = address(this).balance;
 
         // If the Vault's underlying token is WETH compatible and we have some ETH, wrap it into WETH.
