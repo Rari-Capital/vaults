@@ -48,6 +48,33 @@ contract Vault is ERC20, Auth {
         UNDERLYING = _UNDERLYING;
 
         BASE_UNIT = 10**decimals;
+
+        // Prevent minting of fvTokens until
+        // the Vault is properly initialized.
+        totalSupply = type(uint256).max;
+    }
+
+    /*///////////////////////////////////////////////////////////////
+                           INITILIZATION LOGIC
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Emitted when the Vault is initialized.
+    event Initialized();
+
+    /// @notice Whether the Vault has been initialized yet.
+    /// @dev Can go from false to true, never from true to false.
+    bool isInitialized;
+
+    /// @notice Initializes the Vault, enabling it to receive deposits.
+    /// @dev All critical parameters must already be set before calling.
+    function initialize() external requiresAuth {
+        // Ensure the Vault has not already been initialized.
+        require(!isInitialized, "ALREADY_INITIALIZED");
+
+        // Open for deposits.
+        totalSupply = 0;
+
+        emit Initialized();
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -56,7 +83,7 @@ contract Vault is ERC20, Auth {
 
     /// @notice The percentage of profit recognized each harvest to reserve as fees.
     /// @dev A fixed point number where 1e18 represents 100% and 0 represents 0%.
-    uint256 public feePercent = 0.1e18;
+    uint256 public feePercent;
 
     /// @notice Emitted when the fee percentage is updated.
     /// @param newFeePercent The updated fee percentage.
@@ -72,55 +99,6 @@ contract Vault is ERC20, Auth {
         feePercent = newFeePercent;
 
         emit FeePercentUpdated(newFeePercent);
-    }
-
-    /*///////////////////////////////////////////////////////////////
-                   UNDERLYING IS WETH CONFIGURATION
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Whether the Vault should treat the underlying token as WETH compatible.
-    /// @dev If enabled the Vault will allow trusting strategies that accept Ether.
-    bool public underlyingIsWETH = false;
-
-    /// @notice Emitted when whether the Vault should treat the underlying as WETH is updated.
-    /// @param newUnderlyingIsWETH Whether the Vault nows treats the underlying as WETH.
-    event UnderlyingIsWETHUpdated(bool newUnderlyingIsWETH);
-
-    /// @notice Set whether the Vault treats the underlying as WETH.
-    /// @param newUnderlyingIsWETH Whether the Vault should treat the underlying as WETH.
-    /// @dev The underlying token must have 18 decimals, to match Ether's decimal scheme.
-    function setUnderlyingIsWETH(bool newUnderlyingIsWETH) external requiresAuth {
-        // Ensure the underlying token's decimals match ETH.
-        require(UNDERLYING.decimals() == 18, "WRONG_DECIMALS");
-
-        // Update whether the Vault treats the underlying as WETH.
-        underlyingIsWETH = newUnderlyingIsWETH;
-
-        emit UnderlyingIsWETHUpdated(newUnderlyingIsWETH);
-    }
-
-    /*///////////////////////////////////////////////////////////////
-                       TARGET FLOAT CONFIGURATION
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice The desired percentage of the Vault's holdings to keep as float.
-    /// @dev A fixed point number where 1e18 represents 100% and 0 represents 0%.
-    uint256 public targetFloatPercent = 0.01e18;
-
-    /// @notice Emitted when the target float percentage is updated.
-    /// @param newTargetFloatPercent The updated target float percentage.
-    event TargetFloatPercentUpdated(uint256 newTargetFloatPercent);
-
-    /// @notice Set a new target float percentage.
-    /// @param newTargetFloatPercent The new target float percentage.
-    function setTargetFloatPercent(uint256 newTargetFloatPercent) external requiresAuth {
-        // A target float percentage over 100% doesn't make sense.
-        require(targetFloatPercent <= 1e18, "TARGET_TOO_HIGH");
-
-        // Update the target float percentage.
-        targetFloatPercent = newTargetFloatPercent;
-
-        emit TargetFloatPercentUpdated(newTargetFloatPercent);
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -141,12 +119,12 @@ contract Vault is ERC20, Auth {
 
     /// @notice The period in seconds during which multiple harvests can occur
     /// regardless if they are taking place before the harvest delay has elapsed.
-    /// @dev Longer harvest delays open up the Vault to profit distribution DOS attacks.
-    uint128 public harvestWindow = 5 minutes;
+    /// @dev Long harvest delays open up the Vault to profit distribution DOS attacks.
+    uint128 public harvestWindow;
 
     /// @notice The period in seconds over which locked profit is unlocked.
     /// @dev Cannot be 0 as it opens harvests up to sandwich attacks.
-    uint64 public harvestDelay = 6 hours;
+    uint64 public harvestDelay;
 
     /// @notice The value that will replace harvestDelay next harvest.
     /// @dev In the case that the next delay is 0, no update will be applied.
@@ -178,6 +156,55 @@ contract Vault is ERC20, Auth {
         nextHarvestDelay = newHarvestDelay;
 
         emit HarvestDelayUpdateScheduled(newHarvestDelay);
+    }
+
+    /*///////////////////////////////////////////////////////////////
+                       TARGET FLOAT CONFIGURATION
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice The desired percentage of the Vault's holdings to keep as float.
+    /// @dev A fixed point number where 1e18 represents 100% and 0 represents 0%.
+    uint256 public targetFloatPercent;
+
+    /// @notice Emitted when the target float percentage is updated.
+    /// @param newTargetFloatPercent The updated target float percentage.
+    event TargetFloatPercentUpdated(uint256 newTargetFloatPercent);
+
+    /// @notice Set a new target float percentage.
+    /// @param newTargetFloatPercent The new target float percentage.
+    function setTargetFloatPercent(uint256 newTargetFloatPercent) external requiresAuth {
+        // A target float percentage over 100% doesn't make sense.
+        require(targetFloatPercent <= 1e18, "TARGET_TOO_HIGH");
+
+        // Update the target float percentage.
+        targetFloatPercent = newTargetFloatPercent;
+
+        emit TargetFloatPercentUpdated(newTargetFloatPercent);
+    }
+
+    /*///////////////////////////////////////////////////////////////
+                   UNDERLYING IS WETH CONFIGURATION
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Whether the Vault should treat the underlying token as WETH compatible.
+    /// @dev If enabled the Vault will allow trusting strategies that accept Ether.
+    bool public underlyingIsWETH = false;
+
+    /// @notice Emitted when whether the Vault should treat the underlying as WETH is updated.
+    /// @param newUnderlyingIsWETH Whether the Vault nows treats the underlying as WETH.
+    event UnderlyingIsWETHUpdated(bool newUnderlyingIsWETH);
+
+    /// @notice Set whether the Vault treats the underlying as WETH.
+    /// @param newUnderlyingIsWETH Whether the Vault should treat the underlying as WETH.
+    /// @dev The underlying token must have 18 decimals, to match Ether's decimal scheme.
+    function setUnderlyingIsWETH(bool newUnderlyingIsWETH) external requiresAuth {
+        // Ensure the underlying token's decimals match ETH.
+        require(UNDERLYING.decimals() == 18, "WRONG_DECIMALS");
+
+        // Update whether the Vault treats the underlying as WETH.
+        underlyingIsWETH = newUnderlyingIsWETH;
+
+        emit UnderlyingIsWETHUpdated(newUnderlyingIsWETH);
     }
 
     /*///////////////////////////////////////////////////////////////
