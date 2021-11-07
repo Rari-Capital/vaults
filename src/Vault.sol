@@ -200,14 +200,12 @@ contract Vault is ERC20, Auth {
                              HARVEST STORAGE
     //////////////////////////////////////////////////////////////*/
 
-    // TODO: pack????
-
     /// @notice A timestamp representing when the first harvest in the most recent harvest window occurred.
     /// @dev May be equal to lastHarvest if there was/has only been one harvest in the most last/current window.
-    uint256 public lastHarvestWindowStart;
+    uint128 public lastHarvestWindowStart;
 
     /// @notice A timestamp representing when the most recent harvest occurred.
-    uint256 public lastHarvest;
+    uint128 public lastHarvest;
 
     /// @notice The amount of locked profit at the end of the last harvest.
     uint256 public maxLockedProfit;
@@ -402,8 +400,8 @@ contract Vault is ERC20, Auth {
 
         // If this is the first harvest after the last window:
         if (block.timestamp >= lastHarvest + harvestDelay) {
-            // Update the lastHarvestWindowStart.
-            lastHarvestWindowStart = block.timestamp;
+            // Set the harvest window's start timestamp.
+            lastHarvestWindowStart = uint128(block.timestamp);
         } else {
             // We know this harvest is not the first in the window so we need to ensure it's within it.
             require(block.timestamp <= lastHarvestWindowStart + harvestWindow, "BAD_HARVEST_TIME");
@@ -437,7 +435,7 @@ contract Vault is ERC20, Auth {
         maxLockedProfit = profitAccrued - feesAccrued;
 
         // Update the last harvest timestamp.
-        lastHarvest = block.timestamp;
+        lastHarvest = uint128(block.timestamp);
 
         // Get the next harvest delay.
         uint128 newHarvestDelay = nextHarvestDelay;
