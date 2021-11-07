@@ -8,8 +8,8 @@ import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 
 import {Vault} from "../Vault.sol";
 
-/// @title Vault ETH Wrapper Module
-/// @author Transmissions11 + JetJadeja
+/// @title Rari Vault ETH Wrapper Module
+/// @author Transmissions11 and JetJadeja
 /// @notice Module for using ETH with a WETH Vault.
 contract VaultETHWrapperModule {
     using SafeTransferLib for ERC20;
