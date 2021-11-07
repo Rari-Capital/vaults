@@ -310,8 +310,8 @@ contract Vault is ERC20, Auth {
             uint256 targetFloatDelta = (totalHoldings() - underlyingAmount).fmul(targetFloatPercent, 1e18);
 
             // Pull the desired amount from the withdrawal queue.
-            pullFromWithdrawalQueue(floatDelta + targetFloatDelta);
             // TODO: need safe cast?
+            pullFromWithdrawalQueue(uint248(floatDelta + targetFloatDelta));
         }
 
         // Transfer the provided amount of underlying tokens.
@@ -476,17 +476,17 @@ contract Vault is ERC20, Auth {
     /// @notice Emitted after the Vault deposits into a strategy contract.
     /// @param strategy The strategy that was deposited into.
     /// @param underlyingAmount The amount of underlying tokens that were deposited.
-    event StrategyDeposit(Strategy indexed strategy, uint256 underlyingAmount);
+    event StrategyDeposit(Strategy indexed strategy, uint248 underlyingAmount);
 
     /// @notice Emitted after the Vault withdraws funds from a strategy contract.
     /// @param strategy The strategy that was withdrawn from.
     /// @param underlyingAmount The amount of underlying tokens that were withdrawn.
-    event StrategyWithdrawal(Strategy indexed strategy, uint256 underlyingAmount);
+    event StrategyWithdrawal(Strategy indexed strategy, uint248 underlyingAmount);
 
     /// @notice Deposit a specific amount of float into a trusted strategy.
     /// @param strategy The trusted strategy to deposit into.
     /// @param underlyingAmount The amount of underlying tokens in float to deposit.
-    function depositIntoStrategy(Strategy strategy, uint256 underlyingAmount) external requiresAuth {
+    function depositIntoStrategy(Strategy strategy, uint248 underlyingAmount) external requiresAuth {
         // A strategy must be trusted before it can be deposited into.
         require(getStrategyData[strategy].trusted, "UNTRUSTED_STRATEGY");
 
@@ -499,7 +499,7 @@ contract Vault is ERC20, Auth {
         unchecked {
             // Without this the next harvest would count the deposit as profit.
             // Cannot overflow as the balance of one strategy can't exceed the sum of all.
-            getStrategyData[strategy].balance += uint248(underlyingAmount);
+            getStrategyData[strategy].balance += underlyingAmount;
         }
 
         emit StrategyDeposit(strategy, underlyingAmount);
@@ -524,7 +524,7 @@ contract Vault is ERC20, Auth {
     /// @param strategy The strategy to withdraw from.
     /// @param underlyingAmount  The amount of underlying tokens to withdraw.
     /// @dev Withdrawing from a strategy will not remove it from the withdrawal queue.
-    function withdrawFromStrategy(Strategy strategy, uint256 underlyingAmount) external requiresAuth {
+    function withdrawFromStrategy(Strategy strategy, uint248 underlyingAmount) external requiresAuth {
         // A strategy must be trusted before it can be withdrawn from.
         require(getStrategyData[strategy].trusted, "UNTRUSTED_STRATEGY");
 
@@ -532,7 +532,7 @@ contract Vault is ERC20, Auth {
         require(underlyingAmount != 0, "AMOUNT_CANNOT_BE_ZERO");
 
         // Without this the next harvest would count the withdrawal as a loss.
-        getStrategyData[strategy].balance -= uint248(underlyingAmount);
+        getStrategyData[strategy].balance -= underlyingAmount;
 
         unchecked {
             // Decrease totalStrategyHoldings to account for the withdrawal.
@@ -624,7 +624,7 @@ contract Vault is ERC20, Auth {
     /// @dev Withdraw a specific amount of underlying tokens from strategies in the withdrawal queue.
     /// @param underlyingAmount The amount of underlying tokens to pull into float.
     /// @dev Automatically removes depleted strategies from the withdrawal queue.
-    function pullFromWithdrawalQueue(uint256 underlyingAmount) internal {
+    function pullFromWithdrawalQueue(uint248 underlyingAmount) internal {
         // We will update this variable as we pull from strategies.
         uint256 amountLeftToPull = underlyingAmount;
 
@@ -642,18 +642,18 @@ contract Vault is ERC20, Auth {
             Strategy strategy = withdrawalQueue[currentIndex];
 
             // Get the balance of the strategy before we withdraw from it.
-            uint256 strategyBalance = getStrategyData[strategy].balance;
+            uint248 strategyBalance = getStrategyData[strategy].balance;
 
             // We want to pull as much as we can from the strategy, but no more than we need.
-            uint256 amountToPull = FixedPointMathLib.min(amountLeftToPull, strategyBalance);
+            uint248 amountToPull = uint248(FixedPointMathLib.min(amountLeftToPull, strategyBalance));
 
             unchecked {
                 // Compute the balance of the strategy that will remain after we withdraw.
                 // Cannot overflow as we cap the amount to pull at the strategy's balance.
-                uint256 strategyBalanceAfterWithdrawal = strategyBalance - amountToPull;
+                uint248 strategyBalanceAfterWithdrawal = strategyBalance - amountToPull;
 
                 // Without this the next harvest would count the withdrawal as a loss.
-                getStrategyData[strategy].balance = uint248(strategyBalanceAfterWithdrawal);
+                getStrategyData[strategy].balance = strategyBalanceAfterWithdrawal;
 
                 // Adjust our goal based on how much we can pull from the strategy.
                 // Cannot overflow as we cap the amount to pull at the amount left to pull.
