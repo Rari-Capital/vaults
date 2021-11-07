@@ -273,7 +273,7 @@ contract Vault is ERC20, Auth {
 
         emit Withdraw(msg.sender, underlyingAmount);
 
-        // Withdraw from strategies (if needed) and transfer.
+        // Withdraw from strategies if needed and transfer.
         transferUnderlyingTo(msg.sender, underlyingAmount);
     }
 
@@ -292,7 +292,7 @@ contract Vault is ERC20, Auth {
 
         emit Withdraw(msg.sender, underlyingAmount);
 
-        // Withdraw from strategies (if needed) and transfer.
+        // Withdraw from strategies if needed and transfer.
         transferUnderlyingTo(msg.sender, underlyingAmount);
     }
 
