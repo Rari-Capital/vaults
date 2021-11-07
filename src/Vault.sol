@@ -134,7 +134,7 @@ contract Vault is ERC20, Auth {
 
     /// @notice The period in seconds over which locked profit is unlocked.
     /// @dev Cannot be 0 as it opens harvests up to sandwich attacks.
-    uint256 public harvestDelay;
+    uint256 public harvestDelay = 6 hours;
 
     /// @notice The value that will replace harvestDelay next harvest.
     /// @dev In the case that the next delay is 0, no update will be applied.
@@ -170,7 +170,7 @@ contract Vault is ERC20, Auth {
     /// @notice The period in seconds during which multiple harvests can occur
     /// regardless if they are taking place before the harvest delay has elapsed.
     /// @dev Longer harvest delays open up the Vault to profit distribution DOS attacks.
-    uint256 public harvestWindow;
+    uint256 public harvestWindow = 5 minutes;
 
     //// @notice Emitted when the harvest window is updated.
     //// @param newHarvestWindow The updated harvest window.
@@ -410,7 +410,7 @@ contract Vault is ERC20, Auth {
         // If this is the first harvest after the last window:
         if (block.timestamp >= lastHarvest + harvestDelay) {
             // Update the lastHarvestWindowStart.
-            lastHarvestWindowStart = lastHarvest;
+            lastHarvestWindowStart = block.timestamp;
         } else {
             // We know this harvest is not the first in the window so we need to ensure it's within it.
             require(block.timestamp <= lastHarvestWindowStart + harvestWindow, "BAD_HARVEST_TIME");
