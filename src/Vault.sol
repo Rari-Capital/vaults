@@ -176,7 +176,7 @@ contract Vault is ERC20, Auth {
 
     /// @notice Whether the Vault should treat the underlying token as WETH compatible.
     /// @dev If enabled the Vault will allow trusting strategies that accept Ether.
-    bool public underlyingIsWETH = false;
+    bool public underlyingIsWETH;
 
     /// @notice Emitted when whether the Vault should treat the underlying as WETH is updated.
     /// @param newUnderlyingIsWETH Whether the Vault nows treats the underlying as WETH.
