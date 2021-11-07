@@ -135,6 +135,7 @@ contract Vault is ERC20, Auth {
 
     /// @notice Set a new harvest window.
     /// @param newHarvestWindow The new harvest window.
+    /// @dev The Vault's harvestDelay must already be set before calling.
     function setHarvestWindow(uint128 newHarvestWindow) external requiresAuth {
         // A harvest window longer than the harvest delay doesn't make sense.
         require(newHarvestWindow <= harvestDelay, "WINDOW_TOO_LONG");
@@ -145,20 +146,30 @@ contract Vault is ERC20, Auth {
         emit HarvestWindowUpdated(newHarvestWindow);
     }
 
-    /// @notice Set a new harvest delay delay to be applied next harvest.
+    /// @notice Set a new harvest delay delay.
     /// @param newHarvestDelay The new harvest delay to set.
-    function scheduleHarvestUnlockDelayUpdate(uint64 newHarvestDelay) external requiresAuth {
+    /// @dev If the current harvest delay is 0, meaning it has not
+    /// been set before, it will be updated immediately; otherwise
+    /// it will be scheduled to take effect after the next harvest.
+    function setHarvestDelay(uint64 newHarvestDelay) external requiresAuth {
         // A harvest delay of 0 makes harvests vulnerable to sandwich attacks.
         require(newHarvestDelay != 0, "DELAY_CANNOT_BE_ZERO");
 
         // A target harvest delay over 1 year doesn't make sense.
         require(newHarvestDelay <= 365 days, "DELAY_TOO_LONG");
 
-        // Set the next harvest delay.
-        // The update actually be applied next harvest.
-        nextHarvestDelay = newHarvestDelay;
+        // If the harvest delay is 0, meaning it has not been set before:
+        if (harvestDelay == 0) {
+            // We'll apply the update immediately.
+            harvestDelay = newHarvestDelay;
 
-        emit HarvestDelayUpdateScheduled(newHarvestDelay);
+            emit HarvestDelayUpdated(newHarvestDelay);
+        } else {
+            // We'll apply the update next harvest.
+            nextHarvestDelay = newHarvestDelay;
+
+            emit HarvestDelayUpdateScheduled(newHarvestDelay);
+        }
     }
 
     /*///////////////////////////////////////////////////////////////

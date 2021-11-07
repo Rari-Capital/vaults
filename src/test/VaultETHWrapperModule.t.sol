@@ -20,6 +20,8 @@ contract VaultETHWrapperModuleTest is DSTestPlus {
         underlying = new WETH();
         vault = new VaultFactory().deployVault(underlying);
 
+        vault.initialize();
+
         vaultETHWrapperModule = new VaultETHWrapperModule();
     }
 
