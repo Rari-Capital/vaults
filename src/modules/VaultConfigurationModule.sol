@@ -105,8 +105,11 @@ contract VaultConfigurationModule is Auth(msg.sender, Authority(address(0))) {
     /// percentage or the default fee percentage if a custom percentage is not set.
     /// @param vault The Vault to sync the fee percentage for.
     function syncFeePercent(Vault vault) external {
+        // Get the Vault's custom fee percentage.
         uint256 customFeePercent = getVaultCustomFeePercent[vault];
 
+        // Set the Vault's fee percentage to the custom fee percentage
+        // or the default fee percentage if a custom percentage isn't set.
         vault.setFeePercent(customFeePercent == 0 ? defaultFeePercent : customFeePercent);
     }
 
@@ -114,8 +117,11 @@ contract VaultConfigurationModule is Auth(msg.sender, Authority(address(0))) {
     /// harvest delay or the default harvest delay if a custom delay is not set.
     /// @param vault The Vault to sync the harvest delay for.
     function syncHarvestDelay(Vault vault) external {
+        // Get the Vault's custom harvest delay.
         uint64 customHarvestDelay = getVaultCustomHarvestDelay[vault];
 
+        // Set the Vault's harvest delay to the custom harvest delay
+        // or the default harvest delay if a custom delay isn't set.
         vault.setHarvestDelay(customHarvestDelay == 0 ? defaultHarvestDelay : customHarvestDelay);
     }
 
@@ -123,8 +129,11 @@ contract VaultConfigurationModule is Auth(msg.sender, Authority(address(0))) {
     /// harvest window or the default harvest window if a custom window is not set.
     /// @param vault The Vault to sync the harvest window for.
     function syncHarvestWindow(Vault vault) external {
+        // Get the Vault's custom harvest window.
         uint128 customHarvestWindow = getVaultCustomHarvestWindow[vault];
 
+        // Set the Vault's harvest window to the custom harvest window
+        // or the default harvest window if a custom window isn't set.
         vault.setHarvestWindow(customHarvestWindow == 0 ? defaultHarvestWindow : customHarvestWindow);
     }
 
@@ -132,8 +141,11 @@ contract VaultConfigurationModule is Auth(msg.sender, Authority(address(0))) {
     /// float percentage or the default target float percentage if a custom percentage is not set.
     /// @param vault The Vault to sync the target float percentage for.
     function syncTargetFloatPercent(Vault vault) external {
+        // Get the Vault's custom target float percentage.
         uint256 customTargetFloatPercent = getVaultCustomTargetFloatPercent[vault];
 
+        // Set the Vault's target float percentage to the custom target float percentage
+        // or the default target float percentage if a custom percentage isn't set.
         vault.setTargetFloatPercent(
             customTargetFloatPercent == 0 ? defaultTargetFloatPercent : customTargetFloatPercent
         );
