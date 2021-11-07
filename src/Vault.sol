@@ -403,6 +403,9 @@ contract Vault is ERC20, Auth {
             require(block.timestamp <= lastHarvestWindowStart + harvestWindow, "BAD_HARVEST_TIME");
         }
 
+        // Get the Vault's current total strategy holdings.
+        uint256 strategyHoldings = totalStrategyHoldings;
+
         // Get the strategy's previous and current balance.
         uint256 balanceLastHarvest = balanceOfStrategy[strategy];
         uint256 balanceThisHarvest = strategy.balanceOfUnderlying(address(this));
@@ -416,13 +419,21 @@ contract Vault is ERC20, Auth {
         uint256 feesAccrued = profitAccrued.fmul(feePercent, 1e18);
 
         // If we accrued any fees, mint an equivalent amount of fvTokens.
-        // Authorized users can claim the newly minted fvTokens at a later time.
-        // TODO: factoring out exchange rate manually is probably gonna give us the most savings!
-        if (feesAccrued != 0) _mint(address(this), feesAccrued.fdiv(exchangeRate(), BASE_UNIT));
+        // Authorized users can claim the newly minted fvTokens via claimFees.
+        if (feesAccrued != 0)
+            _mint(
+                address(this),
+                feesAccrued.fdiv(
+                    // Optimized equivalent to exchangeRate. We don't subtract
+                    // locked profit because it will always be 0 during a harvest.
+                    (strategyHoldings + totalFloat()).fdiv(totalSupply, BASE_UNIT),
+                    BASE_UNIT
+                )
+            );
 
         // Increase/decrease totalStrategyHoldings based on the profit/loss registered.
         // We cannot wrap the subtraction in parenthesis as it would underflow if the strategy had a loss.
-        totalStrategyHoldings = totalStrategyHoldings + balanceThisHarvest - balanceLastHarvest;
+        totalStrategyHoldings = strategyHoldings + balanceThisHarvest - balanceLastHarvest;
 
         // Update our stored balance for the strategy.
         balanceOfStrategy[strategy] = balanceThisHarvest;
