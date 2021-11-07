@@ -126,30 +126,23 @@ contract Vault is ERC20, Auth {
 
     /// @notice Emitted when the harvest delay is updated.
     /// @param newHarvestDelay The updated harvest delay.
-    event HarvestDelayUpdated(uint256 newHarvestDelay);
+    event HarvestDelayUpdated(uint128 newHarvestDelay);
 
     /// @notice Emitted when the harvest delay is scheduled to be updated next harvest.
     /// @param newHarvestDelay The scheduled updated harvest delay.
-    event HarvestDelayUpdateScheduled(uint256 newHarvestDelay);
+    event HarvestDelayUpdateScheduled(uint128 newHarvestDelay);
 
     /// @notice The period in seconds over which locked profit is unlocked.
     /// @dev Cannot be 0 as it opens harvests up to sandwich attacks.
-    uint256 public harvestDelay = 6 hours;
+    uint128 public harvestDelay = 6 hours;
 
     /// @notice The value that will replace harvestDelay next harvest.
     /// @dev In the case that the next delay is 0, no update will be applied.
-    uint256 public nextHarvestDelay;
-
-    // TODO: packing these two uints above might be a good idea.!!
-    // TODO: packing these two uints above might be a good idea.!!
-    // TODO: packing these two uints above might be a good idea.!!
-    // TODO: packing these two uints above might be a good idea.!!
-    // TODO: packing these two uints above might be a good idea.!!
-    // TODO: packing these two uints above might be a good idea.!!
+    uint128 public nextHarvestDelay;
 
     /// @notice Set a new harvest delay delay to be applied next harvest.
     /// @param newHarvestDelay The new harvest delay to set.
-    function scheduleHarvestUnlockDelayUpdate(uint256 newHarvestDelay) external requiresAuth {
+    function scheduleHarvestUnlockDelayUpdate(uint128 newHarvestDelay) external requiresAuth {
         // A harvest delay of 0 makes harvests vulnerable to sandwich attacks.
         require(newHarvestDelay != 0, "DELAY_CANNOT_BE_ZERO");
 
@@ -440,34 +433,22 @@ contract Vault is ERC20, Auth {
         // Update our stored balance for the strategy.
         balanceOfStrategy[strategy] = balanceThisHarvest;
 
-        // TODO: can we pack these uwu
-
         // Update the max amount of locked profit.
         maxLockedProfit = profitAccrued - feesAccrued;
 
         // Update the last harvest timestamp.
         lastHarvest = block.timestamp;
 
-        // TODO: can we pack these uwu
-
         // Get the next harvest delay.
-        uint256 newHarvestDelay = nextHarvestDelay;
+        uint128 newHarvestDelay = nextHarvestDelay;
 
         // If the next harvest delay is not 0:
         if (newHarvestDelay != 0) {
-            // TODO: can we pack these uwu
-
-            // TODO: can we pack these uwu
-
             // Update the harvest delay.
             harvestDelay = newHarvestDelay;
 
             // Reset the next harvest delay.
             newHarvestDelay = 0;
-
-            // TODO: can we pack these uwu
-
-            // TODO: can we pack these uwu
 
             emit HarvestDelayUpdated(newHarvestDelay);
         }
