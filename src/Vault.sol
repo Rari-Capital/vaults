@@ -7,6 +7,7 @@ import {ERC20} from "solmate/tokens/ERC20.sol";
 import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 
+import {SafeCastLib} from "./libraries/SafeCastLib.sol";
 import {Strategy, ERC20Strategy, ETHStrategy} from "./interfaces/Strategy.sol";
 
 import {VaultFactory} from "./VaultFactory.sol";
@@ -15,6 +16,7 @@ import {VaultFactory} from "./VaultFactory.sol";
 /// @author Transmissions11 + JetJadeja
 /// @notice Minimalist yield aggregator designed to support any ERC20 token.
 contract Vault is ERC20, Auth {
+    using SafeCastLib for uint256;
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
 
@@ -310,8 +312,7 @@ contract Vault is ERC20, Auth {
             uint256 targetFloatDelta = (totalHoldings() - underlyingAmount).fmul(targetFloatPercent, 1e18);
 
             // Pull the desired amount from the withdrawal queue.
-            // TODO: need safe cast?
-            pullFromWithdrawalQueue(uint248(floatDelta + targetFloatDelta));
+            pullFromWithdrawalQueue((floatDelta + targetFloatDelta).safeCastTo224());
         }
 
         // Transfer the provided amount of underlying tokens.
@@ -443,8 +444,7 @@ contract Vault is ERC20, Auth {
         totalStrategyHoldings = strategyHoldings + balanceThisHarvest - balanceLastHarvest;
 
         // Update our stored balance for the strategy.
-        // TODO: need safecast here
-        getStrategyData[strategy].balance = uint248(balanceThisHarvest);
+        getStrategyData[strategy].balance = balanceThisHarvest.safeCastTo224();
 
         // Update the max amount of locked profit.
         maxLockedProfit = uint128(profitAccrued - feesAccrued);
