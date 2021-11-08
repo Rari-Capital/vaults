@@ -50,7 +50,7 @@ contract Vault is ERC20, Auth {
         BASE_UNIT = 10**decimals;
 
         // Prevent minting of fvTokens until
-        // the Vault is initialize is called.
+        // the initialize function is called.
         totalSupply = type(uint256).max;
     }
 
@@ -693,8 +693,9 @@ contract Vault is ERC20, Auth {
 
                 emit StrategyWithdrawal(strategy, amountToPull);
 
-                // If we depleted the strategy, pop it from the queue.
+                // If we fully depleted the strategy:
                 if (strategyBalanceAfterWithdrawal == 0) {
+                    // Remove it from the queue.
                     withdrawalQueue.pop();
 
                     emit WithdrawalQueuePopped(strategy);
@@ -721,6 +722,7 @@ contract Vault is ERC20, Auth {
     /// @notice Push a single strategy to front of the withdrawal queue.
     /// @param strategy The strategy to be inserted at the front of the withdrawal queue.
     function pushToWithdrawalQueue(Strategy strategy) external requiresAuth {
+        // Push the strategy to the front of the queue.
         withdrawalQueue.push(strategy);
 
         emit WithdrawalQueuePushed(strategy);
@@ -733,6 +735,7 @@ contract Vault is ERC20, Auth {
         // Get the (soon to be) popped strategy.
         Strategy poppedStrategy = withdrawalQueue[withdrawalQueue.length - 1];
 
+        // Pop the first strategy in the queue.
         withdrawalQueue.pop();
 
         emit WithdrawalQueuePopped(poppedStrategy);
@@ -741,6 +744,7 @@ contract Vault is ERC20, Auth {
     /// @notice Set the withdrawal queue.
     /// @param newQueue The new withdrawal queue.
     function setWithdrawalQueue(Strategy[] calldata newQueue) external requiresAuth {
+        // Replace the withdrawal queue.
         withdrawalQueue = newQueue;
 
         emit WithdrawalQueueSet(newQueue);
@@ -753,6 +757,7 @@ contract Vault is ERC20, Auth {
         // Get the (soon to be) replaced strategy.
         Strategy replacedStrategy = withdrawalQueue[index];
 
+        // Update the index with the replacement strategy.
         withdrawalQueue[index] = replacementStrategy;
 
         emit WithdrawalQueueIndexReplaced(index, replacedStrategy, replacementStrategy);
@@ -782,6 +787,7 @@ contract Vault is ERC20, Auth {
         Strategy newStrategy2 = withdrawalQueue[index1];
         Strategy newStrategy1 = withdrawalQueue[index2];
 
+        // Swap the strategies at both indexes.
         withdrawalQueue[index1] = newStrategy1;
         withdrawalQueue[index2] = newStrategy2;
 
