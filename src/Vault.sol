@@ -63,7 +63,7 @@ contract Vault is ERC20, Auth {
     uint256 public feePercent;
 
     /// @notice Emitted when the fee percentage is updated.
-    /// @param newFeePercent The updated fee percentage.
+    /// @param newFeePercent The new fee percentage.
     event FeePercentUpdated(uint256 newFeePercent);
 
     /// @notice Set a new fee percentage.
@@ -83,11 +83,11 @@ contract Vault is ERC20, Auth {
     //////////////////////////////////////////////////////////////*/
 
     //// @notice Emitted when the harvest window is updated.
-    //// @param newHarvestWindow The updated harvest window.
+    //// @param newHarvestWindow The new harvest window.
     event HarvestWindowUpdated(uint128 newHarvestWindow);
 
     /// @notice Emitted when the harvest delay is updated.
-    /// @param newHarvestDelay The updated harvest delay.
+    /// @param newHarvestDelay The new harvest delay.
     event HarvestDelayUpdated(uint64 newHarvestDelay);
 
     /// @notice Emitted when the harvest delay is scheduled to be updated next harvest.
@@ -155,7 +155,7 @@ contract Vault is ERC20, Auth {
     uint256 public targetFloatPercent;
 
     /// @notice Emitted when the target float percentage is updated.
-    /// @param newTargetFloatPercent The updated target float percentage.
+    /// @param newTargetFloatPercent The new target float percentage.
     event TargetFloatPercentUpdated(uint256 newTargetFloatPercent);
 
     /// @notice Set a new target float percentage.
@@ -327,7 +327,7 @@ contract Vault is ERC20, Auth {
             // Compute the amount needed to reach our target float percentage.
             uint256 targetFloatDelta = (totalHoldings() - underlyingAmount).fmul(targetFloatPercent, 1e18);
 
-            // Pull the desired amount from the withdrawal queue.
+            // Pull the necessary amount from the withdrawal queue.
             pullFromWithdrawalQueue((floatDelta + targetFloatDelta).safeCastTo224());
         }
 
