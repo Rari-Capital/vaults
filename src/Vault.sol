@@ -10,8 +10,6 @@ import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 
 import {Strategy, ERC20Strategy, ETHStrategy} from "./interfaces/Strategy.sol";
 
-import {VaultFactory} from "./VaultFactory.sol";
-
 /// @title Rari Vault (rvToken)
 /// @author Transmissions11 and JetJadeja
 /// @notice Minimalist yield aggregator designed to support any ERC20 token.
@@ -43,7 +41,7 @@ contract Vault is ERC20, Auth {
             // ex: 18
             _UNDERLYING.decimals()
         )
-        Auth(VaultFactory(msg.sender).owner(), VaultFactory(msg.sender).authority())
+        Auth(Auth(msg.sender).owner(), Auth(msg.sender).authority())
     {
         UNDERLYING = _UNDERLYING;
 
