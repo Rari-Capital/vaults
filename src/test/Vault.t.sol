@@ -21,6 +21,7 @@ contract VaultsTest is DSTestPlus {
 
     function setUp() public {
         underlying = new MockERC20("Mock Token", "TKN", 18);
+
         vault = new VaultFactory().deployVault(underlying);
 
         vault.setFeePercent(0.1e18);
@@ -35,7 +36,7 @@ contract VaultsTest is DSTestPlus {
     }
 
     /*///////////////////////////////////////////////////////////////
-                      BASIC DEPOSIT/WITHDRAWAL TESTS
+                        DEPOSIT/WITHDRAWAL TESTS
     //////////////////////////////////////////////////////////////*/
 
     function testAtomicDepositWithdraw() public {
@@ -146,7 +147,7 @@ contract VaultsTest is DSTestPlus {
     }
 
     /*///////////////////////////////////////////////////////////////
-                  BASIC STRATEGY DEPOSIT/WITHDRAWAL TESTS
+                     STRATEGY DEPOSIT/WITHDRAWAL TESTS
     //////////////////////////////////////////////////////////////*/
 
     function testAtomicEnterExitSinglePool() public {
@@ -294,7 +295,7 @@ contract VaultsTest is DSTestPlus {
     }
 
     /*///////////////////////////////////////////////////////////////
-                         BASIC HARVEST TESTS
+                             HARVEST TESTS
     //////////////////////////////////////////////////////////////*/
 
     function testProfitableHarvest() public {

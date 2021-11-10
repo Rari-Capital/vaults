@@ -11,15 +11,15 @@ contract MockStrategy is ERC20("Mock cToken Strategy", "cMOCK", 18), ERC20Strate
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
 
-    /*///////////////////////////////////////////////////////////////
-                           STRATEGY FUNCTIONS
-    //////////////////////////////////////////////////////////////*/
-
     constructor(ERC20 _UNDERLYING) {
         UNDERLYING = _UNDERLYING;
 
         BASE_UNIT = 10**_UNDERLYING.decimals();
     }
+
+    /*///////////////////////////////////////////////////////////////
+                             STRATEGY LOGIC
+    //////////////////////////////////////////////////////////////*/
 
     function isCEther() external pure override returns (bool) {
         return false;
@@ -50,7 +50,7 @@ contract MockStrategy is ERC20("Mock cToken Strategy", "cMOCK", 18), ERC20Strate
     }
 
     /*///////////////////////////////////////////////////////////////
-                             INTERNAL LOGIC
+                            INTERNAL LOGIC
     //////////////////////////////////////////////////////////////*/
 
     ERC20 internal immutable UNDERLYING;
@@ -66,7 +66,7 @@ contract MockStrategy is ERC20("Mock cToken Strategy", "cMOCK", 18), ERC20Strate
     }
 
     /*///////////////////////////////////////////////////////////////
-                             MOCK FUNCTIONS
+                              MOCK LOGIC
     //////////////////////////////////////////////////////////////*/
 
     function simulateLoss(uint256 underlyingAmount) external {

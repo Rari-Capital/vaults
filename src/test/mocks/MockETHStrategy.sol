@@ -12,7 +12,7 @@ contract MockETHStrategy is ERC20("Mock cEther Strategy", "cEther", 18), ETHStra
     using FixedPointMathLib for uint256;
 
     /*///////////////////////////////////////////////////////////////
-                           STRATEGY FUNCTIONS
+                             STRATEGY LOGIC
     //////////////////////////////////////////////////////////////*/
 
     function isCEther() external pure override returns (bool) {
@@ -36,7 +36,7 @@ contract MockETHStrategy is ERC20("Mock cEther Strategy", "cEther", 18), ETHStra
     }
 
     /*///////////////////////////////////////////////////////////////
-                             INTERNAL LOGIC
+                            INTERNAL LOGIC
     //////////////////////////////////////////////////////////////*/
 
     function exchangeRate() internal view returns (uint256) {
@@ -48,7 +48,7 @@ contract MockETHStrategy is ERC20("Mock cEther Strategy", "cEther", 18), ETHStra
     }
 
     /*///////////////////////////////////////////////////////////////
-                             MOCK FUNCTIONS
+                              MOCK LOGIC
     //////////////////////////////////////////////////////////////*/
 
     function simulateLoss(uint256 underlyingAmount) external {
