@@ -686,10 +686,10 @@ contract Vault is ERC20, Auth {
                 // Cannot overflow as we cap the amount to pull at the amount left to pull.
                 amountLeftToPull -= amountToPull;
 
+                emit StrategyWithdrawal(strategy, amountToPull);
+
                 // Withdraw from the strategy and revert if returns an error code.
                 require(strategy.redeemUnderlying(amountToPull) == 0, "REDEEM_FAILED");
-
-                emit StrategyWithdrawal(strategy, amountToPull);
 
                 // If we fully depleted the strategy:
                 if (strategyBalanceAfterWithdrawal == 0) {
@@ -817,7 +817,7 @@ contract Vault is ERC20, Auth {
         if (totalHoldings() >= strategyBalance) maxLockedProfit = 0;
 
         // Decrease the total by the strategy's balance.
-        totalStrategyHoldings - strategyBalance;
+        totalStrategyHoldings -= strategyBalance;
 
         // Set the strategy's balance to 0.
         getStrategyData[strategy].balance = 0;
@@ -840,10 +840,10 @@ contract Vault is ERC20, Auth {
     /// @param fvTokenAmount The amount of fvTokens to claim.
     /// @dev Accrued fees are measured as fvTokens held by the Vault.
     function claimFees(uint256 fvTokenAmount) external requiresAuth {
+        emit FeesClaimed(fvTokenAmount);
+
         // Transfer the provided amount of fvTokens to the caller.
         ERC20(this).safeTransfer(msg.sender, fvTokenAmount);
-
-        emit FeesClaimed(fvTokenAmount);
     }
 
     /*///////////////////////////////////////////////////////////////
