@@ -419,6 +419,7 @@ contract Vault is ERC20, Auth {
         // If this is the first harvest after the last window:
         if (block.timestamp >= lastHarvest + harvestDelay) {
             // Set the harvest window's start timestamp.
+            // Cannot overflow 64 bits on human timescales.
             lastHarvestWindowStart = uint64(block.timestamp);
         } else {
             // We know this harvest is not the first in the window so we need to ensure it's within it.
@@ -464,6 +465,7 @@ contract Vault is ERC20, Auth {
         maxLockedProfit = (profitAccrued - feesAccrued).safeCastTo128();
 
         // Update the last harvest timestamp.
+        // Cannot overflow on human timescales.
         lastHarvest = uint64(block.timestamp);
 
         // Get the next harvest delay.
