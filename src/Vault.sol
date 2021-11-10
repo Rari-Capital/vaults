@@ -815,8 +815,7 @@ contract Vault is ERC20, Auth {
 
         // If the strategy's balance exceeds the Vault's total
         // holdings, instantly unlock any remaining locked profit.
-        // Only necessary if the strategy has a lot of unlocked profit.
-        if (totalHoldings() >= strategyBalance) maxLockedProfit = 0;
+        if (strategyBalance > totalHoldings()) maxLockedProfit = 0;
 
         // Decrease the total by the strategy's balance.
         totalStrategyHoldings -= strategyBalance;
