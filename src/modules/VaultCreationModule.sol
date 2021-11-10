@@ -35,10 +35,17 @@ contract VaultCreationModule is Auth {
         configModule = _configModule;
     }
 
+    /// @notice Emitted when the config module is updated.
+    /// @param newConfigModule The new configuration module.
+    event ConfigModuleUpdated(VaultConfigurationModule newConfigModule);
+
     /// @notice Sets a new Vault configuration module.
     /// @param newConfigModule The Vault configuration module to set.
     function setConfigModule(VaultConfigurationModule newConfigModule) external requiresAuth {
+        // Update the config module.
         configModule = newConfigModule;
+
+        emit ConfigModuleUpdated(newConfigModule);
     }
 
     /// @notice Creates and properly configures a new Vault which supports a specific underlying token.
