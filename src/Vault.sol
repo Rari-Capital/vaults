@@ -235,7 +235,7 @@ contract Vault is ERC20, Auth {
     /// @notice An ordered array of strategies representing the withdrawal queue.
     /// @dev The queue is processed in descending order, meaning the last index will be withdrawn from first.
     /// @dev Strategies that are untrusted, duplicated, or have no balance are filtered out when encountered at
-    /// withdrawal time, not validated upfront, meaning the queue may not reflect the "true"  used for withdrawals.
+    /// withdrawal time, not validated upfront, meaning the queue may not reflect the "true" set used for withdrawals.
     Strategy[] public withdrawalQueue;
 
     /// @notice Gets the full withdrawal queue.
