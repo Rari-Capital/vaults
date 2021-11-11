@@ -753,7 +753,7 @@ contract Vault is ERC20, Auth {
     /// @notice Replace an index in the withdrawal queue with another strategy.
     /// @param index The index in the queue to replace.
     /// @param replacementStrategy The strategy to override the index with.
-    function replaceWithdrawalQueueIndex(uint256 index, Strategy replacementStrategy) external {
+    function replaceWithdrawalQueueIndex(uint256 index, Strategy replacementStrategy) external requiresAuth {
         // Get the (soon to be) replaced strategy.
         Strategy replacedStrategy = withdrawalQueue[index];
 
@@ -782,7 +782,7 @@ contract Vault is ERC20, Auth {
     /// @notice Swap two indexes in the withdrawal queue.
     /// @param index1 One index involved in the swap
     /// @param index2 The other index involved in the swap.
-    function swapWithdrawalQueueIndexes(uint256 index1, uint256 index2) external {
+    function swapWithdrawalQueueIndexes(uint256 index1, uint256 index2) external requiresAuth {
         // Get the (soon to be) new strategies at each index.
         Strategy newStrategy2 = withdrawalQueue[index1];
         Strategy newStrategy1 = withdrawalQueue[index2];
