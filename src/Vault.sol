@@ -328,7 +328,7 @@ contract Vault is ERC20, Auth {
             uint256 targetFloatDelta = (totalHoldings() - underlyingAmount).fmul(targetFloatPercent, 1e18);
 
             // Pull the necessary amount from the withdrawal queue.
-            pullFromWithdrawalQueue((floatDelta + targetFloatDelta).safeCastTo224());
+            pullFromWithdrawalQueue(floatDelta + targetFloatDelta);
         }
 
         // Transfer the provided amount of underlying tokens.
@@ -463,7 +463,7 @@ contract Vault is ERC20, Auth {
         // Update our stored balance for the strategy.
         getStrategyData[strategy].balance = balanceThisHarvest.safeCastTo224();
 
-        // Update the max amount of locked profit
+        // Update the max amount of locked profit.
         maxLockedProfit = (profitAccrued - feesAccrued).safeCastTo128();
 
         // Update the last harvest timestamp.
@@ -825,18 +825,21 @@ contract Vault is ERC20, Auth {
         // A strategy must be trusted before it can be seized.
         require(getStrategyData[strategy].trusted, "UNTRUSTED_STRATEGY");
 
-        // Get balance the strategy last reported holding.
+        // Get the strategy's last reported balance of underlying tokens.
         uint256 strategyBalance = getStrategyData[strategy].balance;
 
-        // If the strategy's balance exceeds the Vault's total
+        // If the strategy's balance exceeds the Vault's current
         // holdings, instantly unlock any remaining locked profit.
         if (strategyBalance > totalHoldings()) maxLockedProfit = 0;
 
-        // Decrease the total by the strategy's balance.
-        totalStrategyHoldings -= strategyBalance;
-
         // Set the strategy's balance to 0.
         getStrategyData[strategy].balance = 0;
+
+        unchecked {
+            // Decrease totalStrategyHoldings to account for the seize.
+            // Cannot underflow as the balance of one strategy will never exceed the sum of all.
+            totalStrategyHoldings -= strategyBalance;
+        }
 
         emit StrategySeized(strategy);
 
