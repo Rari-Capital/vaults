@@ -234,6 +234,8 @@ contract Vault is ERC20, Auth {
 
     /// @notice An ordered array of strategies representing the withdrawal queue.
     /// @dev The queue is processed in descending order, meaning the last index will be withdrawn from first.
+    /// @dev Strategies that are untrusted, duplicated, or have no balance are filtered out when encountered at
+    /// withdrawal time, not validated upfront, meaning the queue may not reflect the "true"  used for withdrawals.
     Strategy[] public withdrawalQueue;
 
     /// @notice Gets the full withdrawal queue.
@@ -657,12 +659,8 @@ contract Vault is ERC20, Auth {
         // We will update this variable as we pull from strategies.
         uint256 amountLeftToPull = underlyingAmount;
 
-        // Store the starting index which is at the tip of the queue.
-        // Will revert due to underflow if there are no strategies in the queue.
-        uint256 startingIndex = withdrawalQueue.length - 1;
-
-        // We will use this after the loop to check how many strategies we withdrew from.
-        uint256 currentIndex = startingIndex;
+        // We'll at the tip of the queue and pop strategies until we've pulled the entire amount.
+        uint256 currentIndex = withdrawalQueue.length - 1;
 
         // Iterate in reverse so we pull from the queue in a "last in, first out" manner.
         // Will revert due to underflow if we empty the queue before pulling the desired amount.
@@ -672,6 +670,17 @@ contract Vault is ERC20, Auth {
 
             // Get the balance of the strategy before we withdraw from it.
             uint256 strategyBalance = getStrategyData[strategy].balance;
+
+            // If the strategy is currently untrusted or was already depleted:
+            if (!getStrategyData[strategy].trusted || strategyBalance == 0) {
+                // Remove it from the queue.
+                withdrawalQueue.pop();
+
+                emit WithdrawalQueuePopped(strategy);
+
+                // Move on to the next strategy.
+                continue;
+            }
 
             // We want to pull as much as we can from the strategy, but no more than we need.
             uint256 amountToPull = FixedPointMathLib.min(amountLeftToPull, strategyBalance);
@@ -721,6 +730,8 @@ contract Vault is ERC20, Auth {
 
     /// @notice Push a single strategy to front of the withdrawal queue.
     /// @param strategy The strategy to be inserted at the front of the withdrawal queue.
+    /// @dev Strategies that are untrusted, duplicated, or have no balance are
+    /// filtered out when encountered at withdrawal time, not validated upfront.
     function pushToWithdrawalQueue(Strategy strategy) external requiresAuth {
         // Push the strategy to the front of the queue.
         withdrawalQueue.push(strategy);
@@ -743,6 +754,8 @@ contract Vault is ERC20, Auth {
 
     /// @notice Set the withdrawal queue.
     /// @param newQueue The new withdrawal queue.
+    /// @dev Strategies that are untrusted, duplicated, or have no balance are
+    /// filtered out when encountered at withdrawal time, not validated upfront.
     function setWithdrawalQueue(Strategy[] calldata newQueue) external requiresAuth {
         // Replace the withdrawal queue.
         withdrawalQueue = newQueue;
@@ -753,6 +766,8 @@ contract Vault is ERC20, Auth {
     /// @notice Replace an index in the withdrawal queue with another strategy.
     /// @param index The index in the queue to replace.
     /// @param replacementStrategy The strategy to override the index with.
+    /// @dev Strategies that are untrusted, duplicated, or have no balance are
+    /// filtered out when encountered at withdrawal time, not validated upfront.
     function replaceWithdrawalQueueIndex(uint256 index, Strategy replacementStrategy) external requiresAuth {
         // Get the (soon to be) replaced strategy.
         Strategy replacedStrategy = withdrawalQueue[index];
