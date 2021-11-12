@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.8.9;
 
+import {WETH} from "solmate/tokens/WETH.sol";
+import {Authority} from "solmate/auth/Auth.sol";
+import {DSTestPlus} from "solmate/test/utils/DSTestPlus.sol";
 import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
 
-import {DSTestPlus} from "./utils/DSTestPlus.sol";
-
-import {MockStrategy} from "./mocks/MockStrategy.sol";
+import {MockETHStrategy} from "./mocks/MockETHStrategy.sol";
+import {MockERC20Strategy} from "./mocks/MockERC20Strategy.sol";
 
 import {Strategy} from "../interfaces/Strategy.sol";
 
@@ -16,13 +18,13 @@ contract VaultsTest is DSTestPlus {
     Vault vault;
     MockERC20 underlying;
 
-    MockStrategy strategy1;
-    MockStrategy strategy2;
+    MockERC20Strategy strategy1;
+    MockERC20Strategy strategy2;
 
     function setUp() public {
         underlying = new MockERC20("Mock Token", "TKN", 18);
 
-        vault = new VaultFactory().deployVault(underlying);
+        vault = new VaultFactory(address(this), Authority(address(0))).deployVault(underlying);
 
         vault.setFeePercent(0.1e18);
         vault.setHarvestDelay(6 hours);
@@ -31,8 +33,8 @@ contract VaultsTest is DSTestPlus {
 
         vault.initialize();
 
-        strategy1 = new MockStrategy(underlying);
-        strategy2 = new MockStrategy(underlying);
+        strategy1 = new MockERC20Strategy(underlying);
+        strategy2 = new MockERC20Strategy(underlying);
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -330,7 +332,15 @@ contract VaultsTest is DSTestPlus {
         assertEq(vault.balanceOf(address(vault)), 0);
         assertEq(vault.balanceOfUnderlying(address(vault)), 0);
 
+        assertEq(vault.lastHarvest(), 0);
+        assertEq(vault.lastHarvestWindowStart(), 0);
+
         vault.harvest(strategy1);
+
+        uint256 startingTimestamp = block.timestamp;
+
+        assertEq(vault.lastHarvest(), startingTimestamp);
+        assertEq(vault.lastHarvestWindowStart(), startingTimestamp);
 
         assertEq(vault.exchangeRate(), 1e18);
         assertEq(vault.totalStrategyHoldings(), 1.5e18);
@@ -413,7 +423,15 @@ contract VaultsTest is DSTestPlus {
         assertEq(vault.balanceOf(address(vault)), 0);
         assertEq(vault.balanceOfUnderlying(address(vault)), 0);
 
+        assertEq(vault.lastHarvest(), 0);
+        assertEq(vault.lastHarvestWindowStart(), 0);
+
         vault.harvest(strategy1);
+
+        uint256 startingTimestamp = block.timestamp;
+
+        assertEq(vault.lastHarvest(), startingTimestamp);
+        assertEq(vault.lastHarvestWindowStart(), startingTimestamp);
 
         assertEq(vault.exchangeRate(), 0.5e18);
         assertEq(vault.totalStrategyHoldings(), 0.5e18);
@@ -440,19 +458,97 @@ contract VaultsTest is DSTestPlus {
         assertEq(vault.balanceOfUnderlying(address(vault)), 0);
     }
 
-    /*///////////////////////////////////////////////////////////////
-                            EDGE CASE TESTS
-    //////////////////////////////////////////////////////////////*/
+    function testMultipleHarvestsInWindow() public {
+        underlying.mint(address(this), 1.5e18);
 
-    function testFailTrustStrategyWithWrongUnderlying() public {
-        MockERC20 wrongUnderlying = new MockERC20("Not The Right Token", "TKN2", 18);
+        underlying.approve(address(vault), 1e18);
+        vault.deposit(1e18);
 
-        MockStrategy badStrategy = new MockStrategy(wrongUnderlying);
+        vault.trustStrategy(strategy1);
+        vault.depositIntoStrategy(strategy1, 0.5e18);
 
-        vault.trustStrategy(badStrategy);
+        vault.trustStrategy(strategy2);
+        vault.depositIntoStrategy(strategy2, 0.5e18);
+
+        assertEq(vault.lastHarvest(), 0);
+        assertEq(vault.lastHarvestWindowStart(), 0);
+
+        vault.harvest(strategy1);
+        vault.harvest(strategy2);
+
+        uint256 startingTimestamp = block.timestamp;
+
+        assertEq(vault.lastHarvest(), startingTimestamp);
+        assertEq(vault.lastHarvestWindowStart(), startingTimestamp);
+
+        hevm.warp(block.timestamp + vault.harvestWindow() - 1);
+
+        vault.harvest(strategy1);
+        vault.harvest(strategy2);
+
+        assertEq(vault.lastHarvest(), block.timestamp);
+        assertEq(vault.lastHarvestWindowStart(), startingTimestamp);
     }
 
-    function testFailWithdrawWithEmptyQueue() public {
+    function testUpdatingHarvestDelay() public {
+        assertEq(vault.harvestDelay(), 6 hours);
+        assertEq(vault.nextHarvestDelay(), 0);
+
+        vault.setHarvestDelay(12 hours);
+
+        assertEq(vault.harvestDelay(), 6 hours);
+        assertEq(vault.nextHarvestDelay(), 12 hours);
+
+        vault.trustStrategy(strategy1);
+        vault.harvest(strategy1);
+
+        assertEq(vault.harvestDelay(), 12 hours);
+        assertEq(vault.nextHarvestDelay(), 0);
+    }
+
+    function testClaimFees() public {
+        underlying.mint(address(this), 1e18);
+
+        underlying.approve(address(vault), 1e18);
+        vault.deposit(1e18);
+
+        vault.transfer(address(vault), 1e18);
+
+        assertEq(vault.balanceOf(address(vault)), 1e18);
+        assertEq(vault.balanceOf(address(this)), 0);
+
+        vault.claimFees(1e18);
+
+        assertEq(vault.balanceOf(address(vault)), 0);
+        assertEq(vault.balanceOf(address(this)), 1e18);
+    }
+
+    /*///////////////////////////////////////////////////////////////
+                        HARVEST SANITY CHECK TESTS
+    //////////////////////////////////////////////////////////////*/
+
+    function testFailHarvestAfterWindowBeforeDelay() public {
+        underlying.mint(address(this), 1.5e18);
+
+        underlying.approve(address(vault), 1e18);
+        vault.deposit(1e18);
+
+        vault.trustStrategy(strategy1);
+        vault.depositIntoStrategy(strategy1, 0.5e18);
+
+        vault.trustStrategy(strategy2);
+        vault.depositIntoStrategy(strategy2, 0.5e18);
+
+        vault.harvest(strategy1);
+        vault.harvest(strategy2);
+
+        hevm.warp(block.timestamp + vault.harvestWindow() + 1);
+
+        vault.harvest(strategy1);
+        vault.harvest(strategy2);
+    }
+
+    function testFailHarvestUntrustedStrategy() public {
         underlying.mint(address(this), 1e18);
 
         underlying.approve(address(vault), 1e18);
@@ -461,51 +557,10 @@ contract VaultsTest is DSTestPlus {
         vault.trustStrategy(strategy1);
         vault.depositIntoStrategy(strategy1, 1e18);
 
-        vault.redeem(1e18);
+        vault.distrustStrategy(strategy1);
+
+        vault.harvest(strategy1);
     }
-
-    function testFailWithdrawWithIncompleteQueue() public {
-        underlying.mint(address(this), 1e18);
-
-        underlying.approve(address(vault), 1e18);
-        vault.deposit(1e18);
-
-        vault.trustStrategy(strategy1);
-        vault.depositIntoStrategy(strategy1, 0.5e18);
-
-        vault.pushToWithdrawalQueue(strategy1);
-
-        vault.trustStrategy(strategy2);
-        vault.depositIntoStrategy(strategy2, 0.5e18);
-
-        vault.redeem(1e18);
-    }
-
-    // function testUpdatingProfitUnlockDelayWhileProfitIsStillLocked() public {
-    //     underlying.mint(address(this), 1.5e18);
-
-    //     underlying.approve(address(vault), 1e18);
-    //     vault.deposit(1e18);
-
-    //     vault.trustStrategy(strategy1);
-    //     vault.depositIntoStrategy(strategy1, 1e18);
-    //     vault.pushToWithdrawalQueue(strategy1);
-
-    //     underlying.transfer(address(strategy1), 0.5e18);
-    //     vault.harvest(strategy1);
-
-    //     hevm.warp(block.timestamp + (vault.harvestDelay() / 2));
-    //     assertEq(vault.balanceOfUnderlying(address(this)), 1.25e18);
-
-    //     vault.setHarvestDelay(vault.harvestDelay() * 2);
-    //     assertEq(vault.balanceOfUnderlying(address(this)), 1.125e18);
-
-    //     hevm.warp(block.timestamp + vault.harvestDelay());
-    //     assertEq(vault.balanceOfUnderlying(address(this)), 1.5e18);
-
-    //     vault.redeem(1e18);
-    //     assertEq(underlying.balanceOf(address(this)), 1.5e18);
-    // }
 
     /*///////////////////////////////////////////////////////////////
                         WITHDRAWAL QUEUE TESTS
@@ -532,19 +587,15 @@ contract VaultsTest is DSTestPlus {
         vault.pushToWithdrawalQueue(Strategy(address(69420)));
 
         vault.popFromWithdrawalQueue();
-
         assertEq(vault.getWithdrawalQueue().length, 3);
 
         vault.popFromWithdrawalQueue();
-
         assertEq(vault.getWithdrawalQueue().length, 2);
 
         vault.popFromWithdrawalQueue();
-
         assertEq(vault.getWithdrawalQueue().length, 1);
 
         vault.popFromWithdrawalQueue();
-
         assertEq(vault.getWithdrawalQueue().length, 0);
     }
 
@@ -591,5 +642,304 @@ contract VaultsTest is DSTestPlus {
         assertEq(vault.getWithdrawalQueue().length, 4);
         assertEq(address(vault.withdrawalQueue(1)), address(1003));
         assertEq(address(vault.withdrawalQueue(2)), address(1002));
+    }
+
+    /*///////////////////////////////////////////////////////////////
+                            EDGE CASE TESTS
+    //////////////////////////////////////////////////////////////*/
+
+    function testWithdrawingWithDuplicateStrategiesInQueue() public {
+        underlying.mint(address(this), 1e18);
+
+        underlying.approve(address(vault), 1e18);
+        vault.deposit(1e18);
+
+        vault.trustStrategy(strategy1);
+        vault.depositIntoStrategy(strategy1, 0.5e18);
+
+        vault.trustStrategy(strategy2);
+        vault.depositIntoStrategy(strategy2, 0.5e18);
+
+        vault.pushToWithdrawalQueue(strategy1);
+        vault.pushToWithdrawalQueue(strategy1);
+        vault.pushToWithdrawalQueue(strategy2);
+        vault.pushToWithdrawalQueue(strategy1);
+        vault.pushToWithdrawalQueue(strategy1);
+
+        assertEq(vault.getWithdrawalQueue().length, 5);
+
+        vault.redeem(1e18);
+
+        assertEq(vault.getWithdrawalQueue().length, 2);
+
+        assertEq(address(vault.withdrawalQueue(0)), address(strategy1));
+        assertEq(address(vault.withdrawalQueue(1)), address(strategy1));
+    }
+
+    function testWithdrawingWithUntrustedStrategyInQueue() public {
+        underlying.mint(address(this), 1e18);
+
+        underlying.approve(address(vault), 1e18);
+        vault.deposit(1e18);
+
+        vault.trustStrategy(strategy1);
+        vault.depositIntoStrategy(strategy1, 0.5e18);
+
+        vault.trustStrategy(strategy2);
+        vault.depositIntoStrategy(strategy2, 0.5e18);
+
+        vault.pushToWithdrawalQueue(strategy2);
+        vault.pushToWithdrawalQueue(strategy2);
+        vault.pushToWithdrawalQueue(new MockERC20Strategy(underlying));
+        vault.pushToWithdrawalQueue(strategy1);
+        vault.pushToWithdrawalQueue(strategy1);
+
+        assertEq(vault.getWithdrawalQueue().length, 5);
+
+        vault.redeem(1e18);
+
+        assertEq(vault.getWithdrawalQueue().length, 1);
+
+        assertEq(address(vault.withdrawalQueue(0)), address(strategy2));
+    }
+
+    function testSeizeStrategy() public {
+        underlying.mint(address(this), 1e18);
+
+        underlying.approve(address(vault), 1e18);
+        vault.deposit(1e18);
+
+        vault.trustStrategy(strategy1);
+        vault.depositIntoStrategy(strategy1, 1e18);
+
+        assertEq(strategy1.balanceOf(address(vault)), 1e18);
+        assertEq(strategy1.balanceOf(address(this)), 0);
+
+        assertEq(vault.totalHoldings(), 1e18);
+        assertEq(vault.totalStrategyHoldings(), 1e18);
+        assertEq(vault.totalFloat(), 0);
+
+        vault.seizeStrategy(strategy1);
+
+        assertEq(strategy1.balanceOf(address(vault)), 0);
+        assertEq(strategy1.balanceOf(address(this)), 1e18);
+
+        assertEq(vault.totalHoldings(), 0);
+        assertEq(vault.totalStrategyHoldings(), 0);
+        assertEq(vault.totalFloat(), 0);
+
+        strategy1.redeemUnderlying(1e18);
+
+        assertEq(vault.totalHoldings(), 0);
+        assertEq(vault.totalStrategyHoldings(), 0);
+        assertEq(vault.totalFloat(), 0);
+
+        underlying.transfer(address(vault), 1e18);
+
+        assertEq(vault.totalHoldings(), 1e18);
+        assertEq(vault.totalStrategyHoldings(), 0);
+        assertEq(vault.totalFloat(), 1e18);
+
+        vault.withdraw(1e18);
+    }
+
+    function testSeizeStrategyWithBalanceGreaterThanTotalAssets() public {
+        underlying.mint(address(this), 1.5e18);
+
+        underlying.approve(address(vault), 1e18);
+        vault.deposit(1e18);
+
+        vault.trustStrategy(strategy1);
+        vault.depositIntoStrategy(strategy1, 1e18);
+
+        underlying.transfer(address(strategy1), 0.5e18);
+
+        vault.harvest(strategy1);
+
+        assertEq(vault.maxLockedProfit(), 0.45e18);
+        assertEq(vault.lockedProfit(), 0.45e18);
+
+        assertEq(vault.balanceOfUnderlying(address(this)), 1e18);
+
+        vault.seizeStrategy(strategy1);
+
+        assertEq(vault.maxLockedProfit(), 0);
+        assertEq(vault.lockedProfit(), 0);
+
+        strategy1.redeemUnderlying(1.5e18);
+        underlying.transfer(address(vault), 1.5e18);
+
+        assertEq(vault.balanceOfUnderlying(address(this)), 1428571428571428571);
+
+        vault.withdraw(1428571428571428571);
+    }
+
+    function testFailSeizeUntrustedStrategy() public {
+        underlying.mint(address(this), 1e18);
+
+        underlying.approve(address(vault), 1e18);
+        vault.deposit(1e18);
+
+        vault.trustStrategy(strategy1);
+        vault.depositIntoStrategy(strategy1, 1e18);
+
+        vault.distrustStrategy(strategy1);
+
+        vault.seizeStrategy(strategy1);
+    }
+
+    function testFailTrustStrategyWithWrongUnderlying() public {
+        MockERC20 wrongUnderlying = new MockERC20("Not The Right Token", "TKN2", 18);
+
+        MockERC20Strategy badStrategy = new MockERC20Strategy(wrongUnderlying);
+
+        vault.trustStrategy(badStrategy);
+    }
+
+    function testFailTrustStrategyWithETHUnderlying() public {
+        MockETHStrategy ethStrategy = new MockETHStrategy();
+
+        vault.trustStrategy(ethStrategy);
+    }
+
+    function testFailWithdrawWithEmptyQueue() public {
+        underlying.mint(address(this), 1e18);
+
+        underlying.approve(address(vault), 1e18);
+        vault.deposit(1e18);
+
+        vault.trustStrategy(strategy1);
+        vault.depositIntoStrategy(strategy1, 1e18);
+
+        vault.redeem(1e18);
+    }
+
+    function testFailWithdrawWithIncompleteQueue() public {
+        underlying.mint(address(this), 1e18);
+
+        underlying.approve(address(vault), 1e18);
+        vault.deposit(1e18);
+
+        vault.trustStrategy(strategy1);
+        vault.depositIntoStrategy(strategy1, 0.5e18);
+
+        vault.pushToWithdrawalQueue(strategy1);
+
+        vault.trustStrategy(strategy2);
+        vault.depositIntoStrategy(strategy2, 0.5e18);
+
+        vault.redeem(1e18);
+    }
+
+    function testFailInitializeTwice() public {
+        vault.initialize();
+    }
+}
+
+contract VaultsETHTest is DSTestPlus {
+    Vault wethVault;
+    WETH weth;
+
+    MockETHStrategy ethStrategy;
+    MockERC20Strategy erc20Strategy;
+
+    function setUp() public {
+        weth = new WETH();
+
+        wethVault = new VaultFactory(address(this), Authority(address(0))).deployVault(weth);
+
+        wethVault.setFeePercent(0.1e18);
+        wethVault.setHarvestDelay(6 hours);
+        wethVault.setHarvestWindow(5 minutes);
+        wethVault.setTargetFloatPercent(0.01e18);
+
+        wethVault.setUnderlyingIsWETH(true);
+
+        wethVault.initialize();
+
+        ethStrategy = new MockETHStrategy();
+        erc20Strategy = new MockERC20Strategy(weth);
+    }
+
+    function testAtomicDepositWithdrawIntoETHStrategies() public {
+        uint256 startingETHBal = address(this).balance;
+
+        weth.deposit{value: 1 ether}();
+
+        assertEq(address(this).balance, startingETHBal - 1 ether);
+
+        weth.approve(address(wethVault), 1e18);
+        wethVault.deposit(1e18);
+
+        wethVault.trustStrategy(ethStrategy);
+        wethVault.depositIntoStrategy(ethStrategy, 0.5e18);
+        wethVault.pushToWithdrawalQueue(ethStrategy);
+
+        wethVault.trustStrategy(erc20Strategy);
+        wethVault.depositIntoStrategy(erc20Strategy, 0.5e18);
+        wethVault.pushToWithdrawalQueue(erc20Strategy);
+
+        wethVault.withdrawFromStrategy(ethStrategy, 0.25e18);
+        wethVault.withdrawFromStrategy(erc20Strategy, 0.25e18);
+
+        wethVault.redeem(1e18);
+
+        weth.withdraw(1 ether);
+
+        assertEq(address(this).balance, startingETHBal);
+    }
+
+    function testTrustStrategyWithETHUnderlying() public {
+        wethVault.trustStrategy(ethStrategy);
+
+        (bool trusted, ) = wethVault.getStrategyData(ethStrategy);
+        assertTrue(trusted);
+    }
+
+    function testTrustStrategyWithWETHUnderlying() public {
+        wethVault.trustStrategy(erc20Strategy);
+
+        (bool trusted, ) = wethVault.getStrategyData(erc20Strategy);
+        assertTrue(trusted);
+    }
+
+    receive() external payable {}
+}
+
+contract UnInitializedVaultTest is DSTestPlus {
+    Vault vault;
+    MockERC20 underlying;
+
+    function setUp() public {
+        underlying = new MockERC20("Mock Token", "TKN", 18);
+
+        vault = new VaultFactory(address(this), Authority(address(0))).deployVault(underlying);
+
+        vault.setFeePercent(0.1e18);
+        vault.setHarvestDelay(6 hours);
+        vault.setHarvestWindow(5 minutes);
+        vault.setTargetFloatPercent(0.01e18);
+    }
+
+    function testFailDeposit() public {
+        underlying.mint(address(this), 1e18);
+
+        underlying.approve(address(vault), 1e18);
+        vault.deposit(1e18);
+    }
+
+    function testInitializeAndDeposit() public {
+        assertFalse(vault.isInitialized());
+        assertEq(vault.totalSupply(), type(uint256).max);
+
+        vault.initialize();
+
+        assertTrue(vault.isInitialized());
+        assertEq(vault.totalSupply(), 0);
+
+        underlying.mint(address(this), 1e18);
+
+        underlying.approve(address(vault), 1e18);
+        vault.deposit(1e18);
     }
 }

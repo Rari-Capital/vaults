@@ -15,7 +15,7 @@ contract VaultConfigurationModule is Auth {
 
     /// @notice Creates a Vault configuration module.
     /// @param _owner The owner of the module.
-    /// @param _authority The authority of the module.
+    /// @param _authority The Authority of the module.
     constructor(address _owner, Authority _authority) Auth(_owner, _authority) {}
 
     /*///////////////////////////////////////////////////////////////

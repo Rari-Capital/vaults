@@ -10,22 +10,27 @@ import {Vault} from "./Vault.sol";
 /// @title Rari Vault Factory
 /// @author Transmissions11 and JetJadeja
 /// @notice Factory which enables deploying a Vault contract for any ERC20 token.
-contract VaultFactory is Auth(msg.sender, Authority(address(0))) {
+contract VaultFactory is Auth {
     using Bytes32AddressLib for address;
     using Bytes32AddressLib for bytes32;
 
     /*///////////////////////////////////////////////////////////////
-                                 EVENTS
+                               CONSTRUCTOR
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Creates a Vault factory.
+    /// @param _owner The owner of the factory.
+    /// @param _authority The Authority of the factory.
+    constructor(address _owner, Authority _authority) Auth(_owner, _authority) {}
+
+    /*///////////////////////////////////////////////////////////////
+                          VAULT DEPLOYMENT LOGIC
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Emitted when a new Vault is deployed.
     /// @param vault The newly deployed Vault contract.
     /// @param underlying The underlying token the new Vault accepts.
     event VaultDeployed(Vault vault, ERC20 underlying);
-
-    /*///////////////////////////////////////////////////////////////
-                          VAULT DEPLOYMENT LOGIC
-    //////////////////////////////////////////////////////////////*/
 
     /// @notice Deploys a new Vault which supports a specific underlying token.
     /// @dev This will revert if a Vault that accepts the same underlying token has already been deployed.

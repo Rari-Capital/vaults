@@ -2,8 +2,8 @@
 pragma solidity 0.8.9;
 
 import {WETH} from "solmate/tokens/WETH.sol";
-
-import {DSTestPlus} from "./utils/DSTestPlus.sol";
+import {Authority} from "solmate/auth/Auth.sol";
+import {DSTestPlus} from "solmate/test/utils/DSTestPlus.sol";
 
 import {VaultRouterModule} from "../modules/VaultRouterModule.sol";
 
@@ -11,8 +11,6 @@ import {Vault} from "../Vault.sol";
 import {VaultFactory} from "../VaultFactory.sol";
 
 contract VaultRouterModuleTest is DSTestPlus {
-    VaultFactory vaultFactory;
-
     Vault wethVault;
     WETH weth;
 
@@ -21,7 +19,8 @@ contract VaultRouterModuleTest is DSTestPlus {
     function setUp() public {
         weth = new WETH();
 
-        wethVault = new VaultFactory().deployVault(weth);
+        wethVault = new VaultFactory(address(this), Authority(address(0))).deployVault(weth);
+
         wethVault.initialize();
 
         vaultRouterModule = new VaultRouterModule();

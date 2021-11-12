@@ -7,7 +7,7 @@ import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 
 import {ERC20Strategy} from "../../interfaces/Strategy.sol";
 
-contract MockStrategy is ERC20("Mock cToken Strategy", "cMOCK", 18), ERC20Strategy {
+contract MockERC20Strategy is ERC20("Mock cToken Strategy", "cMOCK", 18), ERC20Strategy {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
 
