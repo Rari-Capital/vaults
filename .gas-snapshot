@@ -1,3 +1,4 @@
+testIntegration() (gas: 5156301)
 testFailDeposit() (gas: 81044)
 testInitializeAndDeposit() (gas: 173808)
 testTrustStrategyWithWETHUnderlying() (gas: 27679)
