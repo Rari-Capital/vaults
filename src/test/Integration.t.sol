@@ -11,6 +11,8 @@ import {VaultCreationModule} from "../modules/VaultCreationModule.sol";
 import {VaultAuthorityModule} from "../modules/VaultAuthorityModule.sol";
 import {VaultConfigurationModule} from "../modules/VaultConfigurationModule.sol";
 
+import {Strategy} from "../interfaces/Strategy.sol";
+
 import {Vault} from "../Vault.sol";
 import {VaultFactory} from "../VaultFactory.sol";
 
@@ -85,14 +87,17 @@ contract IntegrationTest is DSTestPlus {
         assertEq(vault.feePercent(), 0.2e18);
 
         underlying.transfer(address(strategy1), 0.25e18);
-        vault.harvest(strategy1);
+
+        Strategy[] memory strategiesToHarvest = new Strategy[](2);
+        strategiesToHarvest[0] = strategy1;
+        strategiesToHarvest[1] = strategy2;
 
         underlying.transfer(address(strategy2), 0.25e18);
-        vault.harvest(strategy2);
+        vault.harvest(strategiesToHarvest);
 
-        hevm.warp(block.timestamp + 6 hours);
+        hevm.warp(block.timestamp + vault.harvestDelay());
 
-        vault.withdraw(1373626373626373626);
+        vault.withdraw(1363636363636363636);
         assertEq(vault.balanceOf(address(this)), 0);
     }
 }

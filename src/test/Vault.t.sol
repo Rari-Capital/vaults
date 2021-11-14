@@ -335,7 +335,10 @@ contract VaultsTest is DSTestPlus {
         assertEq(vault.lastHarvest(), 0);
         assertEq(vault.lastHarvestWindowStart(), 0);
 
-        vault.harvest(strategy1);
+        Strategy[] memory strategiesToHarvest = new Strategy[](1);
+        strategiesToHarvest[0] = strategy1;
+
+        vault.harvest(strategiesToHarvest);
 
         uint256 startingTimestamp = block.timestamp;
 
@@ -426,7 +429,10 @@ contract VaultsTest is DSTestPlus {
         assertEq(vault.lastHarvest(), 0);
         assertEq(vault.lastHarvestWindowStart(), 0);
 
-        vault.harvest(strategy1);
+        Strategy[] memory strategiesToHarvest = new Strategy[](1);
+        strategiesToHarvest[0] = strategy1;
+
+        vault.harvest(strategiesToHarvest);
 
         uint256 startingTimestamp = block.timestamp;
 
@@ -473,8 +479,11 @@ contract VaultsTest is DSTestPlus {
         assertEq(vault.lastHarvest(), 0);
         assertEq(vault.lastHarvestWindowStart(), 0);
 
-        vault.harvest(strategy1);
-        vault.harvest(strategy2);
+        Strategy[] memory strategiesToHarvest = new Strategy[](2);
+        strategiesToHarvest[0] = strategy1;
+        strategiesToHarvest[1] = strategy2;
+
+        vault.harvest(strategiesToHarvest);
 
         uint256 startingTimestamp = block.timestamp;
 
@@ -483,8 +492,7 @@ contract VaultsTest is DSTestPlus {
 
         hevm.warp(block.timestamp + vault.harvestWindow() - 1);
 
-        vault.harvest(strategy1);
-        vault.harvest(strategy2);
+        vault.harvest(strategiesToHarvest);
 
         assertEq(vault.lastHarvest(), block.timestamp);
         assertEq(vault.lastHarvestWindowStart(), startingTimestamp);
@@ -500,7 +508,11 @@ contract VaultsTest is DSTestPlus {
         assertEq(vault.nextHarvestDelay(), 12 hours);
 
         vault.trustStrategy(strategy1);
-        vault.harvest(strategy1);
+
+        Strategy[] memory strategiesToHarvest = new Strategy[](1);
+        strategiesToHarvest[0] = strategy1;
+
+        vault.harvest(strategiesToHarvest);
 
         assertEq(vault.harvestDelay(), 12 hours);
         assertEq(vault.nextHarvestDelay(), 0);
@@ -539,13 +551,15 @@ contract VaultsTest is DSTestPlus {
         vault.trustStrategy(strategy2);
         vault.depositIntoStrategy(strategy2, 0.5e18);
 
-        vault.harvest(strategy1);
-        vault.harvest(strategy2);
+        Strategy[] memory strategiesToHarvest = new Strategy[](2);
+        strategiesToHarvest[0] = strategy1;
+        strategiesToHarvest[1] = strategy2;
+
+        vault.harvest(strategiesToHarvest);
 
         hevm.warp(block.timestamp + vault.harvestWindow() + 1);
 
-        vault.harvest(strategy1);
-        vault.harvest(strategy2);
+        vault.harvest(strategiesToHarvest);
     }
 
     function testFailHarvestUntrustedStrategy() public {
@@ -559,7 +573,10 @@ contract VaultsTest is DSTestPlus {
 
         vault.distrustStrategy(strategy1);
 
-        vault.harvest(strategy1);
+        Strategy[] memory strategiesToHarvest = new Strategy[](1);
+        strategiesToHarvest[0] = strategy1;
+
+        vault.harvest(strategiesToHarvest);
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -620,6 +637,7 @@ contract VaultsTest is DSTestPlus {
         newQueue[1] = Strategy(address(1002));
         newQueue[2] = Strategy(address(1003));
         newQueue[3] = Strategy(address(1004));
+
         vault.setWithdrawalQueue(newQueue);
 
         vault.replaceWithdrawalQueueIndexWithTip(1);
@@ -635,6 +653,7 @@ contract VaultsTest is DSTestPlus {
         newQueue[1] = Strategy(address(1002));
         newQueue[2] = Strategy(address(1003));
         newQueue[3] = Strategy(address(1004));
+
         vault.setWithdrawalQueue(newQueue);
 
         vault.swapWithdrawalQueueIndexes(1, 2);
@@ -754,7 +773,10 @@ contract VaultsTest is DSTestPlus {
 
         underlying.transfer(address(strategy1), 0.5e18);
 
-        vault.harvest(strategy1);
+        Strategy[] memory strategiesToHarvest = new Strategy[](1);
+        strategiesToHarvest[0] = strategy1;
+
+        vault.harvest(strategiesToHarvest);
 
         assertEq(vault.maxLockedProfit(), 0.45e18);
         assertEq(vault.lockedProfit(), 0.45e18);

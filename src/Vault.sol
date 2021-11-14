@@ -405,19 +405,14 @@ contract Vault is ERC20, Auth {
     /// @notice Emitted after a successful harvest.
     /// @param strategy The strategy that was harvested.
     /// @param profitAccrued The amount of profit accrued by the harvest.
-    /// @param feesAccrued The amount of fees accrued during the harvest.
     /// @dev If profitAccrued is 0 that could mean the strategy registered a loss.
-    event Harvest(Strategy indexed strategy, uint256 profitAccrued, uint256 feesAccrued);
+    event Harvest(Strategy indexed strategy, uint256 profitAccrued);
 
-    /// @notice Harvest a trusted strategy.
-    /// @param strategy The trusted strategy to harvest.
-    /// @dev Heavily optimized at the cost of some readability, as this function must
-    /// be called frequently by altruistic actors for the Vault to function as intended.
-    function harvest(Strategy strategy) external {
-        // If an untrusted strategy could be harvested a malicious user could use
-        // a fake strategy that over-reports holdings to manipulate the exchange rate.
-        require(getStrategyData[strategy].trusted, "UNTRUSTED_STRATEGY");
-
+    /// @notice Harvest trusted strategies.
+    /// @param strategies The trusted strategies to harvest.
+    /// @dev Heavily optimized at the cost of some readability, as harvests
+    /// must be performed frequently for the Vault to function as intended.
+    function harvest(Strategy[] calldata strategies) external {
         // If this is the first harvest after the last window:
         if (block.timestamp >= lastHarvest + harvestDelay) {
             // Set the harvest window's start timestamp.
@@ -429,42 +424,58 @@ contract Vault is ERC20, Auth {
         }
 
         // Get the Vault's current total strategy holdings.
-        uint256 strategyHoldings = totalStrategyHoldings;
+        uint256 oldTotalStrategyHoldings = totalStrategyHoldings;
 
-        // Get the strategy's previous and current balance.
-        uint256 balanceLastHarvest = getStrategyData[strategy].balance;
-        uint256 balanceThisHarvest = strategy.balanceOfUnderlying(address(this));
+        // Used to store the total profit accrued by the strategies.
+        uint256 totalProfitAccrued;
 
-        // Compute the profit since last harvest. Will be 0 if it it had a net loss.
-        uint256 profitAccrued = balanceThisHarvest > balanceLastHarvest
-            ? balanceThisHarvest - balanceLastHarvest // Profits since last harvest.
-            : 0; // If the strategy registered a net loss we don't have any new profit.
+        // Used to store the new total strategy holdings after harvesting.
+        uint256 newTotalStrategyHoldings = oldTotalStrategyHoldings;
+
+        // Harvest each strategy, while updating total profit/holdings.
+        for (uint256 i = 0; i < strategies.length; i++) {
+            // Get the strategy at the current index.
+            Strategy strategy = strategies[i];
+
+            // If an untrusted strategy could be harvested a malicious user could use
+            // a fake strategy that over-reports holdings to manipulate the exchange rate.
+            require(getStrategyData[strategy].trusted, "UNTRUSTED_STRATEGY");
+
+            // Get the strategy's previous and current balance.
+            uint256 balanceLastHarvest = getStrategyData[strategy].balance;
+            uint256 balanceThisHarvest = strategy.balanceOfUnderlying(address(this));
+
+            // Increase/decrease totalStrategyHoldings based on the profit/loss registered.
+            // We cannot wrap the subtraction in parenthesis as it would underflow if the strategy had a loss.
+            newTotalStrategyHoldings = newTotalStrategyHoldings + balanceThisHarvest - balanceLastHarvest;
+
+            // Update the strategy's stored balance. Cast overflow is unrealistic.
+            getStrategyData[strategy].balance = balanceThisHarvest.safeCastTo224();
+
+            // Compute the profit since last harvest. Will be 0 if it it had a net loss.
+            uint256 profitAccrued = balanceThisHarvest > balanceLastHarvest
+                ? balanceThisHarvest - balanceLastHarvest // Profits since last harvest.
+                : 0; // If the strategy registered a net loss we don't have any new profit.
+
+            // Update the total profit accrued.
+            totalProfitAccrued += profitAccrued;
+
+            emit Harvest(strategy, profitAccrued);
+        }
 
         // Compute fees as the fee percent multiplied by the profit.
-        uint256 feesAccrued = profitAccrued.fmul(feePercent, 1e18);
+        uint256 feesAccrued = totalProfitAccrued.fmul(feePercent, 1e18);
 
         // If we accrued any fees, mint an equivalent amount of fvTokens.
         // Authorized users can claim the newly minted fvTokens via claimFees.
-        if (feesAccrued != 0)
-            _mint(
-                address(this),
-                feesAccrued.fdiv(
-                    // Optimized equivalent to exchangeRate. We don't subtract
-                    // locked profit because it will always be 0 during a harvest.
-                    (strategyHoldings + totalFloat()).fdiv(totalSupply, BASE_UNIT),
-                    BASE_UNIT
-                )
-            );
+        _mint(address(this), feesAccrued.fdiv(exchangeRate(), BASE_UNIT));
 
-        // Increase/decrease totalStrategyHoldings based on the profit/loss registered.
-        // We cannot wrap the subtraction in parenthesis as it would underflow if the strategy had a loss.
-        totalStrategyHoldings = strategyHoldings + balanceThisHarvest - balanceLastHarvest;
+        // TODO: do we need to use lockedProfit()
+        // Update the maximum amount of locked profit, not including fees.
+        maxLockedProfit += (totalProfitAccrued - feesAccrued).safeCastTo128();
 
-        // Update our stored balance for the strategy.
-        getStrategyData[strategy].balance = balanceThisHarvest.safeCastTo224();
-
-        // Update the max amount of locked profit.
-        maxLockedProfit = (profitAccrued - feesAccrued).safeCastTo128();
+        // Set strategy holdings to our new total.
+        totalStrategyHoldings = newTotalStrategyHoldings;
 
         // Update the last harvest timestamp.
         // Cannot overflow on human timescales.
@@ -483,8 +494,6 @@ contract Vault is ERC20, Auth {
 
             emit HarvestDelayUpdated(newHarvestDelay);
         }
-
-        emit Harvest(strategy, profitAccrued, feesAccrued);
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -678,7 +687,7 @@ contract Vault is ERC20, Auth {
 
                 emit WithdrawalQueuePopped(strategy);
 
-                // Move on to the next strategy.
+                // Move on the next strategy.
                 continue;
             }
 
