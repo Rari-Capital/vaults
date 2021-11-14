@@ -408,7 +408,7 @@ contract Vault is ERC20, Auth {
     /// @dev If profitAccrued is 0 that could mean the strategy registered a loss.
     event Harvest(Strategy indexed strategy, uint256 profitAccrued);
 
-    /// @notice Harvest trusted strategies.
+    /// @notice Harvest a set of trusted strategies.
     /// @param strategies The trusted strategies to harvest.
     /// @dev Heavily optimized at the cost of some readability, as harvests
     /// must be performed frequently for the Vault to function as intended.
@@ -445,7 +445,7 @@ contract Vault is ERC20, Auth {
             uint256 balanceLastHarvest = getStrategyData[strategy].balance;
             uint256 balanceThisHarvest = strategy.balanceOfUnderlying(address(this));
 
-            // Increase/decrease totalStrategyHoldings based on the profit/loss registered.
+            // Increase/decrease newTotalStrategyHoldings based on the profit/loss registered.
             // We cannot wrap the subtraction in parenthesis as it would underflow if the strategy had a loss.
             newTotalStrategyHoldings = newTotalStrategyHoldings + balanceThisHarvest - balanceLastHarvest;
 
