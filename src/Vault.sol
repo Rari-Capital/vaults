@@ -321,14 +321,14 @@ contract Vault is ERC20, Auth {
 
         // If the amount is greater than the float, withdraw from strategies.
         if (underlyingAmount > float) {
-            // Compute the bare minimum we need for this withdrawal.
-            uint256 floatDelta = underlyingAmount - float;
-
             // Compute the amount needed to reach our target float percentage.
-            uint256 targetFloatDelta = (totalHoldings() - underlyingAmount).fmul(targetFloatPercent, 1e18);
+            uint256 floatMissingForTarget = (totalHoldings() - underlyingAmount).fmul(targetFloatPercent, 1e18);
 
-            // Pull the necessary amount from the withdrawal queue.
-            pullFromWithdrawalQueue(floatDelta + targetFloatDelta);
+            // Compute the bare minimum amount we need for this withdrawal.
+            uint256 floatMissingForWithdrawal = underlyingAmount - float;
+
+            // Pull enough to cover the withdrawal and reach our target float percentage.
+            pullFromWithdrawalQueue(floatMissingForWithdrawal + floatMissingForTarget);
         }
 
         // Transfer the provided amount of underlying tokens.
