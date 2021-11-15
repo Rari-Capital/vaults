@@ -687,7 +687,7 @@ contract Vault is ERC20, Auth {
 
                 emit WithdrawalQueuePopped(strategy);
 
-                // Move on the next strategy.
+                // Move onto the next strategy.
                 continue;
             }
 
