@@ -47,7 +47,7 @@ contract Vault is ERC20, Auth {
 
         BASE_UNIT = 10**decimals;
 
-        // Prevent minting of fvTokens until
+        // Prevent minting of rvTokens until
         // the initialize function is called.
         totalSupply = type(uint256).max;
     }
@@ -466,8 +466,8 @@ contract Vault is ERC20, Auth {
         // Compute fees as the fee percent multiplied by the profit.
         uint256 feesAccrued = totalProfitAccrued.fmul(feePercent, 1e18);
 
-        // If we accrued any fees, mint an equivalent amount of fvTokens.
-        // Authorized users can claim the newly minted fvTokens via claimFees.
+        // If we accrued any fees, mint an equivalent amount of rvTokens.
+        // Authorized users can claim the newly minted rvTokens via claimFees.
         _mint(address(this), feesAccrued.fdiv(exchangeRate(), BASE_UNIT));
 
         // TODO: Optimize lockedProfit via inlining?
@@ -861,17 +861,17 @@ contract Vault is ERC20, Auth {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Emitted after fees are claimed.
-    /// @param fvTokenAmount The amount of fvTokens that were claimed.
-    event FeesClaimed(uint256 fvTokenAmount);
+    /// @param rvTokenAmount The amount of rvTokens that were claimed.
+    event FeesClaimed(uint256 rvTokenAmount);
 
     /// @notice Claims fees accrued from harvests.
-    /// @param fvTokenAmount The amount of fvTokens to claim.
-    /// @dev Accrued fees are measured as fvTokens held by the Vault.
-    function claimFees(uint256 fvTokenAmount) external requiresAuth {
-        emit FeesClaimed(fvTokenAmount);
+    /// @param rvTokenAmount The amount of rvTokens to claim.
+    /// @dev Accrued fees are measured as rvTokens held by the Vault.
+    function claimFees(uint256 rvTokenAmount) external requiresAuth {
+        emit FeesClaimed(rvTokenAmount);
 
-        // Transfer the provided amount of fvTokens to the caller.
-        ERC20(this).safeTransfer(msg.sender, fvTokenAmount);
+        // Transfer the provided amount of rvTokens to the caller.
+        ERC20(this).safeTransfer(msg.sender, rvTokenAmount);
     }
 
     /*///////////////////////////////////////////////////////////////
