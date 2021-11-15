@@ -432,7 +432,7 @@ contract Vault is ERC20, Auth {
         // Used to store the new total strategy holdings after harvesting.
         uint256 newTotalStrategyHoldings = oldTotalStrategyHoldings;
 
-        // Harvest each strategy, while updating total profit/holdings.
+        // Will revert if any of the specified strategies are untrusted.
         for (uint256 i = 0; i < strategies.length; i++) {
             // Get the strategy at the current index.
             Strategy strategy = strategies[i];
