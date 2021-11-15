@@ -470,7 +470,6 @@ contract Vault is ERC20, Auth {
         // Authorized users can claim the newly minted rvTokens via claimFees.
         _mint(address(this), feesAccrued.fdiv(exchangeRate(), BASE_UNIT));
 
-        // TODO: Optimize lockedProfit via inlining?
         // Update max unlocked profit based on any remaining locked profit plus new profit.
         maxLockedProfit = (lockedProfit() + totalProfitAccrued - feesAccrued).safeCastTo128();
 
