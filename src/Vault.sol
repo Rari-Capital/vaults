@@ -470,9 +470,9 @@ contract Vault is ERC20, Auth {
         // Authorized users can claim the newly minted fvTokens via claimFees.
         _mint(address(this), feesAccrued.fdiv(exchangeRate(), BASE_UNIT));
 
-        // TODO: do we need to use lockedProfit()
-        // Update the maximum amount of locked profit, not including fees.
-        maxLockedProfit += (totalProfitAccrued - feesAccrued).safeCastTo128();
+        // TODO: Optimize lockedProfit via inlining?
+        // Update max unlocked profit based on any remaining locked profit plus new profit.
+        maxLockedProfit = (lockedProfit() + totalProfitAccrued - feesAccrued).safeCastTo128();
 
         // Set strategy holdings to our new total.
         totalStrategyHoldings = newTotalStrategyHoldings;
