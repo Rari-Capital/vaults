@@ -118,7 +118,7 @@ contract Vault is ERC20, Auth {
         emit HarvestWindowUpdated(newHarvestWindow);
     }
 
-    /// @notice Set a new harvest delay delay.
+    /// @notice Set a new harvest delay.
     /// @param newHarvestDelay The new harvest delay to set.
     /// @dev If the current harvest delay is 0, meaning it has not
     /// been set before, it will be updated immediately; otherwise
@@ -355,7 +355,7 @@ contract Vault is ERC20, Auth {
         // If there are no rvTokens in circulation, return an exchange rate of 1:1.
         if (rvTokenSupply == 0) return BASE_UNIT;
 
-        // Calculate the exchange rate by diving the total holdings by the rvToken supply.
+        // Calculate the exchange rate by dividing the total holdings by the rvToken supply.
         return totalHoldings().fdiv(rvTokenSupply, BASE_UNIT);
     }
 
@@ -452,7 +452,7 @@ contract Vault is ERC20, Auth {
             // Update the strategy's stored balance. Cast overflow is unrealistic.
             getStrategyData[strategy].balance = balanceThisHarvest.safeCastTo224();
 
-            // Compute the profit since last harvest. Will be 0 if it it had a net loss.
+            // Compute the profit since last harvest. Will be 0 if it had a net loss.
             uint256 profitAccrued = balanceThisHarvest > balanceLastHarvest
                 ? balanceThisHarvest - balanceLastHarvest // Profits since last harvest.
                 : 0; // If the strategy registered a net loss we don't have any new profit.
@@ -569,7 +569,7 @@ contract Vault is ERC20, Auth {
 
         emit StrategyWithdrawal(strategy, underlyingAmount);
 
-        // Withdraw from the strategy and revert if returns an error code.
+        // Withdraw from the strategy and revert if it returns an error code.
         require(strategy.redeemUnderlying(underlyingAmount) == 0, "REDEEM_FAILED");
 
         // Wrap the withdrawn Ether into WETH if necessary.
