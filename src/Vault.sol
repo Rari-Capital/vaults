@@ -127,7 +127,7 @@ contract Vault is ERC20, Auth {
         // A harvest delay of 0 makes harvests vulnerable to sandwich attacks.
         require(newHarvestDelay != 0, "DELAY_CANNOT_BE_ZERO");
 
-        // A target harvest delay over 1 year doesn't make sense.
+        // A harvest delay longer than 1 year doesn't make sense.
         require(newHarvestDelay <= 365 days, "DELAY_TOO_LONG");
 
         // If the harvest delay is 0, meaning it has not been set before:
