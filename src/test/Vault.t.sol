@@ -476,6 +476,9 @@ contract VaultsTest is DSTestPlus {
         vault.trustStrategy(strategy2);
         vault.depositIntoStrategy(strategy2, 0.5e18);
 
+        underlying.transfer(address(strategy1), 0.25e18);
+        underlying.transfer(address(strategy2), 0.25e18);
+
         assertEq(vault.lastHarvest(), 0);
         assertEq(vault.lastHarvestWindowStart(), 0);
 
@@ -490,9 +493,13 @@ contract VaultsTest is DSTestPlus {
         assertEq(vault.lastHarvest(), startingTimestamp);
         assertEq(vault.lastHarvestWindowStart(), startingTimestamp);
 
-        hevm.warp(block.timestamp + vault.harvestWindow() - 1);
+        hevm.warp(block.timestamp + (vault.harvestWindow() / 2));
+
+        uint256 exchangeRateBeforeHarvest = vault.exchangeRate();
 
         vault.harvest(strategiesToHarvest);
+
+        assertEq(vault.exchangeRate(), exchangeRateBeforeHarvest);
 
         assertEq(vault.lastHarvest(), block.timestamp);
         assertEq(vault.lastHarvestWindowStart(), startingTimestamp);
