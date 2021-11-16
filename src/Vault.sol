@@ -695,14 +695,14 @@ contract Vault is ERC20, Auth {
 
             unchecked {
                 // Compute the balance of the strategy that will remain after we withdraw.
-                // Cannot overflow as we cap the amount to pull at the strategy's balance.
+                // Cannot underflow as we cap the amount to pull at the strategy's balance.
                 uint256 strategyBalanceAfterWithdrawal = strategyBalance - amountToPull;
 
                 // Without this the next harvest would count the withdrawal as a loss.
                 getStrategyData[strategy].balance = strategyBalanceAfterWithdrawal.safeCastTo224();
 
                 // Adjust our goal based on how much we can pull from the strategy.
-                // Cannot overflow as we cap the amount to pull at the amount left to pull.
+                // Cannot underflow as we cap the amount to pull at the amount left to pull.
                 amountLeftToPull -= amountToPull;
 
                 emit StrategyWithdrawal(strategy, amountToPull);
@@ -725,7 +725,7 @@ contract Vault is ERC20, Auth {
 
         unchecked {
             // Account for the withdrawals done in the loop above.
-            // Cannot overflow as the balances of some strategies cannot exceed the sum of all.
+            // Cannot underflow as the balances of some strategies cannot exceed the sum of all.
             totalStrategyHoldings -= underlyingAmount;
         }
 
