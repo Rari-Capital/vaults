@@ -117,7 +117,7 @@ contract VaultAuthorityModule is Auth, Authority {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Emitted when a role's capabilities are updated.
-    /// @param role The role who's capabilities were updated.
+    /// @param role The role whose capabilities were updated.
     /// @param functionSig The function the role was enabled to call or not.
     /// @param enabled Whether the role is now able to call the function or not.
     event RoleCapabilityUpdated(uint8 indexed role, bytes4 indexed functionSig, bool enabled);

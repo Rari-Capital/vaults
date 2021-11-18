@@ -253,7 +253,7 @@ contract VaultRouterModule {
 
     /// @dev Permits tokens from the caller and transfers them into the module.
     /// @param token The token to permit and transfer in.
-    /// @param amount The amount of tokens permit and transfer in.
+    /// @param amount The amount of tokens to permit and transfer in.
     /// @param deadline A timestamp, the block's timestamp must be less than or equal to this timestamp.
     /// @param v Must produce valid secp256k1 signature from the caller along with r and s.
     /// @param r Must produce valid secp256k1 signature from the caller along with v and s.
@@ -275,7 +275,7 @@ contract VaultRouterModule {
 
     /// @dev Max permits tokens from the caller and transfers them into the module.
     /// @param token The token to permit and transfer in.
-    /// @param amount The amount of tokens permit and transfer in.
+    /// @param amount The amount of tokens to permit and transfer in.
     /// @param nonce The callers's nonce, increases at each call to permit.
     /// @param expiry The timestamp at which the permit is no longer valid.
     /// @param v Must produce valid secp256k1 signature from the caller along with r and s.
