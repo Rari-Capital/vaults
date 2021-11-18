@@ -75,9 +75,9 @@ contract VaultAuthorityModule is Auth, Authority {
     /// @param target The target the user is trying to call.
     /// @param functionSig The function signature the user is trying to call.
     /// @return A boolean indicating if the user can call the function on the target.
-    /// @dev First checks if the user is authorized to call all target's with the given function.
-    /// If they are not it then checks if the target has a custom Authority. If so it returns whether
-    /// it the user is authorized to call the function, otherwise execution ends and it returns false.
+    /// @dev First checks whether the target has a custom Authority assigned to it, if so returns
+    /// whether the custom Authority would allow the user to call the desired function on the target,
+    /// otherwise returns whether the user is able to call the desired function on any target contract.
     function canCall(
         address user,
         address target,
@@ -131,15 +131,15 @@ contract VaultAuthorityModule is Auth, Authority {
         bytes4 functionSig,
         bool enabled
     ) external requiresAuth {
-        // Get the previous role capability set.
-        bytes32 lastRoles = getRoleCapabilities[functionSig];
+        // Get the previous set of role capabilities.
+        bytes32 lastCapabilities = getRoleCapabilities[functionSig];
 
         unchecked {
             // Generate a mask for the role.
             bytes32 shifted = bytes32(uint256(uint256(2)**uint256(role)));
 
             // Update the role's capability set with the role mask.
-            getRoleCapabilities[functionSig] = enabled ? lastRoles | shifted : lastRoles & ~shifted;
+            getRoleCapabilities[functionSig] = enabled ? lastCapabilities | shifted : lastCapabilities & ~shifted;
         }
 
         emit RoleCapabilityUpdated(role, functionSig, enabled);
