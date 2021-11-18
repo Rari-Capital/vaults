@@ -7,7 +7,7 @@ import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
 
 import {MockERC20Strategy} from "./mocks/MockERC20Strategy.sol";
 
-import {VaultCreationModule} from "../modules/VaultCreationModule.sol";
+import {VaultInitializationModule} from "../modules/VaultInitializationModule.sol";
 import {VaultAuthorityModule} from "../modules/VaultAuthorityModule.sol";
 import {VaultConfigurationModule} from "../modules/VaultConfigurationModule.sol";
 
@@ -23,7 +23,7 @@ contract IntegrationTest is DSTestPlus {
 
     VaultConfigurationModule vaultConfigurationModule;
 
-    VaultCreationModule vaultCreationModule;
+    VaultInitializationModule vaultInitializationModule;
 
     MockERC20 underlying;
 
@@ -39,8 +39,7 @@ contract IntegrationTest is DSTestPlus {
 
         vaultConfigurationModule = new VaultConfigurationModule(address(this), Authority(address(0)));
 
-        vaultCreationModule = new VaultCreationModule(
-            vaultFactory,
+        vaultInitializationModule = new VaultInitializationModule(
             vaultConfigurationModule,
             address(this),
             Authority(address(0))
@@ -57,7 +56,7 @@ contract IntegrationTest is DSTestPlus {
         vaultAuthorityModule.setRoleCapability(0, Vault.setHarvestWindow.selector, true);
         vaultAuthorityModule.setRoleCapability(0, Vault.setTargetFloatPercent.selector, true);
 
-        vaultAuthorityModule.setUserRole(address(vaultCreationModule), 1, true);
+        vaultAuthorityModule.setUserRole(address(vaultInitializationModule), 1, true);
         vaultAuthorityModule.setRoleCapability(1, Vault.initialize.selector, true);
 
         vaultConfigurationModule.setDefaultFeePercent(0.1e18);
@@ -65,7 +64,8 @@ contract IntegrationTest is DSTestPlus {
         vaultConfigurationModule.setDefaultHarvestWindow(5 minutes);
         vaultConfigurationModule.setDefaultTargetFloatPercent(0.01e18);
 
-        Vault vault = vaultCreationModule.createVault(underlying);
+        Vault vault = vaultFactory.deployVault(underlying);
+        vaultInitializationModule.initializeVault(vault);
 
         underlying.mint(address(this), 1.5e18);
 

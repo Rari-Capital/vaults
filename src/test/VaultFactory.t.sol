@@ -21,17 +21,10 @@ contract VaultFactoryTest is DSTestPlus {
 
     function testDeployVault() public {
         Vault vault = vaultFactory.deployVault(underlying);
-        assertTrue(vaultFactory.isVaultDeployed(vault));
 
+        assertTrue(vaultFactory.isVaultDeployed(vault));
         assertEq(address(vaultFactory.getVaultFromUnderlying(underlying)), address(vault));
         assertEq(address(vault.UNDERLYING()), address(underlying));
-
-        assertFalse(vault.isInitialized());
-
-        assertEq(vault.feePercent(), 0);
-        assertEq(vault.harvestDelay(), 0);
-        assertEq(vault.harvestWindow(), 0);
-        assertEq(vault.targetFloatPercent(), 0);
     }
 
     function testFailNoDuplicateVaults() public {

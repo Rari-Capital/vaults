@@ -9,29 +9,23 @@ import {VaultFactory} from "../VaultFactory.sol";
 
 import {VaultConfigurationModule} from "./VaultConfigurationModule.sol";
 
-/// @title Rari Vault Creation Module
+/// @title Rari Vault Initialization Module
 /// @author Transmissions11 and JetJadeja
-/// @notice Module for creating and configuring new Vaults.
-contract VaultCreationModule is Auth {
-    /// @notice The Vault factory instance to deploy with.
-    VaultFactory public immutable FACTORY;
-
-    /// @notice Vault configuration module instance to configure with.
+/// @notice Module for initializing newly created Vaults.
+contract VaultInitializationModule is Auth {
+    /// @notice Vault configuration module used to configure Vaults before initialization.
     VaultConfigurationModule public configModule;
 
-    /// @notice Creates a Vault creation module.
-    /// @param _FACTORY The Vault factory instance the module should deploy with.
-    /// @param _configModule The Vault configuration module the module should configure with.
+    /// @notice Creates a Vault initialization module.
+    /// @param _configModule The Vault configuration module the
+    /// module will use to configure Vaults before initialization.
     /// @param _owner The owner of the module.
     /// @param _authority The Authority of the module.
     constructor(
-        VaultFactory _FACTORY,
         VaultConfigurationModule _configModule,
         address _owner,
         Authority _authority
     ) Auth(_owner, _authority) {
-        FACTORY = _FACTORY;
-
         configModule = _configModule;
     }
 
@@ -48,15 +42,11 @@ contract VaultCreationModule is Auth {
         emit ConfigModuleUpdated(newConfigModule);
     }
 
-    /// @notice Creates and properly configures a new Vault which supports a specific underlying token.
-    /// @dev This will revert if a Vault that accepts the same underlying token has already been deployed.
-    /// @param underlying The ERC20 token that the Vault should accept.
-    /// @return vault The newly deployed Vault contract which accepts the provided underlying token.
-    function createVault(ERC20 underlying) external returns (Vault vault) {
-        // Deploy a new Vault with the underlying token.
-        vault = FACTORY.deployVault(underlying);
-
-        // Set all configuration parameters.
+    /// @notice Properly configures and initializes a newly deployed Vault.
+    /// @dev This will revert if the Vault has already been initialized.
+    /// @param vault The Vault to configure and initialize.
+    function initializeVault(Vault vault) external {
+        // Configure all key parameters.
         configModule.syncFeePercent(vault);
         configModule.syncHarvestDelay(vault);
         configModule.syncHarvestWindow(vault);
