@@ -644,7 +644,7 @@ contract Vault is ERC20, Auth {
     /// @param previousTipStrategy The previous tip of the queue that replaced the strategy.
     event WithdrawalQueueIndexReplacedWithTip(
         uint256 index,
-        Strategy replacedStrategy,
+        Strategy indexed replacedStrategy,
         Strategy indexed previousTipStrategy
     );
 
