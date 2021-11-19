@@ -32,9 +32,9 @@ contract VaultRebalancerModule {
             vaultBaseUnit
         );
 
-        for (uint256 i = 0; i < strategiesToWithdrawFrom.length; i++) {
+        for (uint256 i = 0; i < strategiesToDepositInto.length; i++) {
             totalDeposit += strategiesToDepositInto[i].amount;
-            vault.withdrawFromStrategy(strategiesToDepositInto[i].strategy, strategiesToDepositInto[i].amount);
+            vault.depositIntoStrategy(strategiesToDepositInto[i].strategy, strategiesToDepositInto[i].amount);
         }
 
         uint256 interestInDepositPools = calculateWeightedAverage(strategiesToDepositInto, totalDeposit, vaultBaseUnit);
