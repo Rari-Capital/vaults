@@ -9,6 +9,8 @@ abstract contract Strategy is ERC20 {
     function redeemUnderlying(uint256 amount) external virtual returns (uint256);
 
     function balanceOfUnderlying(address user) external virtual returns (uint256);
+
+    function supplyRatePerBlock() external virtual returns (uint256);
 }
 
 abstract contract ERC20Strategy is Strategy {
