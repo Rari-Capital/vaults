@@ -19,16 +19,27 @@ contract VaultRebalancerModule {
     ) external {
         uint256 totalWithdraw;
         uint256 totalDeposit;
+        uint256 vaultBaseUnit = vault.BASE_UNIT();
 
         for (uint256 i = 0; i < strategiesToWithdrawFrom.length; i++) {
             totalWithdraw += strategiesToWithdrawFrom[i].amount;
             vault.withdrawFromStrategy(strategiesToWithdrawFrom[i].strategy, strategiesToWithdrawFrom[i].amount);
         }
 
+        uint256 interestInWithdrawalPools = calculateWeightedAverage(
+            strategiesToWithdrawFrom,
+            totalWithdraw,
+            vaultBaseUnit
+        );
+
         for (uint256 i = 0; i < strategiesToWithdrawFrom.length; i++) {
             totalDeposit += strategiesToDepositInto[i].amount;
             vault.withdrawFromStrategy(strategiesToDepositInto[i].strategy, strategiesToDepositInto[i].amount);
         }
+
+        uint256 interestInDepositPools = calculateWeightedAverage(strategiesToDepositInto, totalDeposit, vaultBaseUnit);
+
+        require(interestInWithdrawalPools < interestInDepositPools, "");
     }
 
     function calculateWeightedAverage(
