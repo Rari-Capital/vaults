@@ -7,15 +7,15 @@ import {Vault} from "../Vault.sol";
 /// @author Transmissions11 and JetJadeja
 /// @notice Module that automatically rebalances the Vault
 contract VaultRebalancerModule {
-    struct Alloc {
+    struct Action {
         Strategy strategy;
         uint256 amount;
     }
 
     function rebalance(
         Vault vault,
-        Alloc[] memory strategiesToWithdrawFrom,
-        Alloc[] memory strategiesToDepositInto
+        Action[] memory strategiesToWithdrawFrom,
+        Action[] memory strategiesToDepositInto
     ) external {
         uint256 totalWithdraw;
         uint256 totalDeposit;
@@ -43,7 +43,7 @@ contract VaultRebalancerModule {
     }
 
     function calculateWeightedAverage(
-        Alloc[] memory strategies,
+        Action[] memory strategies,
         uint256 total,
         uint256 baseUnit
     ) internal returns (uint256) {
