@@ -17,8 +17,8 @@ contract VaultRebalancerModule {
         Alloc[] memory strategiesToWithdrawFrom,
         Alloc[] memory strategiesToDepositInto
     ) external {
-        uint256 totalWithdraw = 0;
-        uint256 totalDeposit = 0;
+        uint256 totalWithdraw;
+        uint256 totalDeposit;
 
         for (uint256 i = 0; i < strategiesToWithdrawFrom.length; i++) {
             totalWithdraw += strategiesToWithdrawFrom[i].amount;
