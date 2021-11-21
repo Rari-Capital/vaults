@@ -667,7 +667,7 @@ contract Vault is ERC20, Auth {
         // We will update this variable as we pull from strategies.
         uint256 amountLeftToPull = underlyingAmount;
 
-        // We'll at the tip of the queue and pop strategies until we've pulled the entire amount.
+        // We'll start at the tip of the queue and traverse backwards.
         uint256 currentIndex = withdrawalQueue.length - 1;
 
         // Iterate in reverse so we pull from the queue in a "last in, first out" manner.
