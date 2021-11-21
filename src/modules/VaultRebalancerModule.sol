@@ -15,5 +15,7 @@ contract VaultRebalancerModule {
     ) external {
         vault.withdrawFromStrategy(withdrawalContract, amount);
         vault.depositIntoStrategy(depositContract, amount);
+
+        require(depositContract.supplyRatePerBlock() > withdrawalContract.supplyRatePerBlock(), "SUPPLY_RATE_TOO_LOW");
     }
 }
