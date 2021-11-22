@@ -37,13 +37,13 @@ make
 dapp test
 ```
 
-### Measure Test Coverage
+### Measure Coverage
 
 ```sh
 dapp test --coverage
 ```
 
-### Update Test Gas Snapshots
+### Update Gas Snapshots
 
 ```sh
 dapp snapshot
