@@ -13,7 +13,7 @@ import {Strategy, ERC20Strategy, ETHStrategy} from "./interfaces/Strategy.sol";
 /// @title Rari Vault (rvToken)
 /// @author Transmissions11 and JetJadeja
 /// @notice Flexible, minimalist, and gas-optimized yield
-/// aggregator protocol for earning interest on any ERC20 token.
+/// aggregator for earning interest on any ERC20 token.
 contract Vault is ERC20, Auth {
     using SafeCastLib for uint256;
     using SafeTransferLib for ERC20;
