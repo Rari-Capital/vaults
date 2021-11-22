@@ -1,6 +1,6 @@
-# Vaults
+# Vaults • [![Tests](https://github.com/Rari-Capital/vaults/actions/workflows/tests.yml/badge.svg)](https://github.com/Rari-Capital/vaults/actions/workflows/tests.yml) [![License](https://img.shields.io/badge/License-AGPL--3.0-blue)](LICENSE.md)
 
-Flexible, minimalist, and gas-optimized yield aggregator protocol for earning interest on any ERC20 token.
+Flexible, minimalist, and **gas-optimized yield aggregator protocol** for earning interest on any ERC20 token.
 
 - [Documentation](https://docs.rari.capital/vaults)
 - [Deployments](https://github.com/Rari-Capital/vaults/releases)

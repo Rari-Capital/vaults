@@ -9,7 +9,7 @@ import {Vault} from "./Vault.sol";
 
 /// @title Rari Vault Factory
 /// @author Transmissions11 and JetJadeja
-/// @notice Factory which enables deploying a Vault contract for any ERC20 token.
+/// @notice Factory which enables deploying a Vault for any ERC20 token.
 contract VaultFactory is Auth {
     using Bytes32AddressLib for address;
     using Bytes32AddressLib for bytes32;
