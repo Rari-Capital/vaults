@@ -60,8 +60,10 @@ contract VaultAuthorityModule is Auth, Authority {
     /// @return A boolean indicating whether the role has the capability.
     function doesRoleHaveCapability(uint8 role, bytes4 functionSig) external view virtual returns (bool) {
         unchecked {
+            // Generate a mask for the role.
             bytes32 shifted = bytes32(uint256(uint256(2)**uint256(role)));
 
+            // Check if the role has the capability using the generated mask.
             return bytes32(0) != getRoleCapabilities[functionSig] & shifted;
         }
     }
