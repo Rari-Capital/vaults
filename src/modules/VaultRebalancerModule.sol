@@ -13,9 +13,15 @@ contract VaultRebalancerModule {
         Strategy depositContract,
         uint256 amount
     ) external {
+        uint256 shareOfVault = (amount * vault.BASE_UNIT()) / vault.totalHoldings();
+
+        require(shareOfVault < ((3 * vault.totalHoldings()) / 20));
+
+        uint256 withdrawalSupplyRate = withdrawalContract.supplyRatePerBlock();
+
         vault.withdrawFromStrategy(withdrawalContract, amount);
         vault.depositIntoStrategy(depositContract, amount);
 
-        require(depositContract.supplyRatePerBlock() > withdrawalContract.supplyRatePerBlock(), "SUPPLY_RATE_TOO_LOW");
+        require(depositContract.supplyRatePerBlock() > withdrawalSupplyRate, "RATE_MUST_INCREASE");
     }
 }
