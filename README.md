@@ -23,7 +23,7 @@ Flexible, minimalist, and **gas-optimized yield aggregator protocol** for earnin
 
 ## Contributing
 
-You will need a copy of [DappTools](dapp.tools) installed before proceeding. See the [installation guide](https://github.com/dapphub/dapptools#installation) for details.
+You will need a copy of [DappTools](https://dapp.tools) installed before proceeding. See the [installation guide](https://github.com/dapphub/dapptools#installation) for details.
 
 ### Setup
 
