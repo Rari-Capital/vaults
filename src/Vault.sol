@@ -450,7 +450,7 @@ contract Vault is ERC20, Auth {
             newTotalStrategyHoldings = newTotalStrategyHoldings + balanceThisHarvest - balanceLastHarvest;
 
             // Update the strategy's stored balance. Cast overflow is unrealistic.
-            getStrategyData[strategy].balance = balanceThisHarvest.safeCastTo224();
+            getStrategyData[strategy].balance = balanceThisHarvest.safeCastTo248();
 
             // Compute the profit since last harvest. Will be 0 if it had a net loss.
             uint256 profitAccrued = balanceThisHarvest > balanceLastHarvest
@@ -525,7 +525,7 @@ contract Vault is ERC20, Auth {
         unchecked {
             // Without this the next harvest would count the deposit as profit.
             // Cannot overflow as the balance of one strategy can't exceed the sum of all.
-            getStrategyData[strategy].balance += underlyingAmount.safeCastTo224();
+            getStrategyData[strategy].balance += underlyingAmount.safeCastTo248();
         }
 
         emit StrategyDeposit(strategy, underlyingAmount);
@@ -558,7 +558,7 @@ contract Vault is ERC20, Auth {
         require(underlyingAmount != 0, "AMOUNT_CANNOT_BE_ZERO");
 
         // Without this the next harvest would count the withdrawal as a loss.
-        getStrategyData[strategy].balance -= underlyingAmount.safeCastTo224();
+        getStrategyData[strategy].balance -= underlyingAmount.safeCastTo248();
 
         unchecked {
             // Decrease totalStrategyHoldings to account for the withdrawal.
@@ -699,7 +699,7 @@ contract Vault is ERC20, Auth {
                 uint256 strategyBalanceAfterWithdrawal = strategyBalance - amountToPull;
 
                 // Without this the next harvest would count the withdrawal as a loss.
-                getStrategyData[strategy].balance = strategyBalanceAfterWithdrawal.safeCastTo224();
+                getStrategyData[strategy].balance = strategyBalanceAfterWithdrawal.safeCastTo248();
 
                 // Adjust our goal based on how much we can pull from the strategy.
                 // Cannot underflow as we cap the amount to pull at the amount left to pull.
