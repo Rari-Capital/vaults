@@ -409,10 +409,10 @@ contract Vault is ERC20, Auth {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Emitted after a successful harvest.
-    /// @param strategy The strategy that was harvested.
+    /// @param strategies The strategies that were harvested.
     /// @param profitAccrued The amount of profit accrued by the harvest.
-    /// @dev If profitAccrued is 0 that could mean the strategy registered a loss.
-    event Harvest(Strategy indexed strategy, uint256 profitAccrued);
+    /// @dev If profitAccrued is 0 that could mean the harvest registered a loss.
+    event Harvest(Strategy[] strategies, uint256 profitAccrued);
 
     /// @notice Harvest a set of trusted strategies.
     /// @param strategies The trusted strategies to harvest.
@@ -456,15 +456,10 @@ contract Vault is ERC20, Auth {
             // Update the strategy's stored balance. Cast overflow is unrealistic.
             getStrategyData[strategy].balance = balanceThisHarvest.safeCastTo248();
 
-            // Compute the profit since last harvest. Will be 0 if it had a net loss.
-            uint256 profitAccrued = balanceThisHarvest > balanceLastHarvest
+            // Update the total profit accrued.
+            totalProfitAccrued += balanceThisHarvest > balanceLastHarvest
                 ? balanceThisHarvest - balanceLastHarvest // Profits since last harvest.
                 : 0; // If the strategy registered a net loss we don't have any new profit.
-
-            // Update the total profit accrued.
-            totalProfitAccrued += profitAccrued;
-
-            emit Harvest(strategy, profitAccrued);
         }
 
         // Compute fees as the fee percent multiplied by the profit.
@@ -483,6 +478,8 @@ contract Vault is ERC20, Auth {
         // Update the last harvest timestamp.
         // Cannot overflow on human timescales.
         lastHarvest = uint64(block.timestamp);
+
+        emit Harvest(strategies, totalProfitAccrued);
 
         // Get the next harvest delay.
         uint64 newHarvestDelay = nextHarvestDelay;
