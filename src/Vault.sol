@@ -588,12 +588,14 @@ contract Vault is ERC20, Auth {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Emitted when a strategy is set to trusted.
+    /// @param user The authorized user who trusted the strategy.
     /// @param strategy The strategy that became trusted.
-    event StrategyTrusted(Strategy indexed strategy);
+    event StrategyTrusted(address indexed user, Strategy indexed strategy);
 
     /// @notice Emitted when a strategy is set to untrusted.
+    /// @param user The authorized user who untrusted the strategy.
     /// @param strategy The strategy that became untrusted.
-    event StrategyDistrusted(Strategy indexed strategy);
+    event StrategyDistrusted(address indexed user, Strategy indexed strategy);
 
     /// @notice Stores a strategy as trusted, enabling it to be harvested.
     /// @param strategy The strategy to make trusted.
@@ -608,7 +610,7 @@ contract Vault is ERC20, Auth {
         // Store the strategy as trusted.
         getStrategyData[strategy].trusted = true;
 
-        emit StrategyTrusted(strategy);
+        emit StrategyTrusted(msg.sender, strategy);
     }
 
     /// @notice Stores a strategy as untrusted, disabling it from being harvested.
@@ -617,7 +619,7 @@ contract Vault is ERC20, Auth {
         // Store the strategy as untrusted.
         getStrategyData[strategy].trusted = false;
 
-        emit StrategyDistrusted(strategy);
+        emit StrategyDistrusted(msg.sender, strategy);
     }
 
     /*///////////////////////////////////////////////////////////////
