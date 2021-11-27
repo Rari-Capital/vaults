@@ -416,8 +416,6 @@ contract Vault is ERC20, Auth {
 
     /// @notice Harvest a set of trusted strategies.
     /// @param strategies The trusted strategies to harvest.
-    /// @dev Heavily optimized at the cost of some readability, as harvests
-    /// must be performed frequently for the Vault to function as intended.
     function harvest(Strategy[] calldata strategies) external {
         // If this is the first harvest after the last window:
         if (block.timestamp >= lastHarvest + harvestDelay) {
