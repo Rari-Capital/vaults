@@ -61,8 +61,9 @@ contract Vault is ERC20, Auth {
     uint256 public feePercent;
 
     /// @notice Emitted when the fee percentage is updated.
+    /// @param user The authorized user who triggered the update.
     /// @param newFeePercent The new fee percentage.
-    event FeePercentUpdated(uint256 newFeePercent);
+    event FeePercentUpdated(address indexed user, uint256 newFeePercent);
 
     /// @notice Sets a new fee percentage.
     /// @param newFeePercent The new fee percentage.
@@ -73,24 +74,27 @@ contract Vault is ERC20, Auth {
         // Update the fee percentage.
         feePercent = newFeePercent;
 
-        emit FeePercentUpdated(newFeePercent);
+        emit FeePercentUpdated(msg.sender, newFeePercent);
     }
 
     /*///////////////////////////////////////////////////////////////
                         HARVEST CONFIGURATION
     //////////////////////////////////////////////////////////////*/
 
-    //// @notice Emitted when the harvest window is updated.
-    //// @param newHarvestWindow The new harvest window.
-    event HarvestWindowUpdated(uint128 newHarvestWindow);
+    /// @notice Emitted when the harvest window is updated.
+    /// @param user The authorized user who triggered the update.
+    /// @param newHarvestWindow The new harvest window.
+    event HarvestWindowUpdated(address indexed user, uint128 newHarvestWindow);
 
     /// @notice Emitted when the harvest delay is updated.
+    /// @param user The authorized user who triggered the update.
     /// @param newHarvestDelay The new harvest delay.
-    event HarvestDelayUpdated(uint64 newHarvestDelay);
+    event HarvestDelayUpdated(address indexed user, uint64 newHarvestDelay);
 
     /// @notice Emitted when the harvest delay is scheduled to be updated next harvest.
+    /// @param user The authorized user who triggered the update.
     /// @param newHarvestDelay The scheduled updated harvest delay.
-    event HarvestDelayUpdateScheduled(uint64 newHarvestDelay);
+    event HarvestDelayUpdateScheduled(address indexed user, uint64 newHarvestDelay);
 
     /// @notice The period in seconds during which multiple harvests can occur
     /// regardless if they are taking place before the harvest delay has elapsed.
@@ -115,7 +119,7 @@ contract Vault is ERC20, Auth {
         // Update the harvest window.
         harvestWindow = newHarvestWindow;
 
-        emit HarvestWindowUpdated(newHarvestWindow);
+        emit HarvestWindowUpdated(msg.sender, newHarvestWindow);
     }
 
     /// @notice Sets a new harvest delay.
@@ -135,12 +139,12 @@ contract Vault is ERC20, Auth {
             // We'll apply the update immediately.
             harvestDelay = newHarvestDelay;
 
-            emit HarvestDelayUpdated(newHarvestDelay);
+            emit HarvestDelayUpdated(msg.sender, newHarvestDelay);
         } else {
             // We'll apply the update next harvest.
             nextHarvestDelay = newHarvestDelay;
 
-            emit HarvestDelayUpdateScheduled(newHarvestDelay);
+            emit HarvestDelayUpdateScheduled(msg.sender, newHarvestDelay);
         }
     }
 
@@ -153,8 +157,9 @@ contract Vault is ERC20, Auth {
     uint256 public targetFloatPercent;
 
     /// @notice Emitted when the target float percentage is updated.
+    /// @param user The authorized user who triggered the update.
     /// @param newTargetFloatPercent The new target float percentage.
-    event TargetFloatPercentUpdated(uint256 newTargetFloatPercent);
+    event TargetFloatPercentUpdated(address indexed user, uint256 newTargetFloatPercent);
 
     /// @notice Set a new target float percentage.
     /// @param newTargetFloatPercent The new target float percentage.
@@ -165,7 +170,7 @@ contract Vault is ERC20, Auth {
         // Update the target float percentage.
         targetFloatPercent = newTargetFloatPercent;
 
-        emit TargetFloatPercentUpdated(newTargetFloatPercent);
+        emit TargetFloatPercentUpdated(msg.sender, newTargetFloatPercent);
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -177,8 +182,9 @@ contract Vault is ERC20, Auth {
     bool public underlyingIsWETH;
 
     /// @notice Emitted when whether the Vault should treat the underlying as WETH is updated.
+    /// @param user The authorized user who triggered the update.
     /// @param newUnderlyingIsWETH Whether the Vault nows treats the underlying as WETH.
-    event UnderlyingIsWETHUpdated(bool newUnderlyingIsWETH);
+    event UnderlyingIsWETHUpdated(address indexed user, bool newUnderlyingIsWETH);
 
     /// @notice Sets whether the Vault treats the underlying as WETH.
     /// @param newUnderlyingIsWETH Whether the Vault should treat the underlying as WETH.
@@ -190,7 +196,7 @@ contract Vault is ERC20, Auth {
         // Update whether the Vault treats the underlying as WETH.
         underlyingIsWETH = newUnderlyingIsWETH;
 
-        emit UnderlyingIsWETHUpdated(newUnderlyingIsWETH);
+        emit UnderlyingIsWETHUpdated(msg.sender, newUnderlyingIsWETH);
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -491,7 +497,7 @@ contract Vault is ERC20, Auth {
             // Reset the next harvest delay.
             nextHarvestDelay = 0;
 
-            emit HarvestDelayUpdated(newHarvestDelay);
+            emit HarvestDelayUpdated(msg.sender, newHarvestDelay);
         }
     }
 
@@ -500,14 +506,16 @@ contract Vault is ERC20, Auth {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Emitted after the Vault deposits into a strategy contract.
+    /// @param user The authorized user who triggered the deposit.
     /// @param strategy The strategy that was deposited into.
     /// @param underlyingAmount The amount of underlying tokens that were deposited.
-    event StrategyDeposit(Strategy indexed strategy, uint256 underlyingAmount);
+    event StrategyDeposit(address indexed user, Strategy indexed strategy, uint256 underlyingAmount);
 
     /// @notice Emitted after the Vault withdraws funds from a strategy contract.
+    /// @param user The authorized user who triggered the withdrawal.
     /// @param strategy The strategy that was withdrawn from.
     /// @param underlyingAmount The amount of underlying tokens that were withdrawn.
-    event StrategyWithdrawal(Strategy indexed strategy, uint256 underlyingAmount);
+    event StrategyWithdrawal(address indexed user, Strategy indexed strategy, uint256 underlyingAmount);
 
     /// @notice Deposit a specific amount of float into a trusted strategy.
     /// @param strategy The trusted strategy to deposit into.
@@ -528,7 +536,7 @@ contract Vault is ERC20, Auth {
             getStrategyData[strategy].balance += underlyingAmount.safeCastTo248();
         }
 
-        emit StrategyDeposit(strategy, underlyingAmount);
+        emit StrategyDeposit(msg.sender, strategy, underlyingAmount);
 
         // We need to deposit differently if the strategy takes ETH.
         if (strategy.isCEther()) {
@@ -566,7 +574,7 @@ contract Vault is ERC20, Auth {
             totalStrategyHoldings -= underlyingAmount;
         }
 
-        emit StrategyWithdrawal(strategy, underlyingAmount);
+        emit StrategyWithdrawal(msg.sender, strategy, underlyingAmount);
 
         // Withdraw from the strategy and revert if it returns an error code.
         require(strategy.redeemUnderlying(underlyingAmount) == 0, "REDEEM_FAILED");
@@ -617,43 +625,52 @@ contract Vault is ERC20, Auth {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Emitted when a strategy is pushed to the withdrawal queue.
+    /// @param user The authorized user who triggered the push.
     /// @param pushedStrategy The strategy pushed to the withdrawal queue.
-    event WithdrawalQueuePushed(Strategy indexed pushedStrategy);
+    event WithdrawalQueuePushed(address indexed user, Strategy indexed pushedStrategy);
 
     /// @notice Emitted when a strategy is popped from the withdrawal queue.
+    /// @param user The authorized user who triggered the pop.
     /// @param poppedStrategy The strategy popped from the withdrawal queue.
-    event WithdrawalQueuePopped(Strategy indexed poppedStrategy);
+    event WithdrawalQueuePopped(address indexed user, Strategy indexed poppedStrategy);
 
     /// @notice Emitted when the withdrawal queue is updated.
+    /// @param user The authorized user who triggered the set.
     /// @param replacedWithdrawalQueue The new withdrawal queue.
-    event WithdrawalQueueSet(Strategy[] replacedWithdrawalQueue);
+    event WithdrawalQueueSet(address indexed user, Strategy[] replacedWithdrawalQueue);
 
     /// @notice Emitted when an index in the withdrawal queue is replaced.
+    /// @param user The authorized user who triggered the replacement.
     /// @param index The index of the replaced strategy in the withdrawal queue.
     /// @param replacedStrategy The strategy in the withdrawal queue that was replaced.
     /// @param replacementStrategy The strategy that overrode the replaced strategy at the index.
     event WithdrawalQueueIndexReplaced(
+        address indexed user,
         uint256 index,
         Strategy indexed replacedStrategy,
         Strategy indexed replacementStrategy
     );
 
     /// @notice Emitted when an index in the withdrawal queue is replaced with the tip.
+    /// @param user The authorized user who triggered the replacement.
     /// @param index The index of the replaced strategy in the withdrawal queue.
     /// @param replacedStrategy The strategy in the withdrawal queue replaced by the tip.
     /// @param previousTipStrategy The previous tip of the queue that replaced the strategy.
     event WithdrawalQueueIndexReplacedWithTip(
+        address indexed user,
         uint256 index,
         Strategy indexed replacedStrategy,
         Strategy indexed previousTipStrategy
     );
 
     /// @notice Emitted when the strategies at two indexes are swapped.
+    /// @param user The authorized user who triggered the swap.
     /// @param index1 One index involved in the swap
     /// @param index2 The other index involved in the swap.
     /// @param newStrategy1 The strategy (previously at index2) that replaced index1.
     /// @param newStrategy2 The strategy (previously at index1) that replaced index2.
     event WithdrawalQueueIndexesSwapped(
+        address indexed user,
         uint256 index1,
         uint256 index2,
         Strategy indexed newStrategy1,
@@ -684,7 +701,7 @@ contract Vault is ERC20, Auth {
                 // Remove it from the queue.
                 withdrawalQueue.pop();
 
-                emit WithdrawalQueuePopped(strategy);
+                emit WithdrawalQueuePopped(msg.sender, strategy);
 
                 // Move onto the next strategy.
                 continue;
@@ -705,7 +722,7 @@ contract Vault is ERC20, Auth {
                 // Cannot underflow as we cap the amount to pull at the amount left to pull.
                 amountLeftToPull -= amountToPull;
 
-                emit StrategyWithdrawal(strategy, amountToPull);
+                emit StrategyWithdrawal(msg.sender, strategy, amountToPull);
 
                 // Withdraw from the strategy and revert if returns an error code.
                 require(strategy.redeemUnderlying(amountToPull) == 0, "REDEEM_FAILED");
@@ -715,7 +732,7 @@ contract Vault is ERC20, Auth {
                     // Remove it from the queue.
                     withdrawalQueue.pop();
 
-                    emit WithdrawalQueuePopped(strategy);
+                    emit WithdrawalQueuePopped(msg.sender, strategy);
                 }
             }
 
@@ -744,7 +761,7 @@ contract Vault is ERC20, Auth {
         // Push the strategy to the front of the queue.
         withdrawalQueue.push(strategy);
 
-        emit WithdrawalQueuePushed(strategy);
+        emit WithdrawalQueuePushed(msg.sender, strategy);
     }
 
     /// @notice Removes the strategy at the tip of the withdrawal queue.
@@ -757,7 +774,7 @@ contract Vault is ERC20, Auth {
         // Pop the first strategy in the queue.
         withdrawalQueue.pop();
 
-        emit WithdrawalQueuePopped(poppedStrategy);
+        emit WithdrawalQueuePopped(msg.sender, poppedStrategy);
     }
 
     /// @notice Sets a new withdrawal queue.
@@ -768,7 +785,7 @@ contract Vault is ERC20, Auth {
         // Replace the withdrawal queue.
         withdrawalQueue = newQueue;
 
-        emit WithdrawalQueueSet(newQueue);
+        emit WithdrawalQueueSet(msg.sender, newQueue);
     }
 
     /// @notice Replaces an index in the withdrawal queue with another strategy.
@@ -783,7 +800,7 @@ contract Vault is ERC20, Auth {
         // Update the index with the replacement strategy.
         withdrawalQueue[index] = replacementStrategy;
 
-        emit WithdrawalQueueIndexReplaced(index, replacedStrategy, replacementStrategy);
+        emit WithdrawalQueueIndexReplaced(msg.sender, index, replacedStrategy, replacementStrategy);
     }
 
     /// @notice Moves the strategy at the tip of the queue to the specified index and pop the tip off the queue.
@@ -799,7 +816,7 @@ contract Vault is ERC20, Auth {
         // Remove the now duplicated tip from the array.
         withdrawalQueue.pop();
 
-        emit WithdrawalQueueIndexReplacedWithTip(index, replacedStrategy, previousTipStrategy);
+        emit WithdrawalQueueIndexReplacedWithTip(msg.sender, index, replacedStrategy, previousTipStrategy);
     }
 
     /// @notice Swaps two indexes in the withdrawal queue.
@@ -814,7 +831,7 @@ contract Vault is ERC20, Auth {
         withdrawalQueue[index1] = newStrategy1;
         withdrawalQueue[index2] = newStrategy2;
 
-        emit WithdrawalQueueIndexesSwapped(index1, index2, newStrategy1, newStrategy2);
+        emit WithdrawalQueueIndexesSwapped(msg.sender, index1, index2, newStrategy1, newStrategy2);
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -822,8 +839,9 @@ contract Vault is ERC20, Auth {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Emitted after a strategy is seized.
+    /// @param user The authorized user who triggered the seize.
     /// @param strategy The strategy that was seized.
-    event StrategySeized(Strategy indexed strategy);
+    event StrategySeized(address indexed user, Strategy indexed strategy);
 
     /// @notice Seizes a strategy.
     /// @param strategy The strategy to seize.
@@ -849,7 +867,7 @@ contract Vault is ERC20, Auth {
             totalStrategyHoldings -= strategyBalance;
         }
 
-        emit StrategySeized(strategy);
+        emit StrategySeized(msg.sender, strategy);
 
         // Transfer all of the strategy's tokens to the caller.
         ERC20(strategy).safeTransfer(msg.sender, strategy.balanceOf(address(this)));
@@ -860,14 +878,15 @@ contract Vault is ERC20, Auth {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Emitted after fees are claimed.
+    /// @param user The authorized user who claimed the fees.
     /// @param rvTokenAmount The amount of rvTokens that were claimed.
-    event FeesClaimed(uint256 rvTokenAmount);
+    event FeesClaimed(address indexed user, uint256 rvTokenAmount);
 
     /// @notice Claims fees accrued from harvests.
     /// @param rvTokenAmount The amount of rvTokens to claim.
     /// @dev Accrued fees are measured as rvTokens held by the Vault.
     function claimFees(uint256 rvTokenAmount) external requiresAuth {
-        emit FeesClaimed(rvTokenAmount);
+        emit FeesClaimed(msg.sender, rvTokenAmount);
 
         // Transfer the provided amount of rvTokens to the caller.
         ERC20(this).safeTransfer(msg.sender, rvTokenAmount);
@@ -878,7 +897,8 @@ contract Vault is ERC20, Auth {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Emitted when the Vault is initialized.
-    event Initialized();
+    /// @param user The authorized user who triggered the initialization.
+    event Initialized(address indexed user);
 
     /// @notice Whether the Vault has been initialized yet.
     /// @dev Can go from false to true, never from true to false.
@@ -896,7 +916,7 @@ contract Vault is ERC20, Auth {
         // Open for deposits.
         totalSupply = 0;
 
-        emit Initialized();
+        emit Initialized(msg.sender);
     }
 
     /*///////////////////////////////////////////////////////////////
