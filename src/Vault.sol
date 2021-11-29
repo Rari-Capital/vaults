@@ -449,17 +449,20 @@ contract Vault is ERC20, Auth {
             uint256 balanceLastHarvest = getStrategyData[strategy].balance;
             uint256 balanceThisHarvest = strategy.balanceOfUnderlying(address(this));
 
+            // Update the strategy's stored balance. Cast overflow is unrealistic.
+            getStrategyData[strategy].balance = balanceThisHarvest.safeCastTo248();
+
             // Increase/decrease newTotalStrategyHoldings based on the profit/loss registered.
             // We cannot wrap the subtraction in parenthesis as it would underflow if the strategy had a loss.
             newTotalStrategyHoldings = newTotalStrategyHoldings + balanceThisHarvest - balanceLastHarvest;
 
-            // Update the strategy's stored balance. Cast overflow is unrealistic.
-            getStrategyData[strategy].balance = balanceThisHarvest.safeCastTo248();
-
-            // Update the total profit accrued.
-            totalProfitAccrued += balanceThisHarvest > balanceLastHarvest
-                ? balanceThisHarvest - balanceLastHarvest // Profits since last harvest.
-                : 0; // If the strategy registered a net loss we don't have any new profit.
+            unchecked {
+                // Update the total profit accrued while counting losses as zero profit.
+                // Cannot overflow as we already increased total holdings without reverting.
+                totalProfitAccrued += balanceThisHarvest > balanceLastHarvest
+                    ? balanceThisHarvest - balanceLastHarvest // Profits since last harvest.
+                    : 0; // If the strategy registered a net loss we don't have any new profit.
+            }
         }
 
         // Compute fees as the fee percent multiplied by the profit.
