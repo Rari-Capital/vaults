@@ -27,9 +27,6 @@ contract VaultAuthorityModule is Auth, Authority {
                              USER ROLE STORAGE
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Maps users to a boolean indicating whether they have root access.
-    mapping(address => bool) public isUserRoot;
-
     /// @notice Maps users to a bytes32 set of all the roles assigned to them.
     mapping(address => bytes32) public getUserRoles;
 
@@ -51,8 +48,11 @@ contract VaultAuthorityModule is Auth, Authority {
                         ROLE CAPABILITY STORAGE
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev Maps function signatures to a set of all roles that can call the given function.
+    /// @notice Maps function signatures to a set of all roles that can call the given function.
     mapping(bytes4 => bytes32) public getRoleCapabilities;
+
+    /// @notice Maps function signatures to a boolean indicating whether anyone can call the given function.
+    mapping(bytes4 => bool) public isCapabilityPublic;
 
     /// @notice Gets whether a role has a specific capability.
     /// @param role The role to check for.
@@ -91,8 +91,8 @@ contract VaultAuthorityModule is Auth, Authority {
         // If a custom Authority is set, return whether the Authority allows the user to call the function.
         if (address(customAuthority) != address(0)) return customAuthority.canCall(user, target, functionSig);
 
-        // Return whether the user has an authorized role or is root.
-        return bytes32(0) != getUserRoles[user] & getRoleCapabilities[functionSig] || isUserRoot[user];
+        // Return whether the user has an authorized role or the capability is publicly accessible.
+        return bytes32(0) != getUserRoles[user] & getRoleCapabilities[functionSig] || isCapabilityPublic[functionSig];
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -148,6 +148,25 @@ contract VaultAuthorityModule is Auth, Authority {
     }
 
     /*///////////////////////////////////////////////////////////////
+                  PUBLIC CAPABILITY CONFIGURATION LOGIC
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Emitted when whether a capability is public is updated.
+    /// @param functionSig The function that was made public or not.
+    /// @param enabled Whether the function is not publicly callable or not.
+    event PublicCapabilityUpdated(bytes4 indexed functionSig, bool enabled);
+
+    /// @notice Sets whether a capability is public or not.
+    /// @param functionSig The function make public or not.
+    /// @param enabled Whether the function should be public or not.
+    function setPublicCapability(bytes4 functionSig, bool enabled) external requiresAuth {
+        // Update whether the capability is public.
+        isCapabilityPublic[functionSig] = enabled;
+
+        emit PublicCapabilityUpdated(functionSig, enabled);
+    }
+
+    /*///////////////////////////////////////////////////////////////
                       USER ROLE ASSIGNMENT LOGIC
     //////////////////////////////////////////////////////////////*/
 
@@ -156,11 +175,6 @@ contract VaultAuthorityModule is Auth, Authority {
     /// @param role The role the user had assigned/removed.
     /// @param enabled Whether the user had the role assigned/removed.
     event UserRoleUpdated(address indexed user, uint8 indexed role, bool enabled);
-
-    /// @notice Emitted when whether a user has root permissions is updated.
-    /// @param user The user who had their root permissions updated.
-    /// @param enabled Whether the user has root permissions.
-    event UserRootUpdated(address indexed user, bool enabled);
 
     /// @notice Assigns a role to a user.
     /// @param user The user to assign a role to.
@@ -183,15 +197,5 @@ contract VaultAuthorityModule is Auth, Authority {
         }
 
         emit UserRoleUpdated(user, role, enabled);
-    }
-
-    /// @notice Sets a user as a root user.
-    /// @param user The user to set as a root user.
-    /// @param enabled Whether the user should be a root user or not.
-    function setRootUser(address user, bool enabled) external requiresAuth {
-        // Update whether the user is a root user.
-        isUserRoot[user] = enabled;
-
-        emit UserRootUpdated(user, enabled);
     }
 }

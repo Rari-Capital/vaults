@@ -49,18 +49,6 @@ contract VaultAuthorityModuleTest is DSTestPlus {
         assertFalse(vaultAuthorityModule.doesUserHaveRole(address(0xBEEF), 0));
     }
 
-    function testSetRootUser() public {
-        assertFalse(vaultAuthorityModule.isUserRoot(address(0xBEEF)));
-
-        vaultAuthorityModule.setRootUser(address(0xBEEF), true);
-
-        assertTrue(vaultAuthorityModule.isUserRoot(address(0xBEEF)));
-
-        vaultAuthorityModule.setRootUser(address(0xBEEF), false);
-
-        assertFalse(vaultAuthorityModule.isUserRoot(address(0xBEEF)));
-    }
-
     /*///////////////////////////////////////////////////////////////
                       ROLE CAPABILITY UPDATE TESTS
     //////////////////////////////////////////////////////////////*/
@@ -75,6 +63,18 @@ contract VaultAuthorityModuleTest is DSTestPlus {
         vaultAuthorityModule.setRoleCapability(0, Vault.setFeePercent.selector, false);
 
         assertFalse(vaultAuthorityModule.doesRoleHaveCapability(0, Vault.setFeePercent.selector));
+    }
+
+    function testSetPublicCapabilities() public {
+        assertFalse(vaultAuthorityModule.isCapabilityPublic(Vault.setFeePercent.selector));
+
+        vaultAuthorityModule.setPublicCapability(Vault.setFeePercent.selector, true);
+
+        assertTrue(vaultAuthorityModule.isCapabilityPublic(Vault.setFeePercent.selector));
+
+        vaultAuthorityModule.setPublicCapability(Vault.setFeePercent.selector, false);
+
+        assertFalse(vaultAuthorityModule.isCapabilityPublic(Vault.setFeePercent.selector));
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -116,13 +116,13 @@ contract VaultAuthorityModuleTest is DSTestPlus {
         assertFalse(vaultAuthorityModule.canCall(address(0xBEEF), address(0), Vault.setFeePercent.selector));
     }
 
-    function testRootUserCanCall() public {
+    function testCanCallPublicCapability() public {
         assertFalse(vaultAuthorityModule.canCall(address(0xBEEF), address(0), Vault.setFeePercent.selector));
 
-        vaultAuthorityModule.setRootUser(address(0xBEEF), true);
+        vaultAuthorityModule.setPublicCapability(Vault.setFeePercent.selector, true);
         assertTrue(vaultAuthorityModule.canCall(address(0xBEEF), address(0), Vault.setFeePercent.selector));
 
-        vaultAuthorityModule.setRootUser(address(0xBEEF), false);
+        vaultAuthorityModule.setPublicCapability(Vault.setFeePercent.selector, false);
         assertFalse(vaultAuthorityModule.canCall(address(0xBEEF), address(0), Vault.setFeePercent.selector));
     }
 
@@ -145,10 +145,10 @@ contract VaultAuthorityModuleTest is DSTestPlus {
         assertFalse(vaultAuthorityModule.canCall(address(0xBEEF), address(0xCAFE), Vault.setFeePercent.selector));
     }
 
-    function testCanCallWithCustomAuthorityOverridesRootUser() public {
+    function testCanCallWithCustomAuthorityOverridesPublicCapability() public {
         assertFalse(vaultAuthorityModule.canCall(address(0xBEEF), address(0xCAFE), Vault.setFeePercent.selector));
 
-        vaultAuthorityModule.setRootUser(address(0xBEEF), true);
+        vaultAuthorityModule.setPublicCapability(Vault.setFeePercent.selector, true);
         assertTrue(vaultAuthorityModule.canCall(address(0xBEEF), address(0xCAFE), Vault.setFeePercent.selector));
 
         vaultAuthorityModule.setTargetCustomAuthority(address(0xCAFE), trustAuthority);
@@ -160,7 +160,7 @@ contract VaultAuthorityModuleTest is DSTestPlus {
         trustAuthority.setIsTrusted(address(0xBEEF), true);
         assertTrue(vaultAuthorityModule.canCall(address(0xBEEF), address(0xCAFE), Vault.setFeePercent.selector));
 
-        vaultAuthorityModule.setRootUser(address(0xBEEF), false);
+        vaultAuthorityModule.setPublicCapability(Vault.setFeePercent.selector, false);
         assertTrue(vaultAuthorityModule.canCall(address(0xBEEF), address(0xCAFE), Vault.setFeePercent.selector));
 
         vaultAuthorityModule.setTargetCustomAuthority(address(0xCAFE), Authority(address(0)));
@@ -169,7 +169,7 @@ contract VaultAuthorityModuleTest is DSTestPlus {
         trustAuthority.setIsTrusted(address(0xBEEF), true);
         assertFalse(vaultAuthorityModule.canCall(address(0xBEEF), address(0xCAFE), Vault.setFeePercent.selector));
 
-        vaultAuthorityModule.setRootUser(address(0xBEEF), true);
+        vaultAuthorityModule.setPublicCapability(Vault.setFeePercent.selector, true);
         assertTrue(vaultAuthorityModule.canCall(address(0xBEEF), address(0xCAFE), Vault.setFeePercent.selector));
     }
 
