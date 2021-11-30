@@ -409,14 +409,15 @@ contract Vault is ERC20, Auth {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Emitted after a successful harvest.
-    /// @param strategies The strategies that were harvested.
-    /// @param profitAccrued The amount of profit accrued by the harvest.
-    /// @dev If profitAccrued is 0 that could mean the harvest registered a loss.
-    event Harvest(Strategy[] strategies, uint256 profitAccrued);
+    /// @param user The authorized user who triggered the harvest.
+    /// @param strategies The trusted strategies that were harvested.
+    event Harvest(address indexed user, Strategy[] strategies);
 
     /// @notice Harvest a set of trusted strategies.
     /// @param strategies The trusted strategies to harvest.
-    function harvest(Strategy[] calldata strategies) external {
+    /// @dev Will always revert if called outside of an active
+    /// harvest window or before the harvest delay has passed.
+    function harvest(Strategy[] calldata strategies) external requiresAuth {
         // If this is the first harvest after the last window:
         if (block.timestamp >= lastHarvest + harvestDelay) {
             // Set the harvest window's start timestamp.
@@ -482,7 +483,7 @@ contract Vault is ERC20, Auth {
         // Cannot overflow on human timescales.
         lastHarvest = uint64(block.timestamp);
 
-        emit Harvest(strategies, totalProfitAccrued);
+        emit Harvest(msg.sender, strategies);
 
         // Get the next harvest delay.
         uint64 newHarvestDelay = nextHarvestDelay;
