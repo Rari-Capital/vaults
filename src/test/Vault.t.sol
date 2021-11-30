@@ -863,6 +863,10 @@ contract VaultsTest is DSTestPlus {
     function testFailInitializeTwice() public {
         vault.initialize();
     }
+
+    function testDestroyVault() public {
+        vault.destroy();
+    }
 }
 
 contract VaultsETHTest is DSTestPlus {
@@ -930,6 +934,14 @@ contract VaultsETHTest is DSTestPlus {
 
         (bool trusted, ) = wethVault.getStrategyData(erc20Strategy);
         assertTrue(trusted);
+    }
+
+    function testDestroyVaultReturnsETH() public {
+        uint256 startingETHBal = address(this).balance;
+        payable(address(wethVault)).transfer(1 ether);
+
+        wethVault.destroy();
+        assertEq(address(this).balance, startingETHBal);
     }
 
     receive() external payable {}

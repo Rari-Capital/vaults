@@ -921,7 +921,7 @@ contract Vault is ERC20, Auth {
     }
 
     /// @notice Self destructs a Vault, enabling it to be redeployed.
-    /// @dev Will revert if the caller is not able to receive Ether.
+    /// @dev Caller will receive any ETH held as float in the Vault.
     function destroy() external requiresAuth {
         selfdestruct(payable(msg.sender));
     }
