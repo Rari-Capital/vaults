@@ -125,7 +125,7 @@ contract Vault is ERC20, Auth {
     /// @notice Sets a new harvest delay.
     /// @param newHarvestDelay The new harvest delay to set.
     /// @dev If the current harvest delay is 0, meaning it has not
-    /// been set before, it will be updated immediately; otherwise
+    /// been set before, it will be updated immediately, otherwise
     /// it will be scheduled to take effect after the next harvest.
     function setHarvestDelay(uint64 newHarvestDelay) external requiresAuth {
         // A harvest delay of 0 makes harvests vulnerable to sandwich attacks.
