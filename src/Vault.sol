@@ -894,7 +894,7 @@ contract Vault is ERC20, Auth {
     }
 
     /*///////////////////////////////////////////////////////////////
-                          INITIALIZATION LOGIC
+                    INITIALIZATION AND DESTRUCTION LOGIC
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Emitted when the Vault is initialized.
@@ -918,6 +918,12 @@ contract Vault is ERC20, Auth {
         totalSupply = 0;
 
         emit Initialized(msg.sender);
+    }
+
+    /// @notice Self destructs a Vault, enabling it to be redeployed.
+    /// @dev Will revert if the caller is not able to receive Ether.
+    function destroy() external requiresAuth {
+        selfdestruct(payable(msg.sender));
     }
 
     /*///////////////////////////////////////////////////////////////
