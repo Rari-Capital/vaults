@@ -98,7 +98,7 @@ contract Vault is ERC20, Auth {
 
     /// @notice The period in seconds during which multiple harvests can occur
     /// regardless if they are taking place before the harvest delay has elapsed.
-    /// @dev Long harvest delays open up the Vault to profit distribution DOS attacks.
+    /// @dev Long harvest windows open the Vault up to profit distribution slowdown attacks.
     uint128 public harvestWindow;
 
     /// @notice The period in seconds over which locked profit is unlocked.
