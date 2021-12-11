@@ -31,4 +31,8 @@ contract VaultFactoryTest is DSTestPlus {
         vaultFactory.deployVault(underlying);
         vaultFactory.deployVault(underlying);
     }
+
+    function testIsVaultDeployed() public {
+        assertFalse(vaultFactory.isVaultDeployed(Vault(payable(address(0xBEEF)))));
+    }
 }
