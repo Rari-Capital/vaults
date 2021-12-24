@@ -165,7 +165,7 @@ contract Vault is ERC20, Auth {
     /// @param newTargetFloatPercent The new target float percentage.
     function setTargetFloatPercent(uint256 newTargetFloatPercent) external requiresAuth {
         // A target float percentage over 100% doesn't make sense.
-        require(targetFloatPercent <= 1e18, "TARGET_TOO_HIGH");
+        require(newTargetFloatPercent <= 1e18, "TARGET_TOO_HIGH");
 
         // Update the target float percentage.
         targetFloatPercent = newTargetFloatPercent;
