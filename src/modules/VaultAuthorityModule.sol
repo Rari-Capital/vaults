@@ -49,7 +49,7 @@ contract VaultAuthorityModule is Auth, Authority {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Maps function signatures to a set of all roles that can call the given function.
-    mapping(bytes4 => bytes32) public getFuncCapabilities;
+    mapping(bytes4 => bytes32) public getRoleCapabilities;
 
     /// @notice Maps function signatures to a boolean indicating whether anyone can call the given function.
     mapping(bytes4 => bool) public isCapabilityPublic;
@@ -64,7 +64,7 @@ contract VaultAuthorityModule is Auth, Authority {
             bytes32 shifted = bytes32(uint256(uint256(2)**uint256(role)));
 
             // Check if the role has the capability using the generated mask.
-            return bytes32(0) != getFuncCapabilities[functionSig] & shifted;
+            return bytes32(0) != getRoleCapabilities[functionSig] & shifted;
         }
     }
 
@@ -92,7 +92,7 @@ contract VaultAuthorityModule is Auth, Authority {
         if (address(customAuthority) != address(0)) return customAuthority.canCall(user, target, functionSig);
 
         // Return whether the user has an authorized role or the capability is publicly accessible.
-        return bytes32(0) != getUserRoles[user] & getFuncCapabilities[functionSig] || isCapabilityPublic[functionSig];
+        return bytes32(0) != getUserRoles[user] & getRoleCapabilities[functionSig] || isCapabilityPublic[functionSig];
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -134,14 +134,14 @@ contract VaultAuthorityModule is Auth, Authority {
         bool enabled
     ) external requiresAuth {
         // Get the previous set of role capabilities.
-        bytes32 lastCapabilities = getFuncCapabilities[functionSig];
+        bytes32 lastCapabilities = getRoleCapabilities[functionSig];
 
         unchecked {
             // Generate a mask for the role.
             bytes32 shifted = bytes32(uint256(uint256(2)**uint256(role)));
 
             // Update the role's capability set with the role mask.
-            getFuncCapabilities[functionSig] = enabled ? lastCapabilities | shifted : lastCapabilities & ~shifted;
+            getRoleCapabilities[functionSig] = enabled ? lastCapabilities | shifted : lastCapabilities & ~shifted;
         }
 
         emit RoleCapabilityUpdated(role, functionSig, enabled);
