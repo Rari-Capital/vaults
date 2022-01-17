@@ -848,9 +848,6 @@ contract Vault is ERC20, Auth {
     /// @dev Intended for use in emergencies or other extraneous situations where the
     /// strategy requires interaction outside of the Vault's standard operating procedures.
     function seizeStrategy(Strategy strategy) external requiresAuth {
-        // A strategy must be trusted before it can be seized.
-        require(getStrategyData[strategy].trusted, "UNTRUSTED_STRATEGY");
-
         // Get the strategy's last reported balance of underlying tokens.
         uint256 strategyBalance = getStrategyData[strategy].balance;
 

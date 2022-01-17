@@ -797,20 +797,6 @@ contract VaultsTest is DSTestPlus {
         vault.withdraw(1428571428571428571);
     }
 
-    function testFailSeizeUntrustedStrategy() public {
-        underlying.mint(address(this), 1e18);
-
-        underlying.approve(address(vault), 1e18);
-        vault.deposit(1e18);
-
-        vault.trustStrategy(strategy1);
-        vault.depositIntoStrategy(strategy1, 1e18);
-
-        vault.distrustStrategy(strategy1);
-
-        vault.seizeStrategy(strategy1);
-    }
-
     function testFailTrustStrategyWithWrongUnderlying() public {
         MockERC20 wrongUnderlying = new MockERC20("Not The Right Token", "TKN2", 18);
 
