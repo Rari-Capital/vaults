@@ -105,7 +105,7 @@ contract VaultRouterModule {
         require(vault.underlyingIsWETH(), "UNDERLYING_NOT_WETH");
 
         // Compute the amount of rvTokens equivalent to the underlying amount.
-        // We know the Vault's base unit is 1e18 as it's required if underlyingIsWETH returns true.
+        // We know the Vault's base unit is 1e18 as it's required for underlyingIsWETH to be true.
         uint256 rvTokenAmount = underlyingAmount.fdiv(vault.exchangeRate(), 1e18);
 
         // Transfer in the equivalent amount of rvTokens from the caller.
@@ -137,7 +137,7 @@ contract VaultRouterModule {
         require(vault.underlyingIsWETH(), "UNDERLYING_NOT_WETH");
 
         // Compute the amount of rvTokens equivalent to the underlying amount.
-        // We know the Vault's base unit is 1e18 as it's required if underlyingIsWETH returns true.
+        // We know the Vault's base unit is 1e18 as it's required for underlyingIsWETH to be true.
         uint256 rvTokenAmount = underlyingAmount.fdiv(vault.exchangeRate(), 1e18);
 
         // Transfer in the equivalent amount of rvTokens from the caller via permit.
@@ -234,11 +234,8 @@ contract VaultRouterModule {
         ERC20 underlying,
         uint256 amount
     ) internal {
-        // If we don't have enough of the underlying token approved already:
-        if (amount > underlying.allowance(address(this), address(vault))) {
-            // Approve an unlimited amount of the underlying token to the Vault.
-            underlying.safeApprove(address(vault), type(uint256).max);
-        }
+        // Approve the underlying tokens to the Vault.
+        underlying.safeApprove(address(vault), amount);
 
         // Deposit the underlying tokens into the Vault.
         vault.deposit(amount);
