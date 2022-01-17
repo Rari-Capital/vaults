@@ -702,7 +702,7 @@ contract Vault is ERC20, Auth {
             }
 
             // We want to pull as much as we can from the strategy, but no more than we need.
-            uint256 amountToPull = FixedPointMathLib.min(amountLeftToPull, strategyBalance);
+            uint256 amountToPull = strategyBalance > amountLeftToPull ? amountLeftToPull : strategyBalance;
 
             unchecked {
                 // Compute the balance of the strategy that will remain after we withdraw.

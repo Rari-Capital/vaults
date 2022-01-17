@@ -4,11 +4,11 @@ pragma solidity 0.8.10;
 import {Authority} from "solmate/auth/Auth.sol";
 import {DSTestPlus} from "solmate/test/utils/DSTestPlus.sol";
 import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
+import {MultiRolesAuthority} from "solmate/auth/authorities/MultiRolesAuthority.sol";
 
 import {MockERC20Strategy} from "./mocks/MockERC20Strategy.sol";
 
 import {VaultInitializationModule} from "../modules/VaultInitializationModule.sol";
-import {VaultAuthorityModule} from "../modules/VaultAuthorityModule.sol";
 import {VaultConfigurationModule} from "../modules/VaultConfigurationModule.sol";
 
 import {Strategy} from "../interfaces/Strategy.sol";
@@ -19,7 +19,7 @@ import {VaultFactory} from "../VaultFactory.sol";
 contract IntegrationTest is DSTestPlus {
     VaultFactory vaultFactory;
 
-    VaultAuthorityModule vaultAuthorityModule;
+    MultiRolesAuthority multiRolesAuthority;
 
     VaultConfigurationModule vaultConfigurationModule;
 
@@ -33,9 +33,9 @@ contract IntegrationTest is DSTestPlus {
     function setUp() public {
         underlying = new MockERC20("Mock Token", "TKN", 18);
 
-        vaultAuthorityModule = new VaultAuthorityModule(address(this), Authority(address(0)));
+        multiRolesAuthority = new MultiRolesAuthority(address(this), Authority(address(0)));
 
-        vaultFactory = new VaultFactory(address(this), vaultAuthorityModule);
+        vaultFactory = new VaultFactory(address(this), multiRolesAuthority);
 
         vaultConfigurationModule = new VaultConfigurationModule(address(this), Authority(address(0)));
 
@@ -50,14 +50,14 @@ contract IntegrationTest is DSTestPlus {
     }
 
     function testIntegration() public {
-        vaultAuthorityModule.setUserRole(address(vaultConfigurationModule), 0, true);
-        vaultAuthorityModule.setRoleCapability(0, Vault.setFeePercent.selector, true);
-        vaultAuthorityModule.setRoleCapability(0, Vault.setHarvestDelay.selector, true);
-        vaultAuthorityModule.setRoleCapability(0, Vault.setHarvestWindow.selector, true);
-        vaultAuthorityModule.setRoleCapability(0, Vault.setTargetFloatPercent.selector, true);
+        multiRolesAuthority.setUserRole(address(vaultConfigurationModule), 0, true);
+        multiRolesAuthority.setRoleCapability(0, Vault.setFeePercent.selector, true);
+        multiRolesAuthority.setRoleCapability(0, Vault.setHarvestDelay.selector, true);
+        multiRolesAuthority.setRoleCapability(0, Vault.setHarvestWindow.selector, true);
+        multiRolesAuthority.setRoleCapability(0, Vault.setTargetFloatPercent.selector, true);
 
-        vaultAuthorityModule.setUserRole(address(vaultInitializationModule), 1, true);
-        vaultAuthorityModule.setRoleCapability(1, Vault.initialize.selector, true);
+        multiRolesAuthority.setUserRole(address(vaultInitializationModule), 1, true);
+        multiRolesAuthority.setRoleCapability(1, Vault.initialize.selector, true);
 
         vaultConfigurationModule.setDefaultFeePercent(0.1e18);
         vaultConfigurationModule.setDefaultHarvestDelay(6 hours);

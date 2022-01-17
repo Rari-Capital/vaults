@@ -136,18 +136,6 @@ contract VaultsTest is DSTestPlus {
         vault.deposit(1e18);
     }
 
-    function testFailRedeemZero() public {
-        vault.redeem(0);
-    }
-
-    function testFailWithdrawZero() public {
-        vault.withdraw(0);
-    }
-
-    function testFailDepositZero() public {
-        vault.deposit(0);
-    }
-
     /*///////////////////////////////////////////////////////////////
                      STRATEGY DEPOSIT/WITHDRAWAL TESTS
     //////////////////////////////////////////////////////////////*/
@@ -282,18 +270,6 @@ contract VaultsTest is DSTestPlus {
         vault.trustStrategy(strategy1);
 
         vault.withdrawFromStrategy(strategy1, 1e18);
-    }
-
-    function testFailDepositIntoStrategyZero() public {
-        vault.trustStrategy(strategy1);
-
-        vault.depositIntoStrategy(strategy1, 0);
-    }
-
-    function testFailWithdrawFromStrategyZero() public {
-        vault.trustStrategy(strategy1);
-
-        vault.withdrawFromStrategy(strategy1, 0);
     }
 
     /*///////////////////////////////////////////////////////////////

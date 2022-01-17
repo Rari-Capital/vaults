@@ -4,7 +4,7 @@ pragma solidity 0.8.10;
 import {Authority} from "solmate/auth/Auth.sol";
 import {DSTestPlus} from "solmate/test/utils/DSTestPlus.sol";
 import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
-import {TrustAuthority} from "solmate/auth/authorities/TrustAuthority.sol";
+import {MockAuthority} from "solmate/test/utils/mocks/MockAuthority.sol";
 
 import {VaultConfigurationModule} from "../modules/VaultConfigurationModule.sol";
 
@@ -14,8 +14,6 @@ import {VaultFactory} from "../VaultFactory.sol";
 contract VaultConfigurationModuleTest is DSTestPlus {
     VaultFactory vaultFactory;
 
-    TrustAuthority trustAuthority;
-
     Vault vault;
     MockERC20 underlying;
 
@@ -24,11 +22,7 @@ contract VaultConfigurationModuleTest is DSTestPlus {
     function setUp() public {
         vaultConfigurationModule = new VaultConfigurationModule(address(this), Authority(address(0)));
 
-        trustAuthority = new TrustAuthority(address(this));
-
-        vaultFactory = new VaultFactory(address(this), trustAuthority);
-
-        trustAuthority.setIsTrusted(address(vaultConfigurationModule), true);
+        vaultFactory = new VaultFactory(address(this), new MockAuthority(true));
 
         underlying = new MockERC20("Mock Token", "TKN", 18);
 
