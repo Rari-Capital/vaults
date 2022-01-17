@@ -178,7 +178,7 @@ contract VaultConfigurationModule is Auth {
         uint256 customFeePercent = getVaultCustomFeePercent[vault];
 
         // Determine what the new fee percentage should be for the Vault after the sync.
-        uint256 newFeePercent = customFeePercent > 0 ? customFeePercent : defaultFeePercent;
+        uint256 newFeePercent = customFeePercent == 0 ? defaultFeePercent : customFeePercent;
 
         // Prevent spamming as this function requires no authorization.
         require(vault.feePercent() != newFeePercent, "ALREADY_SYNCED");
@@ -195,7 +195,7 @@ contract VaultConfigurationModule is Auth {
         // Get the Vault's custom harvest delay.
         uint64 customHarvestDelay = getVaultCustomHarvestDelay[vault];
 
-        // Determine what the new harvest delay for the Vault should be after the sync.
+        // Determine what the new harvest delay should be for the Vault after the sync.
         uint64 newHarvestDelay = customHarvestDelay == 0 ? defaultHarvestDelay : customHarvestDelay;
 
         // Prevent spamming as this function requires no authorization.
@@ -213,7 +213,7 @@ contract VaultConfigurationModule is Auth {
         // Get the Vault's custom harvest window.
         uint128 customHarvestWindow = getVaultCustomHarvestWindow[vault];
 
-        // Determine what the new harvest window for the Vault should be after the sync.
+        // Determine what the new harvest window should be for the Vault after the sync.
         uint128 newHarvestWindow = customHarvestWindow == 0 ? defaultHarvestWindow : customHarvestWindow;
 
         // Prevent spamming as this function requires no authorization.
@@ -231,7 +231,7 @@ contract VaultConfigurationModule is Auth {
         // Get the Vault's custom target float percentage.
         uint256 customTargetFloatPercent = getVaultCustomTargetFloatPercent[vault];
 
-        // Determine what the new target float percentage for the Vault should be after the sync.
+        // Determine what the new target float percentage should be for the Vault after the sync.
         uint256 newTargetFloatPercent = customTargetFloatPercent == 0
             ? defaultTargetFloatPercent
             : customTargetFloatPercent;
