@@ -308,7 +308,7 @@ contract VaultsTest is DSTestPlus {
 
         vault.trustStrategy(strategy1);
         vault.depositIntoStrategy(strategy1, 1e18);
-        vault.pushToWithdrawalQueue(strategy1);
+        vault.pushToWithdrawalStack(strategy1);
 
         assertEq(vault.exchangeRate(), 1e18);
         assertEq(vault.totalStrategyHoldings(), 1e18);
@@ -402,7 +402,7 @@ contract VaultsTest is DSTestPlus {
 
         vault.trustStrategy(strategy1);
         vault.depositIntoStrategy(strategy1, 1e18);
-        vault.pushToWithdrawalQueue(strategy1);
+        vault.pushToWithdrawalStack(strategy1);
 
         assertEq(vault.exchangeRate(), 1e18);
         assertEq(vault.totalStrategyHoldings(), 1e18);
@@ -587,94 +587,94 @@ contract VaultsTest is DSTestPlus {
     }
 
     /*///////////////////////////////////////////////////////////////
-                        WITHDRAWAL QUEUE TESTS
+                        WITHDRAWAL STACK TESTS
     //////////////////////////////////////////////////////////////*/
 
-    function testPushingToWithdrawalQueue() public {
-        vault.pushToWithdrawalQueue(Strategy(address(69)));
-        vault.pushToWithdrawalQueue(Strategy(address(420)));
-        vault.pushToWithdrawalQueue(Strategy(address(1337)));
-        vault.pushToWithdrawalQueue(Strategy(address(69420)));
+    function testPushingToWithdrawalStack() public {
+        vault.pushToWithdrawalStack(Strategy(address(69)));
+        vault.pushToWithdrawalStack(Strategy(address(420)));
+        vault.pushToWithdrawalStack(Strategy(address(1337)));
+        vault.pushToWithdrawalStack(Strategy(address(69420)));
 
-        assertEq(vault.getWithdrawalQueue().length, 4);
+        assertEq(vault.getWithdrawalStack().length, 4);
 
-        assertEq(address(vault.withdrawalQueue(0)), address(69));
-        assertEq(address(vault.withdrawalQueue(1)), address(420));
-        assertEq(address(vault.withdrawalQueue(2)), address(1337));
-        assertEq(address(vault.withdrawalQueue(3)), address(69420));
+        assertEq(address(vault.withdrawalStack(0)), address(69));
+        assertEq(address(vault.withdrawalStack(1)), address(420));
+        assertEq(address(vault.withdrawalStack(2)), address(1337));
+        assertEq(address(vault.withdrawalStack(3)), address(69420));
     }
 
-    function testPoppingFromWithdrawalQueue() public {
-        vault.pushToWithdrawalQueue(Strategy(address(69)));
-        vault.pushToWithdrawalQueue(Strategy(address(420)));
-        vault.pushToWithdrawalQueue(Strategy(address(1337)));
-        vault.pushToWithdrawalQueue(Strategy(address(69420)));
+    function testPoppingFromWithdrawalStack() public {
+        vault.pushToWithdrawalStack(Strategy(address(69)));
+        vault.pushToWithdrawalStack(Strategy(address(420)));
+        vault.pushToWithdrawalStack(Strategy(address(1337)));
+        vault.pushToWithdrawalStack(Strategy(address(69420)));
 
-        vault.popFromWithdrawalQueue();
-        assertEq(vault.getWithdrawalQueue().length, 3);
+        vault.popFromWithdrawalStack();
+        assertEq(vault.getWithdrawalStack().length, 3);
 
-        vault.popFromWithdrawalQueue();
-        assertEq(vault.getWithdrawalQueue().length, 2);
+        vault.popFromWithdrawalStack();
+        assertEq(vault.getWithdrawalStack().length, 2);
 
-        vault.popFromWithdrawalQueue();
-        assertEq(vault.getWithdrawalQueue().length, 1);
+        vault.popFromWithdrawalStack();
+        assertEq(vault.getWithdrawalStack().length, 1);
 
-        vault.popFromWithdrawalQueue();
-        assertEq(vault.getWithdrawalQueue().length, 0);
+        vault.popFromWithdrawalStack();
+        assertEq(vault.getWithdrawalStack().length, 0);
     }
 
-    function testReplaceWithdrawalQueueIndex() public {
-        Strategy[] memory newQueue = new Strategy[](4);
-        newQueue[0] = Strategy(address(1));
-        newQueue[1] = Strategy(address(2));
-        newQueue[2] = Strategy(address(3));
-        newQueue[3] = Strategy(address(4));
+    function testReplaceWithdrawalStackIndex() public {
+        Strategy[] memory newStack = new Strategy[](4);
+        newStack[0] = Strategy(address(1));
+        newStack[1] = Strategy(address(2));
+        newStack[2] = Strategy(address(3));
+        newStack[3] = Strategy(address(4));
 
-        vault.setWithdrawalQueue(newQueue);
+        vault.setWithdrawalStack(newStack);
 
-        vault.replaceWithdrawalQueueIndex(1, Strategy(address(420)));
+        vault.replaceWithdrawalStackIndex(1, Strategy(address(420)));
 
-        assertEq(vault.getWithdrawalQueue().length, 4);
-        assertEq(address(vault.withdrawalQueue(1)), address(420));
+        assertEq(vault.getWithdrawalStack().length, 4);
+        assertEq(address(vault.withdrawalStack(1)), address(420));
     }
 
-    function testReplaceWithdrawalQueueIndexWithTip() public {
-        Strategy[] memory newQueue = new Strategy[](4);
-        newQueue[0] = Strategy(address(1001));
-        newQueue[1] = Strategy(address(1002));
-        newQueue[2] = Strategy(address(1003));
-        newQueue[3] = Strategy(address(1004));
+    function testReplaceWithdrawalStackIndexWithTip() public {
+        Strategy[] memory newStack = new Strategy[](4);
+        newStack[0] = Strategy(address(1001));
+        newStack[1] = Strategy(address(1002));
+        newStack[2] = Strategy(address(1003));
+        newStack[3] = Strategy(address(1004));
 
-        vault.setWithdrawalQueue(newQueue);
+        vault.setWithdrawalStack(newStack);
 
-        vault.replaceWithdrawalQueueIndexWithTip(1);
+        vault.replaceWithdrawalStackIndexWithTip(1);
 
-        assertEq(vault.getWithdrawalQueue().length, 3);
-        assertEq(address(vault.withdrawalQueue(2)), address(1003));
-        assertEq(address(vault.withdrawalQueue(1)), address(1004));
+        assertEq(vault.getWithdrawalStack().length, 3);
+        assertEq(address(vault.withdrawalStack(2)), address(1003));
+        assertEq(address(vault.withdrawalStack(1)), address(1004));
     }
 
-    function testSwapWithdrawalQueueIndexes() public {
-        Strategy[] memory newQueue = new Strategy[](4);
-        newQueue[0] = Strategy(address(1001));
-        newQueue[1] = Strategy(address(1002));
-        newQueue[2] = Strategy(address(1003));
-        newQueue[3] = Strategy(address(1004));
+    function testSwapWithdrawalStackIndexes() public {
+        Strategy[] memory newStack = new Strategy[](4);
+        newStack[0] = Strategy(address(1001));
+        newStack[1] = Strategy(address(1002));
+        newStack[2] = Strategy(address(1003));
+        newStack[3] = Strategy(address(1004));
 
-        vault.setWithdrawalQueue(newQueue);
+        vault.setWithdrawalStack(newStack);
 
-        vault.swapWithdrawalQueueIndexes(1, 2);
+        vault.swapWithdrawalStackIndexes(1, 2);
 
-        assertEq(vault.getWithdrawalQueue().length, 4);
-        assertEq(address(vault.withdrawalQueue(1)), address(1003));
-        assertEq(address(vault.withdrawalQueue(2)), address(1002));
+        assertEq(vault.getWithdrawalStack().length, 4);
+        assertEq(address(vault.withdrawalStack(1)), address(1003));
+        assertEq(address(vault.withdrawalStack(2)), address(1002));
     }
 
     /*///////////////////////////////////////////////////////////////
                             EDGE CASE TESTS
     //////////////////////////////////////////////////////////////*/
 
-    function testWithdrawingWithDuplicateStrategiesInQueue() public {
+    function testWithdrawingWithDuplicateStrategiesInStack() public {
         underlying.mint(address(this), 1e18);
 
         underlying.approve(address(vault), 1e18);
@@ -686,23 +686,23 @@ contract VaultsTest is DSTestPlus {
         vault.trustStrategy(strategy2);
         vault.depositIntoStrategy(strategy2, 0.5e18);
 
-        vault.pushToWithdrawalQueue(strategy1);
-        vault.pushToWithdrawalQueue(strategy1);
-        vault.pushToWithdrawalQueue(strategy2);
-        vault.pushToWithdrawalQueue(strategy1);
-        vault.pushToWithdrawalQueue(strategy1);
+        vault.pushToWithdrawalStack(strategy1);
+        vault.pushToWithdrawalStack(strategy1);
+        vault.pushToWithdrawalStack(strategy2);
+        vault.pushToWithdrawalStack(strategy1);
+        vault.pushToWithdrawalStack(strategy1);
 
-        assertEq(vault.getWithdrawalQueue().length, 5);
+        assertEq(vault.getWithdrawalStack().length, 5);
 
         vault.redeem(1e18);
 
-        assertEq(vault.getWithdrawalQueue().length, 2);
+        assertEq(vault.getWithdrawalStack().length, 2);
 
-        assertEq(address(vault.withdrawalQueue(0)), address(strategy1));
-        assertEq(address(vault.withdrawalQueue(1)), address(strategy1));
+        assertEq(address(vault.withdrawalStack(0)), address(strategy1));
+        assertEq(address(vault.withdrawalStack(1)), address(strategy1));
     }
 
-    function testWithdrawingWithUntrustedStrategyInQueue() public {
+    function testWithdrawingWithUntrustedStrategyInStack() public {
         underlying.mint(address(this), 1e18);
 
         underlying.approve(address(vault), 1e18);
@@ -714,19 +714,19 @@ contract VaultsTest is DSTestPlus {
         vault.trustStrategy(strategy2);
         vault.depositIntoStrategy(strategy2, 0.5e18);
 
-        vault.pushToWithdrawalQueue(strategy2);
-        vault.pushToWithdrawalQueue(strategy2);
-        vault.pushToWithdrawalQueue(new MockERC20Strategy(underlying));
-        vault.pushToWithdrawalQueue(strategy1);
-        vault.pushToWithdrawalQueue(strategy1);
+        vault.pushToWithdrawalStack(strategy2);
+        vault.pushToWithdrawalStack(strategy2);
+        vault.pushToWithdrawalStack(new MockERC20Strategy(underlying));
+        vault.pushToWithdrawalStack(strategy1);
+        vault.pushToWithdrawalStack(strategy1);
 
-        assertEq(vault.getWithdrawalQueue().length, 5);
+        assertEq(vault.getWithdrawalStack().length, 5);
 
         vault.redeem(1e18);
 
-        assertEq(vault.getWithdrawalQueue().length, 1);
+        assertEq(vault.getWithdrawalStack().length, 1);
 
-        assertEq(address(vault.withdrawalQueue(0)), address(strategy2));
+        assertEq(address(vault.withdrawalStack(0)), address(strategy2));
     }
 
     function testSeizeStrategy() public {
@@ -831,7 +831,7 @@ contract VaultsTest is DSTestPlus {
         vault.trustStrategy(ethStrategy);
     }
 
-    function testFailWithdrawWithEmptyQueue() public {
+    function testFailWithdrawWithEmptyStack() public {
         underlying.mint(address(this), 1e18);
 
         underlying.approve(address(vault), 1e18);
@@ -843,7 +843,7 @@ contract VaultsTest is DSTestPlus {
         vault.redeem(1e18);
     }
 
-    function testFailWithdrawWithIncompleteQueue() public {
+    function testFailWithdrawWithIncompleteStack() public {
         underlying.mint(address(this), 1e18);
 
         underlying.approve(address(vault), 1e18);
@@ -852,7 +852,7 @@ contract VaultsTest is DSTestPlus {
         vault.trustStrategy(strategy1);
         vault.depositIntoStrategy(strategy1, 0.5e18);
 
-        vault.pushToWithdrawalQueue(strategy1);
+        vault.pushToWithdrawalStack(strategy1);
 
         vault.trustStrategy(strategy2);
         vault.depositIntoStrategy(strategy2, 0.5e18);
@@ -906,11 +906,11 @@ contract VaultsETHTest is DSTestPlus {
 
         wethVault.trustStrategy(ethStrategy);
         wethVault.depositIntoStrategy(ethStrategy, 0.5e18);
-        wethVault.pushToWithdrawalQueue(ethStrategy);
+        wethVault.pushToWithdrawalStack(ethStrategy);
 
         wethVault.trustStrategy(erc20Strategy);
         wethVault.depositIntoStrategy(erc20Strategy, 0.5e18);
-        wethVault.pushToWithdrawalQueue(erc20Strategy);
+        wethVault.pushToWithdrawalStack(erc20Strategy);
 
         wethVault.withdrawFromStrategy(ethStrategy, 0.25e18);
         wethVault.withdrawFromStrategy(erc20Strategy, 0.25e18);
