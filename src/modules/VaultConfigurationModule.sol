@@ -39,15 +39,23 @@ contract VaultConfigurationModule is Auth {
     event DefaultTargetFloatPercentUpdated(uint256 newDefaultTargetFloatPercent);
 
     /// @notice The default fee percentage for Vaults.
+    /// @dev See the documentation for the feePercentage
+    /// variable in the Vault contract for more details.
     uint256 public defaultFeePercent;
 
     /// @notice The default harvest delay for Vaults.
+    /// @dev See the documentation for the harvestDelay
+    /// variable in the Vault contract for more details.
     uint64 public defaultHarvestDelay;
 
     /// @notice The default harvest window for Vaults.
+    /// @dev See the documentation for the harvestWindow
+    /// variable in the Vault contract for more details.
     uint128 public defaultHarvestWindow;
 
     /// @notice The default target float percentage for Vaults.
+    /// @dev See the documentation for the targetFloatPercent
+    /// variable in the Vault contract for more details.
     uint256 public defaultTargetFloatPercent;
 
     /// @notice Sets the default fee percentage for Vaults.
@@ -112,18 +120,22 @@ contract VaultConfigurationModule is Auth {
 
     /// @notice Maps Vaults to their custom fee percentage.
     /// @dev Will be 0 if there is no custom fee percentage for the Vault.
+    /// @dev See the documentation for the targetFloatPercent variable in the Vault contract for more details.
     mapping(Vault => uint256) public getVaultCustomFeePercent;
 
     /// @notice Maps Vaults to their custom harvest delay.
     /// @dev Will be 0 if there is no custom harvest delay for the Vault.
+    /// @dev See the documentation for the harvestDelay variable in the Vault contract for more details.
     mapping(Vault => uint64) public getVaultCustomHarvestDelay;
 
     /// @notice Maps Vaults to their custom harvest window.
     /// @dev Will be 0 if there is no custom harvest window for the Vault.
+    /// @dev See the documentation for the harvestWindow variable in the Vault contract for more details.
     mapping(Vault => uint128) public getVaultCustomHarvestWindow;
 
     /// @notice Maps Vaults to their custom target float percentage.
     /// @dev Will be 0 if there is no custom target float percentage for the Vault.
+    /// @dev See the documentation for the targetFloatPercent variable in the Vault contract for more details.
     mapping(Vault => uint256) public getVaultCustomTargetFloatPercent;
 
     /// @notice Sets the custom fee percentage for the Vault.
