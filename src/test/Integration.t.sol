@@ -74,11 +74,11 @@ contract IntegrationTest is DSTestPlus {
 
         vault.trustStrategy(strategy1);
         vault.depositIntoStrategy(strategy1, 0.5e18);
-        vault.pushToWithdrawalQueue(strategy1);
+        vault.pushToWithdrawalStack(strategy1);
 
         vault.trustStrategy(strategy2);
         vault.depositIntoStrategy(strategy2, 0.5e18);
-        vault.pushToWithdrawalQueue(strategy2);
+        vault.pushToWithdrawalStack(strategy2);
 
         vaultConfigurationModule.setDefaultFeePercent(0.2e18);
         assertEq(vault.feePercent(), 0.1e18);
