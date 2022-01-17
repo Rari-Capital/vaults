@@ -198,8 +198,8 @@ contract Vault is ERC20, Auth {
     /// @param newUnderlyingIsWETH Whether the Vault should treat the underlying as WETH.
     /// @dev The underlying token must have 18 decimals, to match Ether's decimal scheme.
     function setUnderlyingIsWETH(bool newUnderlyingIsWETH) external requiresAuth {
-        // Ensure the underlying token's decimals match ETH.
-        require(UNDERLYING.decimals() == 18, "WRONG_DECIMALS");
+        // Ensure the underlying token's decimals match ETH if is WETH being set to true.
+        require(!newUnderlyingIsWETH || UNDERLYING.decimals() == 18, "WRONG_DECIMALS");
 
         // Update whether the Vault treats the underlying as WETH.
         underlyingIsWETH = newUnderlyingIsWETH;
