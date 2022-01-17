@@ -20,6 +20,14 @@ contract Vault is ERC20, Auth {
     using FixedPointMathLib for uint256;
 
     /*///////////////////////////////////////////////////////////////
+                                 CONSTANTS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice The maximum number of elements allowed on the withdrawal stack.
+    /// @dev Needed to prevent denial of service attacks by queue operators.
+    uint256 internal constant MAX_WITHDRAWAL_STACK_SIZE = 32;
+
+    /*///////////////////////////////////////////////////////////////
                                 IMMUTABLES
     //////////////////////////////////////////////////////////////*/
 
@@ -759,6 +767,9 @@ contract Vault is ERC20, Auth {
     /// @dev Strategies that are untrusted, duplicated, or have no balance are
     /// filtered out when encountered at withdrawal time, not validated upfront.
     function pushToWithdrawalStack(Strategy strategy) external requiresAuth {
+        // Ensure pushing the strategy will not cause the stack exceed its limit.
+        require(withdrawalStack.length < MAX_WITHDRAWAL_STACK_SIZE, "STACK_FULL");
+
         // Push the strategy to the front of the stack.
         withdrawalStack.push(strategy);
 
@@ -783,6 +794,9 @@ contract Vault is ERC20, Auth {
     /// @dev Strategies that are untrusted, duplicated, or have no balance are
     /// filtered out when encountered at withdrawal time, not validated upfront.
     function setWithdrawalStack(Strategy[] calldata newStack) external requiresAuth {
+        // Ensure the new stack is not larger than the maximum stack size.
+        require(newStack.length <= MAX_WITHDRAWAL_STACK_SIZE, "STACK_TOO_BIG");
+
         // Replace the withdrawal stack.
         withdrawalStack = newStack;
 

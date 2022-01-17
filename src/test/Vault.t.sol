@@ -670,6 +670,24 @@ contract VaultsTest is DSTestPlus {
         assertEq(address(vault.withdrawalStack(2)), address(1002));
     }
 
+    function testFailPushStackFull() public {
+        Strategy[] memory fullStack = new Strategy[](32);
+
+        vault.setWithdrawalStack(fullStack);
+
+        vault.pushToWithdrawalStack(Strategy(address(69)));
+    }
+
+    function testFailSetStackTooBig() public {
+        Strategy[] memory tooBigStack = new Strategy[](33);
+
+        vault.setWithdrawalStack(tooBigStack);
+    }
+
+    function testFailPopStackEmpty() public {
+        vault.popFromWithdrawalStack();
+    }
+
     /*///////////////////////////////////////////////////////////////
                             EDGE CASE TESTS
     //////////////////////////////////////////////////////////////*/
