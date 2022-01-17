@@ -277,9 +277,6 @@ contract Vault is ERC20, Auth {
     /// @notice Deposit a specific amount of underlying tokens.
     /// @param underlyingAmount The amount of the underlying token to deposit.
     function deposit(uint256 underlyingAmount) external {
-        // We don't allow depositing 0 to prevent emitting a useless event.
-        require(underlyingAmount != 0, "AMOUNT_CANNOT_BE_ZERO");
-
         // Determine the equivalent amount of rvTokens and mint them.
         _mint(msg.sender, underlyingAmount.fdiv(exchangeRate(), BASE_UNIT));
 
@@ -293,9 +290,6 @@ contract Vault is ERC20, Auth {
     /// @notice Withdraw a specific amount of underlying tokens.
     /// @param underlyingAmount The amount of underlying tokens to withdraw.
     function withdraw(uint256 underlyingAmount) external {
-        // We don't allow withdrawing 0 to prevent emitting a useless event.
-        require(underlyingAmount != 0, "AMOUNT_CANNOT_BE_ZERO");
-
         // Determine the equivalent amount of rvTokens and burn them.
         // This will revert if the user does not have enough rvTokens.
         _burn(msg.sender, underlyingAmount.fdiv(exchangeRate(), BASE_UNIT));
@@ -309,9 +303,6 @@ contract Vault is ERC20, Auth {
     /// @notice Redeem a specific amount of rvTokens for underlying tokens.
     /// @param rvTokenAmount The amount of rvTokens to redeem for underlying tokens.
     function redeem(uint256 rvTokenAmount) external {
-        // We don't allow redeeming 0 to prevent emitting a useless event.
-        require(rvTokenAmount != 0, "AMOUNT_CANNOT_BE_ZERO");
-
         // Determine the equivalent amount of underlying tokens.
         uint256 underlyingAmount = rvTokenAmount.fmul(exchangeRate(), BASE_UNIT);
 
@@ -531,9 +522,6 @@ contract Vault is ERC20, Auth {
         // A strategy must be trusted before it can be deposited into.
         require(getStrategyData[strategy].trusted, "UNTRUSTED_STRATEGY");
 
-        // We don't allow depositing 0 to prevent emitting a useless event.
-        require(underlyingAmount != 0, "AMOUNT_CANNOT_BE_ZERO");
-
         // Increase totalStrategyHoldings to account for the deposit.
         totalStrategyHoldings += underlyingAmount;
 
@@ -568,9 +556,6 @@ contract Vault is ERC20, Auth {
     function withdrawFromStrategy(Strategy strategy, uint256 underlyingAmount) external requiresAuth {
         // A strategy must be trusted before it can be withdrawn from.
         require(getStrategyData[strategy].trusted, "UNTRUSTED_STRATEGY");
-
-        // We don't allow withdrawing 0 to prevent emitting a useless event.
-        require(underlyingAmount != 0, "AMOUNT_CANNOT_BE_ZERO");
 
         // Without this the next harvest would count the withdrawal as a loss.
         getStrategyData[strategy].balance -= underlyingAmount.safeCastTo248();
