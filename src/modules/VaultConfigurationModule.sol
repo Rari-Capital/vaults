@@ -189,9 +189,15 @@ contract VaultConfigurationModule is Auth {
         // Get the Vault's custom fee percentage.
         uint256 customFeePercent = getVaultCustomFeePercent[vault];
 
+        // Determine what the new fee percentage should be for the Vault after the sync.
+        uint256 newFeePercent = customFeePercent == 0 ? defaultFeePercent : customFeePercent;
+
+        // Prevent spamming as this function requires no authorization.
+        require(vault.feePercent() != newFeePercent, "ALREADY_SYNCED");
+
         // Set the Vault's fee percentage to the custom fee percentage
         // or the default fee percentage if a custom percentage isn't set.
-        vault.setFeePercent(customFeePercent == 0 ? defaultFeePercent : customFeePercent);
+        vault.setFeePercent(newFeePercent);
     }
 
     /// @notice Syncs a Vault's harvest delay with either the Vault's custom
@@ -201,9 +207,15 @@ contract VaultConfigurationModule is Auth {
         // Get the Vault's custom harvest delay.
         uint64 customHarvestDelay = getVaultCustomHarvestDelay[vault];
 
+        // Determine what the new harvest delay should be for the Vault after the sync.
+        uint64 newHarvestDelay = customHarvestDelay == 0 ? defaultHarvestDelay : customHarvestDelay;
+
+        // Prevent spamming as this function requires no authorization.
+        require(vault.harvestDelay() != newHarvestDelay, "ALREADY_SYNCED");
+
         // Set the Vault's harvest delay to the custom harvest delay
         // or the default harvest delay if a custom delay isn't set.
-        vault.setHarvestDelay(customHarvestDelay == 0 ? defaultHarvestDelay : customHarvestDelay);
+        vault.setHarvestDelay(newHarvestDelay);
     }
 
     /// @notice Syncs a Vault's harvest window with either the Vault's custom
@@ -213,9 +225,15 @@ contract VaultConfigurationModule is Auth {
         // Get the Vault's custom harvest window.
         uint128 customHarvestWindow = getVaultCustomHarvestWindow[vault];
 
+        // Determine what the new harvest window should be for the Vault after the sync.
+        uint128 newHarvestWindow = customHarvestWindow == 0 ? defaultHarvestWindow : customHarvestWindow;
+
+        // Prevent spamming as this function requires no authorization.
+        require(vault.harvestWindow() != newHarvestWindow, "ALREADY_SYNCED");
+
         // Set the Vault's harvest window to the custom harvest window
         // or the default harvest window if a custom window isn't set.
-        vault.setHarvestWindow(customHarvestWindow == 0 ? defaultHarvestWindow : customHarvestWindow);
+        vault.setHarvestWindow(newHarvestWindow);
     }
 
     /// @notice Syncs a Vault's target float percentage with either the Vault's custom target
@@ -225,10 +243,16 @@ contract VaultConfigurationModule is Auth {
         // Get the Vault's custom target float percentage.
         uint256 customTargetFloatPercent = getVaultCustomTargetFloatPercent[vault];
 
+        // Determine what the new target float percentage should be for the Vault after the sync.
+        uint256 newTargetFloatPercent = customTargetFloatPercent == 0
+            ? defaultTargetFloatPercent
+            : customTargetFloatPercent;
+
+        // Prevent spamming as this function requires no authorization.
+        require(vault.targetFloatPercent() != newTargetFloatPercent, "ALREADY_SYNCED");
+
         // Set the Vault's target float percentage to the custom target float percentage
         // or the default target float percentage if a custom percentage isn't set.
-        vault.setTargetFloatPercent(
-            customTargetFloatPercent == 0 ? defaultTargetFloatPercent : customTargetFloatPercent
-        );
+        vault.setTargetFloatPercent(newTargetFloatPercent);
     }
 }
