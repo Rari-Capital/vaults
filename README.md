@@ -2,7 +2,7 @@
 
 Flexible, minimalist, and **gas-optimized yield aggregator protocol** for earning interest on any ERC20 token.
 
-- [Documentation](https://docs.rari.capital/vaults)
+- [Documentation](https://docs.rari.capital/yag/)
 - [Deployments](https://github.com/Rari-Capital/vaults/releases)
 - [Whitepaper](whitepaper/Whitepaper.pdf)
 - [Audits](audits)
