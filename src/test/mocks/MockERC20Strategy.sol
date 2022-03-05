@@ -30,7 +30,7 @@ contract MockERC20Strategy is ERC20("Mock cERC20 Strategy", "cERC20", 18), ERC20
     }
 
     function mint(uint256 amount) external override returns (uint256) {
-        _mint(msg.sender, amount.fdiv(exchangeRate(), BASE_UNIT));
+        _mint(msg.sender, amount.mulDivDown(BASE_UNIT, exchangeRate()));
 
         UNDERLYING.safeTransferFrom(msg.sender, address(this), amount);
 
@@ -38,7 +38,7 @@ contract MockERC20Strategy is ERC20("Mock cERC20 Strategy", "cERC20", 18), ERC20
     }
 
     function redeemUnderlying(uint256 amount) external override returns (uint256) {
-        _burn(msg.sender, amount.fdiv(exchangeRate(), BASE_UNIT));
+        _burn(msg.sender, amount.mulDivDown(BASE_UNIT, exchangeRate()));
 
         UNDERLYING.safeTransfer(msg.sender, amount);
 
@@ -46,7 +46,7 @@ contract MockERC20Strategy is ERC20("Mock cERC20 Strategy", "cERC20", 18), ERC20
     }
 
     function balanceOfUnderlying(address user) external view override returns (uint256) {
-        return balanceOf[user].fmul(exchangeRate(), BASE_UNIT);
+        return balanceOf[user].mulDivDown(exchangeRate(), BASE_UNIT);
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -62,7 +62,7 @@ contract MockERC20Strategy is ERC20("Mock cERC20 Strategy", "cERC20", 18), ERC20
 
         if (cTokenSupply == 0) return BASE_UNIT;
 
-        return UNDERLYING.balanceOf(address(this)).fdiv(cTokenSupply, BASE_UNIT);
+        return UNDERLYING.balanceOf(address(this)).mulDivDown(BASE_UNIT, cTokenSupply);
     }
 
     /*///////////////////////////////////////////////////////////////

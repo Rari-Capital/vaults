@@ -278,7 +278,7 @@ contract Vault is ERC20, Auth {
     /// @param underlyingAmount The amount of the underlying token to deposit.
     function deposit(uint256 underlyingAmount) external {
         // Determine the equivalent amount of rvTokens and mint them.
-        _mint(msg.sender, underlyingAmount.fdiv(exchangeRate(), BASE_UNIT));
+        _mint(msg.sender, underlyingAmount.mulDivDown(BASE_UNIT, exchangeRate()));
 
         emit Deposit(msg.sender, underlyingAmount);
 
@@ -292,7 +292,7 @@ contract Vault is ERC20, Auth {
     function withdraw(uint256 underlyingAmount) external {
         // Determine the equivalent amount of rvTokens and burn them.
         // This will revert if the user does not have enough rvTokens.
-        _burn(msg.sender, underlyingAmount.fdiv(exchangeRate(), BASE_UNIT));
+        _burn(msg.sender, underlyingAmount.mulDivDown(BASE_UNIT, exchangeRate()));
 
         emit Withdraw(msg.sender, underlyingAmount);
 
@@ -304,7 +304,7 @@ contract Vault is ERC20, Auth {
     /// @param rvTokenAmount The amount of rvTokens to redeem for underlying tokens.
     function redeem(uint256 rvTokenAmount) external {
         // Determine the equivalent amount of underlying tokens.
-        uint256 underlyingAmount = rvTokenAmount.fmul(exchangeRate(), BASE_UNIT);
+        uint256 underlyingAmount = rvTokenAmount.mulDivDown(exchangeRate(), BASE_UNIT);
 
         // Burn the provided amount of rvTokens.
         // This will revert if the user does not have enough rvTokens.
@@ -327,7 +327,7 @@ contract Vault is ERC20, Auth {
         // If the amount is greater than the float, withdraw from strategies.
         if (underlyingAmount > float) {
             // Compute the amount needed to reach our target float percentage.
-            uint256 floatMissingForTarget = (totalHoldings() - underlyingAmount).fmul(targetFloatPercent, 1e18);
+            uint256 floatMissingForTarget = (totalHoldings() - underlyingAmount).mulWadDown(targetFloatPercent);
 
             // Compute the bare minimum amount we need for this withdrawal.
             uint256 floatMissingForWithdrawal = underlyingAmount - float;
@@ -348,7 +348,7 @@ contract Vault is ERC20, Auth {
     /// @param user The user to get the underlying balance of.
     /// @return The user's Vault balance in underlying tokens.
     function balanceOfUnderlying(address user) external view returns (uint256) {
-        return balanceOf[user].fmul(exchangeRate(), BASE_UNIT);
+        return balanceOf[user].mulDivDown(exchangeRate(), BASE_UNIT);
     }
 
     /// @notice Returns the amount of underlying tokens an rvToken can be redeemed for.
@@ -361,7 +361,7 @@ contract Vault is ERC20, Auth {
         if (rvTokenSupply == 0) return BASE_UNIT;
 
         // Calculate the exchange rate by dividing the total holdings by the rvToken supply.
-        return totalHoldings().fdiv(rvTokenSupply, BASE_UNIT);
+        return totalHoldings().mulDivDown(BASE_UNIT, rvTokenSupply);
     }
 
     /// @notice Calculates the total amount of underlying tokens the Vault holds.
@@ -466,11 +466,11 @@ contract Vault is ERC20, Auth {
         }
 
         // Compute fees as the fee percent multiplied by the profit.
-        uint256 feesAccrued = totalProfitAccrued.fmul(feePercent, 1e18);
+        uint256 feesAccrued = totalProfitAccrued.mulDivDown(feePercent, 1e18);
 
         // If we accrued any fees, mint an equivalent amount of rvTokens.
         // Authorized users can claim the newly minted rvTokens via claimFees.
-        _mint(address(this), feesAccrued.fdiv(exchangeRate(), BASE_UNIT));
+        _mint(address(this), feesAccrued.mulDivDown(BASE_UNIT, exchangeRate()));
 
         // Update max unlocked profit based on any remaining locked profit plus new profit.
         maxLockedProfit = (lockedProfit() + totalProfitAccrued - feesAccrued).safeCastTo128();
