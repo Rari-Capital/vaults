@@ -2,20 +2,21 @@
 pragma solidity 0.8.10;
 
 import {Auth} from "solmate/auth/Auth.sol";
-import {ERC20} from "solmate/tokens/ERC20.sol";
+import {ERC4626} from "solmate/mixins/ERC4626.sol";
 
 import {SafeCastLib} from "solmate/utils/SafeCastLib.sol";
 import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 
 import {WETH} from "solmate/tokens/WETH.sol";
+import {ERC20} from "solmate/tokens/ERC20.sol";
 import {Strategy, ERC20Strategy, ETHStrategy} from "./interfaces/Strategy.sol";
 
 /// @title Rari Vault (rvToken)
 /// @author Transmissions11 and JetJadeja
 /// @notice Flexible, minimalist, and gas-optimized yield
 /// aggregator for earning interest on any ERC20 token.
-contract Vault is ERC20, Auth {
+contract Vault is ERC4626, Auth {
     using SafeCastLib for uint256;
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
@@ -42,13 +43,12 @@ contract Vault is ERC20, Auth {
     /// @notice Creates a new Vault that accepts a specific underlying token.
     /// @param _UNDERLYING The ERC20 compliant token the Vault should accept.
     constructor(ERC20 _UNDERLYING)
-        ERC20(
+        ERC4626(
+            _UNDERLYING,
             // ex: Rari Dai Stablecoin Vault
             string(abi.encodePacked("Rari ", _UNDERLYING.name(), " Vault")),
             // ex: rvDAI
-            string(abi.encodePacked("rv", _UNDERLYING.symbol())),
-            // ex: 18
-            _UNDERLYING.decimals()
+            string(abi.encodePacked("rv", _UNDERLYING.symbol()))
         )
         Auth(Auth(msg.sender).owner(), Auth(msg.sender).authority())
     {
@@ -265,81 +265,8 @@ contract Vault is ERC20, Auth {
                         DEPOSIT/WITHDRAWAL LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Emitted after a successful deposit.
-    /// @param user The address that deposited into the Vault.
-    /// @param underlyingAmount The amount of underlying tokens that were deposited.
-    event Deposit(address indexed user, uint256 underlyingAmount);
+    
 
-    /// @notice Emitted after a successful withdrawal.
-    /// @param user The address that withdrew from the Vault.
-    /// @param underlyingAmount The amount of underlying tokens that were withdrawn.
-    event Withdraw(address indexed user, uint256 underlyingAmount);
-
-    /// @notice Deposit a specific amount of underlying tokens.
-    /// @param underlyingAmount The amount of the underlying token to deposit.
-    function deposit(uint256 underlyingAmount) external {
-        // Determine the equivalent amount of rvTokens and mint them.
-        _mint(msg.sender, underlyingAmount.mulDivDown(BASE_UNIT, exchangeRate()));
-
-        emit Deposit(msg.sender, underlyingAmount);
-
-        // Transfer in underlying tokens from the user.
-        // This will revert if the user does not have the amount specified.
-        UNDERLYING.safeTransferFrom(msg.sender, address(this), underlyingAmount);
-    }
-
-    /// @notice Withdraw a specific amount of underlying tokens.
-    /// @param underlyingAmount The amount of underlying tokens to withdraw.
-    function withdraw(uint256 underlyingAmount) external {
-        // Determine the equivalent amount of rvTokens and burn them.
-        // This will revert if the user does not have enough rvTokens.
-        _burn(msg.sender, underlyingAmount.mulDivDown(BASE_UNIT, exchangeRate()));
-
-        emit Withdraw(msg.sender, underlyingAmount);
-
-        // Withdraw from strategies if needed and transfer.
-        transferUnderlyingTo(msg.sender, underlyingAmount);
-    }
-
-    /// @notice Redeem a specific amount of rvTokens for underlying tokens.
-    /// @param rvTokenAmount The amount of rvTokens to redeem for underlying tokens.
-    function redeem(uint256 rvTokenAmount) external {
-        // Determine the equivalent amount of underlying tokens.
-        uint256 underlyingAmount = rvTokenAmount.mulDivDown(exchangeRate(), BASE_UNIT);
-
-        // Burn the provided amount of rvTokens.
-        // This will revert if the user does not have enough rvTokens.
-        _burn(msg.sender, rvTokenAmount);
-
-        emit Withdraw(msg.sender, underlyingAmount);
-
-        // Withdraw from strategies if needed and transfer.
-        transferUnderlyingTo(msg.sender, underlyingAmount);
-    }
-
-    /// @dev Transfers a specific amount of underlying tokens held in strategies and/or float to a recipient.
-    /// @dev Only withdraws from strategies if needed and maintains the target float percentage if possible.
-    /// @param recipient The user to transfer the underlying tokens to.
-    /// @param underlyingAmount The amount of underlying tokens to transfer.
-    function transferUnderlyingTo(address recipient, uint256 underlyingAmount) internal {
-        // Get the Vault's floating balance.
-        uint256 float = totalFloat();
-
-        // If the amount is greater than the float, withdraw from strategies.
-        if (underlyingAmount > float) {
-            // Compute the amount needed to reach our target float percentage.
-            uint256 floatMissingForTarget = (totalHoldings() - underlyingAmount).mulWadDown(targetFloatPercent);
-
-            // Compute the bare minimum amount we need for this withdrawal.
-            uint256 floatMissingForWithdrawal = underlyingAmount - float;
-
-            // Pull enough to cover the withdrawal and reach our target float percentage.
-            pullFromWithdrawalStack(floatMissingForWithdrawal + floatMissingForTarget);
-        }
-
-        // Transfer the provided amount of underlying tokens.
-        UNDERLYING.safeTransfer(recipient, underlyingAmount);
-    }
 
     /*///////////////////////////////////////////////////////////////
                         VAULT ACCOUNTING LOGIC
@@ -362,12 +289,12 @@ contract Vault is ERC20, Auth {
         if (rvTokenSupply == 0) return BASE_UNIT;
 
         // Calculate the exchange rate by dividing the total holdings by the rvToken supply.
-        return totalHoldings().mulDivDown(BASE_UNIT, rvTokenSupply);
+        return totalAssets().mulDivDown(BASE_UNIT, rvTokenSupply);
     }
 
     /// @notice Calculates the total amount of underlying tokens the Vault holds.
     /// @return totalUnderlyingHeld The total amount of underlying tokens the Vault holds.
-    function totalHoldings() public view returns (uint256 totalUnderlyingHeld) {
+    function totalAssets() public view override returns (uint256 totalUnderlyingHeld) {
         unchecked {
             // Cannot underflow as locked profit can't exceed total strategy holdings.
             totalUnderlyingHeld = totalStrategyHoldings - lockedProfit();
@@ -836,42 +763,6 @@ contract Vault is ERC20, Auth {
     }
 
     /*///////////////////////////////////////////////////////////////
-                         SEIZE STRATEGY LOGIC
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Emitted after a strategy is seized.
-    /// @param user The authorized user who triggered the seize.
-    /// @param strategy The strategy that was seized.
-    event StrategySeized(address indexed user, Strategy indexed strategy);
-
-    /// @notice Seizes a strategy.
-    /// @param strategy The strategy to seize.
-    /// @dev Intended for use in emergencies or other extraneous situations where the
-    /// strategy requires interaction outside of the Vault's standard operating procedures.
-    function seizeStrategy(Strategy strategy) external requiresAuth {
-        // Get the strategy's last reported balance of underlying tokens.
-        uint256 strategyBalance = getStrategyData[strategy].balance;
-
-        // If the strategy's balance exceeds the Vault's current
-        // holdings, instantly unlock any remaining locked profit.
-        if (strategyBalance > totalHoldings()) maxLockedProfit = 0;
-
-        // Set the strategy's balance to 0.
-        getStrategyData[strategy].balance = 0;
-
-        unchecked {
-            // Decrease totalStrategyHoldings to account for the seize.
-            // Cannot underflow as the balance of one strategy will never exceed the sum of all.
-            totalStrategyHoldings -= strategyBalance;
-        }
-
-        emit StrategySeized(msg.sender, strategy);
-
-        // Transfer all of the strategy's tokens to the caller.
-        ERC20(strategy).safeTransfer(msg.sender, strategy.balanceOf(address(this)));
-    }
-
-    /*///////////////////////////////////////////////////////////////
                              FEE CLAIM LOGIC
     //////////////////////////////////////////////////////////////*/
 
@@ -929,4 +820,10 @@ contract Vault is ERC20, Auth {
 
     /// @dev Required for the Vault to receive unwrapped ETH.
     receive() external payable {}
+
+    /*///////////////////////////////////////////////////////////////
+                                4626 LOGIC
+    //////////////////////////////////////////////////////////////*/
+
+    
 }
