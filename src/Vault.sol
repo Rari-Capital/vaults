@@ -44,6 +44,7 @@ contract Vault is ERC4626, Auth {
     /// @param _UNDERLYING The ERC20 compliant token the Vault should accept.
     constructor(ERC20 _UNDERLYING)
         ERC4626(
+            // Underlying token
             _UNDERLYING,
             // ex: Rari Dai Stablecoin Vault
             string(abi.encodePacked("Rari ", _UNDERLYING.name(), " Vault")),
@@ -265,8 +266,32 @@ contract Vault is ERC4626, Auth {
                         DEPOSIT/WITHDRAWAL LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    
+    function afterDeposit(uint256, uint256) internal override {}
 
+    function beforeWithdraw(uint256 assets, uint256) internal override {
+        // Retrieve underlying tokens from strategies/float.
+        retrieveUnderlying(assets);
+    }
+
+    /// @dev Retrieves a specific amount of underlying tokens held in strategies and/or float.
+    /// @dev Only withdraws from strategies if needed and maintains the target float percentage if possible.
+    /// @param underlyingAmount The amount of underlying tokens to retrieve.
+    function retrieveUnderlying(uint256 underlyingAmount) internal {
+        // Get the Vault's floating balance.
+        uint256 float = totalFloat();
+
+        // If the amount is greater than the float, withdraw from strategies.
+        if (underlyingAmount > float) {
+            // Compute the amount needed to reach our target float percentage.
+            uint256 floatMissingForTarget = (totalAssets() - underlyingAmount).mulWadDown(targetFloatPercent);
+
+            // Compute the bare minimum amount we need for this withdrawal.
+            uint256 floatMissingForWithdrawal = underlyingAmount - float;
+
+            // Pull enough to cover the withdrawal and reach our target float percentage.
+            pullFromWithdrawalStack(floatMissingForWithdrawal + floatMissingForTarget);
+        }
+    }
 
     /*///////////////////////////////////////////////////////////////
                         VAULT ACCOUNTING LOGIC
@@ -820,10 +845,4 @@ contract Vault is ERC4626, Auth {
 
     /// @dev Required for the Vault to receive unwrapped ETH.
     receive() external payable {}
-
-    /*///////////////////////////////////////////////////////////////
-                                4626 LOGIC
-    //////////////////////////////////////////////////////////////*/
-
-    
 }
