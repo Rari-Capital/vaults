@@ -70,7 +70,7 @@ contract IntegrationTest is DSTestPlus {
         underlying.mint(address(this), 1.5e18);
 
         underlying.approve(address(vault), 1e18);
-        vault.deposit(1e18);
+        vault.deposit(1e18, address(this));
 
         vault.trustStrategy(strategy1);
         vault.depositIntoStrategy(strategy1, 0.5e18);
@@ -97,7 +97,7 @@ contract IntegrationTest is DSTestPlus {
 
         hevm.warp(block.timestamp + vault.harvestDelay());
 
-        vault.withdraw(1363636363636363636);
+        vault.withdraw(1363636363636363636, address(this), address(this));
         assertEq(vault.balanceOf(address(this)), 0);
     }
 }
