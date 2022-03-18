@@ -112,7 +112,7 @@ contract VaultRouterModule {
         ERC20(vault).safeTransferFrom(msg.sender, address(this), rvTokenAmount);
 
         // Withdraw from the Vault.
-        vault.withdraw(underlyingAmount);
+        vault.withdraw(underlyingAmount, address(this), address(this));
 
         // Unwrap the withdrawn amount of WETH and transfer it to the caller.
         unwrapAndTransfer(WETH(payable(address(vault.UNDERLYING()))), underlyingAmount);
@@ -144,7 +144,7 @@ contract VaultRouterModule {
         permitAndTransferFromCaller(vault, rvTokenAmount, deadline, v, r, s);
 
         // Withdraw from the Vault.
-        vault.withdraw(underlyingAmount);
+        vault.withdraw(underlyingAmount, address(this), address(this));
 
         // Unwrap the withdrawn amount of WETH and transfer it to the caller.
         unwrapAndTransfer(WETH(payable(address(vault.UNDERLYING()))), underlyingAmount);
@@ -165,7 +165,7 @@ contract VaultRouterModule {
         ERC20(vault).safeTransferFrom(msg.sender, address(this), rvTokenAmount);
 
         // Redeem the rvTokens.
-        vault.redeem(rvTokenAmount);
+        vault.redeem(rvTokenAmount, address(this), address(this));
 
         // Get the Vault's underlying as WETH.
         WETH weth = WETH(payable(address(vault.UNDERLYING())));
@@ -196,7 +196,7 @@ contract VaultRouterModule {
         permitAndTransferFromCaller(vault, rvTokenAmount, deadline, v, r, s);
 
         // Redeem the rvTokens.
-        vault.redeem(rvTokenAmount);
+        vault.redeem(rvTokenAmount, address(this), address(this));
 
         // Get the Vault's underlying as WETH.
         WETH weth = WETH(payable(address(vault.UNDERLYING())));
@@ -238,7 +238,7 @@ contract VaultRouterModule {
         underlying.safeApprove(address(vault), amount);
 
         // Deposit the underlying tokens into the Vault.
-        vault.deposit(amount);
+        vault.deposit(amount, address(this));
 
         // Transfer the newly minted rvTokens back to the caller.
         ERC20(vault).safeTransfer(msg.sender, vault.balanceOf(address(this)));
