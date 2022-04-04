@@ -14,6 +14,8 @@ import {Strategy} from "../interfaces/Strategy.sol";
 import {Vault} from "../Vault.sol";
 import {VaultFactory} from "../VaultFactory.sol";
 
+import "forge-std/console.sol";
+
 contract VaultsTest is DSTestPlus {
     Vault vault;
     MockERC20 underlying;
@@ -68,6 +70,35 @@ contract VaultsTest is DSTestPlus {
         assertEq(underlying.balanceOf(address(this)), preDepositBal);
     }
 
+    function testDepositWithdraw(uint256 amount) public {
+        amount = bound(amount, 1e5, 1e27);
+
+        underlying.mint(address(this), amount);
+        underlying.approve(address(vault), amount);
+
+        uint256 preDepositBal = underlying.balanceOf(address(this));
+
+        vault.deposit(amount, address(this));
+
+        assertEq(vault.exchangeRate(), 1e18);
+        assertEq(vault.totalStrategyHoldings(), 0);
+        assertEq(vault.totalAssets(), amount);
+        assertEq(vault.totalFloat(), amount);
+        assertEq(vault.balanceOf(address(this)), amount);
+        assertEq(vault.balanceOfUnderlying(address(this)), amount);
+        assertEq(underlying.balanceOf(address(this)), preDepositBal - amount);
+
+        vault.withdraw(amount, address(this), address(this));
+
+        assertEq(vault.exchangeRate(), 1e18);
+        assertEq(vault.totalStrategyHoldings(), 0);
+        assertEq(vault.totalAssets(), 0);
+        assertEq(vault.totalFloat(), 0);
+        assertEq(vault.balanceOf(address(this)), 0);
+        assertEq(vault.balanceOfUnderlying(address(this)), 0);
+        assertEq(underlying.balanceOf(address(this)), preDepositBal);
+    }
+
     function testAtomicDepositRedeem() public {
         underlying.mint(address(this), 1e18);
         underlying.approve(address(vault), 1e18);
@@ -85,6 +116,35 @@ contract VaultsTest is DSTestPlus {
         assertEq(underlying.balanceOf(address(this)), preDepositBal - 1e18);
 
         vault.redeem(1e18, address(this), address(this));
+
+        assertEq(vault.exchangeRate(), 1e18);
+        assertEq(vault.totalStrategyHoldings(), 0);
+        assertEq(vault.totalAssets(), 0);
+        assertEq(vault.totalFloat(), 0);
+        assertEq(vault.balanceOf(address(this)), 0);
+        assertEq(vault.balanceOfUnderlying(address(this)), 0);
+        assertEq(underlying.balanceOf(address(this)), preDepositBal);
+    }
+
+    function testDepositRedeem(uint256 amount) public {
+        amount = bound(amount, 1e5, 1e27);
+
+        underlying.mint(address(this), amount);
+        underlying.approve(address(vault), amount);
+
+        uint256 preDepositBal = underlying.balanceOf(address(this));
+
+        vault.deposit(amount, address(this));
+
+        assertEq(vault.exchangeRate(), 1e18);
+        assertEq(vault.totalStrategyHoldings(), 0);
+        assertEq(vault.totalAssets(), amount);
+        assertEq(vault.totalFloat(), amount);
+        assertEq(vault.balanceOf(address(this)), amount);
+        assertEq(vault.balanceOfUnderlying(address(this)), amount);
+        assertEq(underlying.balanceOf(address(this)), preDepositBal - amount);
+
+        vault.redeem(amount, address(this), address(this));
 
         assertEq(vault.exchangeRate(), 1e18);
         assertEq(vault.totalStrategyHoldings(), 0);
@@ -723,8 +783,6 @@ contract VaultsTest is DSTestPlus {
         assertEq(address(vault.withdrawalStack(0)), address(strategy2));
     }
 
-
-
     function testFailTrustStrategyWithWrongUnderlying() public {
         MockERC20 wrongUnderlying = new MockERC20("Not The Right Token", "TKN2", 18);
 
@@ -891,4 +949,26 @@ contract UnInitializedVaultTest is DSTestPlus {
         underlying.approve(address(vault), 1e18);
         vault.deposit(1e18, address(this));
     }
+}
+
+// Bound a value between a min and max.
+function bound(
+    uint256 x,
+    uint256 min,
+    uint256 max
+) pure returns (uint256 result) {
+    require(max >= min, "MAX_LESS_THAN_MIN");
+
+    uint256 size = max - min;
+
+    if (max != type(uint256).max) size++; // Make the max inclusive.
+    if (size == 0) return min; // Using max would be equivalent as well.
+    // Ensure max is inclusive in cases where x != 0 and max is at uint max.
+    if (max == type(uint256).max && x != 0) x--; // Accounted for later.
+
+    if (x < min) x += size * (((min - x) / size) + 1);
+    result = min + ((x - min) % size);
+
+    // Account for decrementing x to make max inclusive.
+    if (max == type(uint256).max && x != 0) result++;
 }
