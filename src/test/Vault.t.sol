@@ -159,41 +159,41 @@ contract VaultsTest is DSTestPlus {
                  DEPOSIT/WITHDRAWAL SANITY CHECK TESTS
     //////////////////////////////////////////////////////////////*/
 
-    function testFailDepositWithNotEnoughApproval() public {
-        underlying.mint(address(this), 0.5e18);
-        underlying.approve(address(vault), 0.5e18);
+    function testFailDepositWithNotEnoughApproval(uint256 amount) public {
+        underlying.mint(address(this), amount / 2);
+        underlying.approve(address(vault), amount / 2);
 
-        vault.deposit(1e18, address(this));
+        vault.deposit(amount, address(this));
     }
 
-    function testFailWithdrawWithNotEnoughBalance() public {
-        underlying.mint(address(this), 0.5e18);
-        underlying.approve(address(vault), 0.5e18);
+    function testFailWithdrawWithNotEnoughBalance(uint256 amount) public {
+        underlying.mint(address(this), amount / 2);
+        underlying.approve(address(vault), amount / 2);
 
-        vault.deposit(0.5e18, address(this));
+        vault.deposit(amount / 2, address(this));
 
-        vault.withdraw(1e18, address(this), address(this));
+        vault.withdraw(amount, address(this), address(this));
     }
 
-    function testFailRedeemWithNotEnoughBalance() public {
-        underlying.mint(address(this), 0.5e18);
-        underlying.approve(address(vault), 0.5e18);
+    function testFailRedeemWithNotEnoughBalance(uint256 amount) public {
+        underlying.mint(address(this), amount / 2);
+        underlying.approve(address(vault), amount / 2);
 
-        vault.deposit(0.5e18, address(this));
+        vault.deposit(amount / 2, address(this));
 
-        vault.redeem(1e18, address(this), address(this));
+        vault.redeem(amount, address(this), address(this));
     }
 
-    function testFailRedeemWithNoBalance() public {
-        vault.redeem(1e18, address(this), address(this));
+    function testFailWithdrawWithNoBalance(uint256 amount) public {
+        vault.withdraw(amount, address(this), address(this));
     }
 
-    function testFailWithdrawWithNoBalance() public {
-        vault.withdraw(1e18, address(this), address(this));
+    function testFailRedeemWithNoBalance(uint256 amount) public {
+        vault.redeem(amount, address(this), address(this));
     }
 
-    function testFailDepositWithNoApproval() public {
-        vault.deposit(1e18, address(this));
+    function testFailDepositWithNoApproval(uint256 amount) public {
+        vault.deposit(amount, address(this));
     }
 
     /*///////////////////////////////////////////////////////////////
