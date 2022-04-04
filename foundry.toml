@@ -1,0 +1,2 @@
+[default]
+fuzz_runs = 1000
