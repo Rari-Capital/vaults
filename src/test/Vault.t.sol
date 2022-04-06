@@ -185,6 +185,7 @@ contract VaultsTest is DSTestPlus {
     }
 
     function testFailWithdrawWithNoBalance(uint256 amount) public {
+        if (amount == 0) amount = 1;
         vault.withdraw(amount, address(this), address(this));
     }
 
