@@ -201,39 +201,41 @@ contract VaultsTest is DSTestPlus {
                      STRATEGY DEPOSIT/WITHDRAWAL TESTS
     //////////////////////////////////////////////////////////////*/
 
-    function testAtomicEnterExitSinglePool() public {
-        underlying.mint(address(this), 1e18);
-        underlying.approve(address(vault), 1e18);
-        vault.deposit(1e18, address(this));
+    function testAtomicEnterExitSinglePool(uint256 amount) public {
+        amount = bound(amount, 1e12, 1e27);
+
+        underlying.mint(address(this), amount);
+        underlying.approve(address(vault), amount);
+        vault.deposit(amount, address(this));
 
         vault.trustStrategy(strategy1);
 
-        vault.depositIntoStrategy(strategy1, 1e18);
+        vault.depositIntoStrategy(strategy1, amount);
 
         assertEq(vault.exchangeRate(), 1e18);
-        assertEq(vault.totalStrategyHoldings(), 1e18);
-        assertEq(vault.totalAssets(), 1e18);
+        assertEq(vault.totalStrategyHoldings(), amount);
+        assertEq(vault.totalAssets(), amount);
         assertEq(vault.totalFloat(), 0);
-        assertEq(vault.balanceOf(address(this)), 1e18);
-        assertEq(vault.balanceOfUnderlying(address(this)), 1e18);
+        assertEq(vault.balanceOf(address(this)), amount);
+        assertEq(vault.balanceOfUnderlying(address(this)), amount);
 
-        vault.withdrawFromStrategy(strategy1, 0.5e18);
+        vault.withdrawFromStrategy(strategy1, amount / 2);
 
         assertEq(vault.exchangeRate(), 1e18);
-        assertEq(vault.totalStrategyHoldings(), 0.5e18);
-        assertEq(vault.totalAssets(), 1e18);
-        assertEq(vault.totalFloat(), 0.5e18);
-        assertEq(vault.balanceOf(address(this)), 1e18);
-        assertEq(vault.balanceOfUnderlying(address(this)), 1e18);
+        assertEq(vault.totalStrategyHoldings(), amount / 2);
+        assertEq(vault.totalAssets(), amount);
+        assertEq(vault.totalFloat(), amount / 2);
+        assertEq(vault.balanceOf(address(this)), amount);
+        assertEq(vault.balanceOfUnderlying(address(this)), amount);
 
-        vault.withdrawFromStrategy(strategy1, 0.5e18);
+        vault.withdrawFromStrategy(strategy1, amount / 2);
 
         assertEq(vault.exchangeRate(), 1e18);
         assertEq(vault.totalStrategyHoldings(), 0);
-        assertEq(vault.totalAssets(), 1e18);
-        assertEq(vault.totalFloat(), 1e18);
-        assertEq(vault.balanceOf(address(this)), 1e18);
-        assertEq(vault.balanceOfUnderlying(address(this)), 1e18);
+        assertEq(vault.totalAssets(), amount);
+        assertEq(vault.totalFloat(), amount);
+        assertEq(vault.balanceOf(address(this)), amount);
+        assertEq(vault.balanceOfUnderlying(address(this)), amount);
     }
 
     function testAtomicEnterExitMultiPool() public {
