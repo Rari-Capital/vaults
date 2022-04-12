@@ -289,50 +289,57 @@ contract VaultsTest is DSTestPlus {
               STRATEGY DEPOSIT/WITHDRAWAL SANITY CHECK TESTS
     //////////////////////////////////////////////////////////////*/
 
-    function testFailDepositIntoStrategyWithNotEnoughBalance() public {
-        underlying.mint(address(this), 0.5e18);
-        underlying.approve(address(vault), 0.5e18);
+    function testFailDepositIntoStrategyWithNotEnoughBalance(uint256 amount) public {
+        amount = bound(amount, 1e5, 1e36);
 
-        vault.deposit(0.5e18, address(this));
+        underlying.mint(address(this), amount / 2);
+        underlying.approve(address(vault), amount / 2);
+
+        vault.deposit(amount / 2, address(this));
 
         vault.trustStrategy(strategy1);
 
-        vault.depositIntoStrategy(strategy1, 1e18);
+        vault.depositIntoStrategy(strategy1, amount);
     }
 
-    function testFailWithdrawFromStrategyWithNotEnoughBalance() public {
-        underlying.mint(address(this), 0.5e18);
-        underlying.approve(address(vault), 0.5e18);
+    function testFailWithdrawFromStrategyWithNotEnoughBalance(uint256 amount) public {
+        amount = bound(amount, 1e5, 1e36);
 
-        vault.deposit(0.5e18, address(this));
+        underlying.mint(address(this), amount / 2);
+        underlying.approve(address(vault), amount / 2);
+
+        vault.deposit(amount / 2, address(this));
         vault.trustStrategy(strategy1);
-        vault.depositIntoStrategy(strategy1, 0.5e18);
+        vault.depositIntoStrategy(strategy1, amount / 2);
 
-        vault.withdrawFromStrategy(strategy1, 1e18);
+        vault.withdrawFromStrategy(strategy1, amount);
     }
 
-    function testFailWithdrawFromStrategyWithoutTrust() public {
-        underlying.mint(address(this), 1e18);
-        underlying.approve(address(vault), 1e18);
+    function testFailWithdrawFromStrategyWithoutTrust(uint256 amount) public {
+        amount = bound(amount, 1e5, 1e36);
 
-        vault.deposit(1e18, address(this));
+        underlying.mint(address(this), amount);
+        underlying.approve(address(vault), amount);
+
+        vault.deposit(amount, address(this));
         vault.trustStrategy(strategy1);
-        vault.depositIntoStrategy(strategy1, 1e18);
+        vault.depositIntoStrategy(strategy1, amount);
 
         vault.distrustStrategy(strategy1);
-
-        vault.withdrawFromStrategy(strategy1, 1e18);
+        vault.withdrawFromStrategy(strategy1, amount);
     }
 
-    function testFailDepositIntoStrategyWithNoBalance() public {
-        vault.trustStrategy(strategy1);
+    function testFailDepositIntoStrategyWithNoBalance(uint256 amount) public {
+        amount = bound(amount, 1e5, 1e36);
 
-        vault.depositIntoStrategy(strategy1, 1e18);
+        vault.trustStrategy(strategy1);
+        vault.depositIntoStrategy(strategy1, amount);
     }
 
-    function testFailWithdrawFromStrategyWithNoBalance() public {
-        vault.trustStrategy(strategy1);
+    function testFailWithdrawFromStrategyWithNoBalance(uint256 amount) public {
+        amount = bound(amount, 1e5, 1e36);
 
+        vault.trustStrategy(strategy1);
         vault.withdrawFromStrategy(strategy1, 1e18);
     }
 
