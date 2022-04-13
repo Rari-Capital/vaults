@@ -7,6 +7,8 @@ import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 
 import {ERC20Strategy} from "../../interfaces/Strategy.sol";
 
+import "forge-std/console.sol";
+
 contract MockERC20Strategy is ERC20("Mock cERC20 Strategy", "cERC20", 18), ERC20Strategy {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
@@ -46,7 +48,7 @@ contract MockERC20Strategy is ERC20("Mock cERC20 Strategy", "cERC20", 18), ERC20
     }
 
     function balanceOfUnderlying(address user) external view override returns (uint256) {
-        return balanceOf[user].mulDivUp(exchangeRate(), BASE_UNIT);
+        return UNDERLYING.balanceOf(address(this));
     }
 
     /*///////////////////////////////////////////////////////////////
