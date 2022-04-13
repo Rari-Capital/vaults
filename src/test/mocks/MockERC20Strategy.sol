@@ -46,7 +46,7 @@ contract MockERC20Strategy is ERC20("Mock cERC20 Strategy", "cERC20", 18), ERC20
     }
 
     function balanceOfUnderlying(address user) external view override returns (uint256) {
-        return balanceOf[user].mulDivDown(exchangeRate(), BASE_UNIT);
+        return balanceOf[user].mulDivUp(exchangeRate(), BASE_UNIT);
     }
 
     /*///////////////////////////////////////////////////////////////
