@@ -297,26 +297,6 @@ contract Vault is ERC4626, Auth {
                         VAULT ACCOUNTING LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Returns a user's Vault balance in underlying tokens.
-    /// @param user The user to get the underlying balance of.
-    /// @return The user's Vault balance in underlying tokens.
-    function balanceOfUnderlying(address user) external view returns (uint256) {
-        return balanceOf[user].mulDivDown(exchangeRate(), BASE_UNIT);
-    }
-
-    /// @notice Returns the amount of underlying tokens an rvToken can be redeemed for.
-    /// @return The amount of underlying tokens an rvToken can be redeemed for.
-    function exchangeRate() public view returns (uint256) {
-        // Get the total supply of rvTokens.
-        uint256 rvTokenSupply = totalSupply;
-
-        // If there are no rvTokens in circulation, return an exchange rate of 1:1.
-        if (rvTokenSupply == 0) return BASE_UNIT;
-
-        // Calculate the exchange rate by dividing the total holdings by the rvToken supply.
-        return totalAssets().mulDivDown(BASE_UNIT, rvTokenSupply);
-    }
-
     /// @notice Calculates the total amount of underlying tokens the Vault holds.
     /// @return totalUnderlyingHeld The total amount of underlying tokens the Vault holds.
     function totalAssets() public view override returns (uint256 totalUnderlyingHeld) {
@@ -423,7 +403,7 @@ contract Vault is ERC4626, Auth {
 
         // If we accrued any fees, mint an equivalent amount of rvTokens.
         // Authorized users can claim the newly minted rvTokens via claimFees.
-        _mint(address(this), feesAccrued.mulDivDown(BASE_UNIT, exchangeRate()));
+        _mint(address(this), feesAccrued.mulDivDown(BASE_UNIT, convertToAssets(BASE_UNIT)));
 
         // Update max unlocked profit based on any remaining locked profit plus new profit.
         maxLockedProfit = (lockedProfit() + totalProfitAccrued - feesAccrued).safeCastTo128();
