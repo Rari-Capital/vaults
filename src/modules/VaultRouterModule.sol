@@ -106,7 +106,7 @@ contract VaultRouterModule {
 
         // Compute the amount of rvTokens equivalent to the underlying amount.
         // We know the Vault's base unit is 1e18 as it's required for underlyingIsWETH to be true.
-        uint256 rvTokenAmount = underlyingAmount.divWadDown(vault.exchangeRate());
+        uint256 rvTokenAmount = underlyingAmount.divWadDown(vault.convertToAssets(10**vault.decimals()));
 
         // Transfer in the equivalent amount of rvTokens from the caller.
         ERC20(vault).safeTransferFrom(msg.sender, address(this), rvTokenAmount);
@@ -138,7 +138,7 @@ contract VaultRouterModule {
 
         // Compute the amount of rvTokens equivalent to the underlying amount.
         // We know the Vault's base unit is 1e18 as it's required for underlyingIsWETH to be true.
-        uint256 rvTokenAmount = underlyingAmount.divWadDown(vault.exchangeRate());
+        uint256 rvTokenAmount = underlyingAmount.divWadDown(vault.convertToAssets(10**vault.decimals()));
 
         // Transfer in the equivalent amount of rvTokens from the caller via permit.
         permitAndTransferFromCaller(vault, rvTokenAmount, deadline, v, r, s);

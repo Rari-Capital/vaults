@@ -40,7 +40,7 @@ contract VaultRouterModuleTest is DSTestPlus {
         assertEq(address(this).balance, startingETHBal - 1 ether);
 
         assertEq(wethVault.balanceOf(address(this)), 1e18);
-        assertEq(wethVault.balanceOfUnderlying(address(this)), 1 ether);
+        assertEq(wethVault.convertToAssets((10**wethVault.decimals())), 1 ether);
 
         wethVault.approve(address(vaultRouterModule), 1e18);
         vaultRouterModule.withdrawETHFromVault(wethVault, 1 ether);
@@ -58,7 +58,7 @@ contract VaultRouterModuleTest is DSTestPlus {
         assertEq(address(this).balance, startingETHBal - 69 ether);
 
         assertEq(wethVault.balanceOf(address(this)), 69e18);
-        assertEq(wethVault.balanceOfUnderlying(address(this)), 69 ether);
+        assertEq((wethVault.convertToAssets(wethVault.balanceOf(address(this)))), 69 ether);
 
         wethVault.approve(address(vaultRouterModule), 69e19);
         vaultRouterModule.redeemETHFromVault(wethVault, 69e18);
