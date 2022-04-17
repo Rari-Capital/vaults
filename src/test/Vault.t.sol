@@ -350,7 +350,6 @@ contract VaultsTest is DSTestPlus {
         uint256 total = (1.5e18 * amount) / 1e18;
 
         underlying.mint(address(this), total);
-
         underlying.approve(address(vault), amount);
         vault.deposit(amount, address(this));
 
@@ -358,131 +357,19 @@ contract VaultsTest is DSTestPlus {
         vault.depositIntoStrategy(strategy1, amount);
         vault.pushToWithdrawalStack(strategy1);
 
-        assertEq(vault.convertToAssets(10**vault.decimals()), 1e18);
-        assertEq(vault.totalStrategyHoldings(), amount);
-        assertEq(vault.totalFloat(), 0);
-        assertEq(vault.totalAssets(), amount);
-        assertEq(vault.balanceOf(address(this)), amount);
-        assertEq(vault.convertToAssets(vault.balanceOf(address(this))), amount);
-        assertEq(vault.totalSupply(), amount);
-        assertEq(vault.balanceOf(address(vault)), 0);
-        assertEq(vault.convertToAssets(vault.balanceOf(address(vault))), 0);
-
         underlying.transfer(address(strategy1), amount / 2);
-
-        assertEq(vault.convertToAssets(10**vault.decimals()), 1e18);
-        assertEq(vault.totalStrategyHoldings(), amount);
-        assertEq(vault.totalFloat(), 0);
-        assertEq(vault.totalAssets(), amount);
-        assertEq(vault.balanceOf(address(this)), amount);
-        assertEq(vault.convertToAssets(vault.balanceOf(address(this))), amount);
-        assertEq(vault.totalSupply(), amount);
-        assertEq(vault.balanceOf(address(vault)), 0);
-        assertEq(vault.convertToAssets(vault.balanceOf(address(vault))), 0);
-
-        assertEq(vault.lastHarvest(), 0);
-        assertEq(vault.lastHarvestWindowStart(), 0);
 
         Strategy[] memory strategiesToHarvest = new Strategy[](1);
         strategiesToHarvest[0] = strategy1;
 
         vault.harvest(strategiesToHarvest);
-
         uint256 startingTimestamp = block.timestamp;
-
-        assertEq(vault.lastHarvest(), startingTimestamp);
-        assertEq(vault.lastHarvestWindowStart(), startingTimestamp);
-        assertEq(vault.convertToAssets(10**vault.decimals()), 1e18);
-        assertApproxEq(vault.totalStrategyHoldings(), total, 2); // TODO: FIX THIS
-        assertEq(vault.totalFloat(), 0);
-        assertEq(vault.totalAssets(), (1.05e18 * amount) / 1e18);
-        assertEq(vault.balanceOf(address(this)), amount);
-        assertEq(vault.convertToAssets(vault.balanceOf(address(this))), amount);
-        assertEq(vault.totalSupply(), (1.05e18 * amount) / 1e18);
-        assertEq(vault.balanceOf(address(vault)), (0.05e18 * amount) / 1e18);
-        assertEq(vault.convertToAssets(vault.balanceOf(address(vault))), (0.05e18 * amount) / 1e18);
 
         hevm.warp(block.timestamp + (vault.harvestDelay() / 2));
 
-        assertEq(vault.totalStrategyHoldings(), total);
-        assertEq(vault.totalFloat(), 0);
-        assertGt(vault.totalAssets(), amount);
-        assertEq(vault.balanceOf(address(this)), amount);
-        assertEq(vault.totalSupply(), (1.05e18 * amount) / 1e18);
-        assertEq(vault.balanceOf(address(vault)), (0.05e18 * amount) / 1e18);
-
-        assertApproxEq(
-            vault.convertToAssets(vault.balanceOf(address(this))),
-            (1214285714285714285 * amount) / 1e18,
-            ((1214285714285714285 * amount) / 1e18) / 1e7 == 0 ? 10 : ((1214285714285714285 * amount) / 1e18)
-        ); // can be off by a factor of 0.00001%
-        assertApproxEq(
-            vault.convertToAssets(vault.balanceOf(address(vault))),
-            (60714285714285714 * amount) / 1e18,
-            (amount / 1e5) == 0 ? 10 : (amount / 1e5)
-        ); // fees (can be up to 0.001% off of expected)
-
-        assertApproxEq(
-            vault.convertToAssets(10**vault.decimals()),
-            1214285714285714285,
-            (1214285714285714285 / uint256(1e4)) == 0 ? 10 : (1214285714285714285 / uint256(1e4))
-        ); // can be off by a factor of 0.01%
-
         hevm.warp(block.timestamp + vault.harvestDelay());
 
-        assertEq(vault.totalStrategyHoldings(), total);
-        assertEq(vault.totalFloat(), 0);
-        assertEq(vault.totalAssets(), total);
-        assertEq(vault.balanceOf(address(this)), amount);
-        assertEq(vault.totalSupply(), (1.05e18 * amount) / 1e18);
-        assertEq(vault.balanceOf(address(vault)), (0.05e18 * amount) / 1e18);
-        assertApproxEq(
-            total - vault.convertToAssets(vault.balanceOf(address(this))),
-            vault.convertToAssets(vault.balanceOf(address(vault))),
-            2
-        );
-
-        assertGt(vault.convertToAssets(10**vault.decimals()), 1e18);
-        assertApproxEq(
-            vault.convertToAssets(vault.balanceOf(address(vault))),
-            (71428571428571428 * amount) / 1e18,
-            vault.convertToAssets(vault.balanceOf(address(vault))) / 1e9 == 0
-                ? 1
-                : vault.convertToAssets(vault.balanceOf(address(vault))) / 1e9
-        ); // can be off by a factor of 0.000000001%
-        assertApproxEq(
-            vault.convertToAssets(vault.balanceOf(address(this))),
-            (1428571428571428571 * amount) / 1e18,
-            vault.convertToAssets(vault.balanceOf(address(this))) / 1e9 == 0
-                ? 1
-                : vault.convertToAssets(vault.balanceOf(address(this))) / 1e9
-        ); // can be off by a factor of 0.000000001%
-
         vault.redeem(amount, address(this), address(this));
-
-        assertApproxEq(
-            underlying.balanceOf(address(this)),
-            (1428571428571428571 * amount) / 1e18,
-            (amount / 1e7) == 0 ? 10 : (amount / 1e7)
-        ); // can be off by a factor of 0.0000001%
-        assertGt(vault.convertToAssets(10**vault.decimals()), 1e17);
-        assertEq(
-            vault.totalStrategyHoldings(),
-            (vault.convertToAssets(vault.balanceOf(address(this))) +
-                vault.convertToAssets(vault.balanceOf(address(vault)))) - vault.totalFloat()
-        );
-
-        assertEq(vault.balanceOf(address(this)), 0);
-        assertEq(vault.convertToAssets(vault.balanceOf(address(this))), 0);
-        assertEq(vault.totalSupply(), (0.05e18 * amount) / 1e18);
-        assertEq(vault.balanceOf(address(vault)), (0.05e18 * amount) / 1e18);
-        assertApproxEq(
-            vault.convertToAssets(vault.balanceOf(address(vault))),
-            (71428571428571428 * amount) / 1e18,
-            vault.convertToAssets(vault.balanceOf(address(vault))) / 1e9 == 0
-                ? 10
-                : vault.convertToAssets(vault.balanceOf(address(vault)))
-        ); // can be off by a factor of 0.000000001%
     }
 
     function testUnprofitableHarvest() public {
