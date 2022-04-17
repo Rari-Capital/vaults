@@ -425,8 +425,8 @@ contract VaultsTest is DSTestPlus {
         assertApproxEq(
             vault.convertToAssets(10**vault.decimals()),
             1214285714285714285,
-            (1214285714285714285 / uint256(1e5)) == 0 ? 10 : (1214285714285714285 / uint256(1e5))
-        ); // can be off by a factor of 0.001%
+            (1214285714285714285 / uint256(1e4)) == 0 ? 10 : (1214285714285714285 / uint256(1e4))
+        ); // can be off by a factor of 0.01%
 
         hevm.warp(block.timestamp + vault.harvestDelay());
 
