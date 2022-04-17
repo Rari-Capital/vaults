@@ -357,7 +357,29 @@ contract VaultsTest is DSTestPlus {
         vault.depositIntoStrategy(strategy1, amount);
         vault.pushToWithdrawalStack(strategy1);
 
+        assertEq(vault.convertToAssets(10**vault.decimals()), 1e18);
+        assertEq(vault.totalStrategyHoldings(), amount);
+        assertEq(vault.totalFloat(), 0);
+        assertEq(vault.totalAssets(), amount);
+        assertEq(vault.balanceOf(address(this)), amount);
+        assertEq(vault.convertToAssets(vault.balanceOf(address(this))), amount);
+        assertEq(vault.totalSupply(), amount);
+        assertEq(vault.balanceOf(address(vault)), 0);
+        assertEq(vault.convertToAssets(vault.balanceOf(address(vault))), 0);
+
         underlying.transfer(address(strategy1), amount / 2);
+
+        assertEq(vault.convertToAssets(10**vault.decimals()), 1e18);
+        assertEq(vault.totalStrategyHoldings(), amount);
+        assertEq(vault.totalFloat(), 0);
+        assertEq(vault.totalAssets(), amount);
+        assertEq(vault.balanceOf(address(this)), amount);
+        assertEq(vault.convertToAssets(vault.balanceOf(address(this))), amount);
+        assertEq(vault.totalSupply(), amount);
+        assertEq(vault.balanceOf(address(vault)), 0);
+        assertEq(vault.convertToAssets(vault.balanceOf(address(vault))), 0);
+        assertEq(vault.lastHarvest(), 0);
+        assertEq(vault.lastHarvestWindowStart(), 0);
 
         Strategy[] memory strategiesToHarvest = new Strategy[](1);
         strategiesToHarvest[0] = strategy1;
@@ -365,11 +387,61 @@ contract VaultsTest is DSTestPlus {
         vault.harvest(strategiesToHarvest);
         uint256 startingTimestamp = block.timestamp;
 
+        assertEq(vault.lastHarvest(), startingTimestamp);
+        assertEq(vault.lastHarvestWindowStart(), startingTimestamp);
+        assertEq(vault.convertToAssets(10**vault.decimals()), 1e18);
+        assertApproxEq(vault.totalStrategyHoldings(), total, 1);
+        assertEq(vault.totalFloat(), 0);
+        assertEq(vault.totalAssets(), (1.05e18 * amount) / 1e18);
+        assertEq(vault.balanceOf(address(this)), amount);
+        assertEq(vault.convertToAssets(vault.balanceOf(address(this))), amount);
+        assertEq(vault.totalSupply(), (1.05e18 * amount) / 1e18);
+        assertEq(vault.balanceOf(address(vault)), (0.05e18 * amount) / 1e18);
+        assertEq(vault.convertToAssets(vault.balanceOf(address(vault))), (0.05e18 * amount) / 1e18);
+
         hevm.warp(block.timestamp + (vault.harvestDelay() / 2));
+
+        assertEq(vault.totalStrategyHoldings(), total);
+        assertEq(vault.totalFloat(), 0);
+        assertGt(vault.totalAssets(), amount);
+        assertLt(vault.totalAssets(), total);
+        assertEq(vault.balanceOf(address(this)), amount);
+        assertEq(vault.totalSupply(), (1.05e18 * amount) / 1e18);
+        assertEq(vault.balanceOf(address(vault)), (0.05e18 * amount) / 1e18);
+
+        assertGt(vault.convertToAssets(vault.balanceOf(address(this))), amount);
+        assertLt(vault.convertToAssets(vault.balanceOf(address(this))), (1.25e18 * amount) / 1e18);
+        assertGt(vault.convertToAssets(10**vault.decimals()), 1e18);
+        assertLt(vault.convertToAssets(10**vault.decimals()), 1.25e18);
 
         hevm.warp(block.timestamp + vault.harvestDelay());
 
+        assertEq(vault.totalStrategyHoldings(), total);
+        assertEq(vault.totalFloat(), 0);
+        assertEq(vault.totalAssets(), total);
+        assertEq(vault.balanceOf(address(this)), amount);
+        assertEq(vault.totalSupply(), (1.05e18 * amount) / 1e18);
+        assertEq(vault.balanceOf(address(vault)), (0.05e18 * amount) / 1e18);
+
+        assertGt(vault.convertToAssets(vault.balanceOf(address(this))), (1.4e18 * amount) / 1e18);
+        assertLt(vault.convertToAssets(vault.balanceOf(address(this))), (1.5e18 * amount) / 1e18);
+        assertGt(vault.convertToAssets(10**vault.decimals()), 1.4e18);
+        assertLt(vault.convertToAssets(10**vault.decimals()), 1.5e18);
+
         vault.redeem(amount, address(this), address(this));
+
+        assertGt(vault.convertToAssets(10**vault.decimals()), 1.4e18);
+        assertEq(vault.totalStrategyHoldings(), vault.totalAssets() - vault.totalFloat());
+        assertGt(vault.totalFloat(), 0);
+        assertGt(vault.totalAssets(), 0);
+        assertEq(vault.balanceOf(address(this)), 0);
+        assertEq(vault.convertToAssets(vault.balanceOf(address(this))), 0);
+        assertEq(vault.totalSupply(), (0.05e18 * amount) / 1e18);
+        assertEq(vault.balanceOf(address(vault)), (0.05e18 * amount) / 1e18);
+
+        assertGt(vault.totalFloat(), 0);
+        assertGt(vault.convertToAssets(10**vault.decimals()), 1.4e18);
+        assertLt(vault.convertToAssets(10**vault.decimals()), 1.5e18);
     }
 
     function testUnprofitableHarvest() public {
