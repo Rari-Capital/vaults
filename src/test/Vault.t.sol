@@ -504,8 +504,7 @@ contract VaultsTest is DSTestPlus {
         console.log(amount == vault.balanceOf(address(this)));
         vault.redeem(amount, address(this), address(this));
 
-        assertEq(underlying.balanceOf(address(this)), amount / 2);
-
+        assertApproxEq(underlying.balanceOf(address(this)), amount / 2, 1);
         assertEq(vault.convertToAssets(10**vault.decimals()), 1e18);
         assertEq(vault.totalStrategyHoldings(), 0);
         assertEq(vault.totalFloat(), 0);
