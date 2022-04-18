@@ -40,7 +40,7 @@ contract MockERC20Strategy is ERC20("Mock cERC20 Strategy", "cERC20", 18), ERC20
     }
 
     function redeemUnderlying(uint256 amount) external override returns (uint256) {
-        _burn(msg.sender, amount.mulDivDown(BASE_UNIT, exchangeRate()));
+        require(amount <= UNDERLYING.balanceOf(address(this)));
 
         UNDERLYING.safeTransfer(msg.sender, amount);
 
