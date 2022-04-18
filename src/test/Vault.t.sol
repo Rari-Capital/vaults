@@ -444,35 +444,37 @@ contract VaultsTest is DSTestPlus {
         assertLt(vault.convertToAssets(10**vault.decimals()), 1.5e18);
     }
 
-    function testUnprofitableHarvest() public {
-        underlying.mint(address(this), 1e18);
+    function testUnprofitableHarvest(uint256 amount) public {
+        amount = bound(amount, 1e5, 1e36);
 
-        underlying.approve(address(vault), 1e18);
-        vault.deposit(1e18, address(this));
+        underlying.mint(address(this), amount);
+
+        underlying.approve(address(vault), amount);
+        vault.deposit(amount, address(this));
 
         vault.trustStrategy(strategy1);
-        vault.depositIntoStrategy(strategy1, 1e18);
+        vault.depositIntoStrategy(strategy1, amount);
         vault.pushToWithdrawalStack(strategy1);
 
         assertEq(vault.convertToAssets(10**vault.decimals()), 1e18);
-        assertEq(vault.totalStrategyHoldings(), 1e18);
+        assertEq(vault.totalStrategyHoldings(), amount);
         assertEq(vault.totalFloat(), 0);
-        assertEq(vault.totalAssets(), 1e18);
-        assertEq(vault.balanceOf(address(this)), 1e18);
-        assertEq(vault.convertToAssets(vault.balanceOf(address(this))), 1e18);
-        assertEq(vault.totalSupply(), 1e18);
+        assertEq(vault.totalAssets(), amount);
+        assertEq(vault.balanceOf(address(this)), amount);
+        assertEq(vault.convertToAssets(vault.balanceOf(address(this))), amount);
+        assertEq(vault.totalSupply(), amount);
         assertEq(vault.balanceOf(address(vault)), 0);
         assertEq(vault.convertToAssets(vault.balanceOf(address(vault))), 0);
 
-        strategy1.simulateLoss(0.5e18);
+        strategy1.simulateLoss(amount / 2);
 
         assertEq(vault.convertToAssets(10**vault.decimals()), 1e18);
-        assertEq(vault.totalStrategyHoldings(), 1e18);
+        assertEq(vault.totalStrategyHoldings(), amount);
         assertEq(vault.totalFloat(), 0);
-        assertEq(vault.totalAssets(), 1e18);
-        assertEq(vault.balanceOf(address(this)), 1e18);
-        assertEq(vault.convertToAssets(vault.balanceOf(address(this))), 1e18);
-        assertEq(vault.totalSupply(), 1e18);
+        assertEq(vault.totalAssets(), amount);
+        assertEq(vault.balanceOf(address(this)), amount);
+        assertEq(vault.convertToAssets(vault.balanceOf(address(this))), amount);
+        assertEq(vault.totalSupply(), amount);
         assertEq(vault.balanceOf(address(vault)), 0);
         assertEq(vault.convertToAssets(vault.balanceOf(address(vault))), 0);
 
@@ -489,19 +491,20 @@ contract VaultsTest is DSTestPlus {
         assertEq(vault.lastHarvest(), startingTimestamp);
         assertEq(vault.lastHarvestWindowStart(), startingTimestamp);
 
-        assertEq(vault.convertToAssets(10**vault.decimals()), 0.5e18);
-        assertEq(vault.totalStrategyHoldings(), 0.5e18);
+        // assertEq(vault.convertToAssets(10**vault.decimals()), 0.5e18);
         assertEq(vault.totalFloat(), 0);
-        assertEq(vault.totalAssets(), 0.5e18);
-        assertEq(vault.balanceOf(address(this)), 1e18);
-        assertEq(vault.convertToAssets(vault.balanceOf(address(this))), 0.5e18);
-        assertEq(vault.totalSupply(), 1e18);
+        assertEq(vault.balanceOf(address(this)), amount);
+        assertApproxEq(vault.convertToAssets(vault.balanceOf(address(this))), amount / 2, 1);
+        assertEq(vault.totalSupply(), amount);
         assertEq(vault.balanceOf(address(vault)), 0);
         assertEq(vault.convertToAssets(vault.balanceOf(address(vault))), 0);
+        assertApproxEq(vault.totalAssets(), amount / 2, 1);
+        assertApproxEq(vault.totalStrategyHoldings(), amount / 2, 1);
 
-        vault.redeem(1e18, address(this), address(this));
+        console.log(amount == vault.balanceOf(address(this)));
+        vault.redeem(amount, address(this), address(this));
 
-        assertEq(underlying.balanceOf(address(this)), 0.5e18);
+        assertEq(underlying.balanceOf(address(this)), amount / 2);
 
         assertEq(vault.convertToAssets(10**vault.decimals()), 1e18);
         assertEq(vault.totalStrategyHoldings(), 0);
