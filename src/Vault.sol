@@ -75,11 +75,14 @@ contract Vault is ERC4626, Auth {
     /// @param newFeePercent The new fee percentage.
     event FeePercentUpdated(address indexed user, uint256 newFeePercent);
 
+    /// @notice Thrown when the fee percentage is over 100%.
+    error FeeTooHigh();
+
     /// @notice Sets a new fee percentage.
     /// @param newFeePercent The new fee percentage.
     function setFeePercent(uint256 newFeePercent) external requiresAuth {
         // A fee percentage over 100% doesn't make sense.
-        require(newFeePercent <= 1e18, "FEE_TOO_HIGH");
+        if (newFeePercent > 1e18) revert FeeTooHigh();
 
         // Update the fee percentage.
         feePercent = newFeePercent;
@@ -106,6 +109,15 @@ contract Vault is ERC4626, Auth {
     /// @param newHarvestDelay The scheduled updated harvest delay.
     event HarvestDelayUpdateScheduled(address indexed user, uint64 newHarvestDelay);
 
+    /// @notice Thrown when the harvest window is longer than the harvest delay.
+    error WindowTooLong();
+
+    /// @notice Thrown when the harvest delay is set to 0.
+    error DelayCannotBeZero();
+
+    /// @notice Thrown when the harvest delay is set longer than 1 year.
+    error DelayTooLong();
+
     /// @notice The period in seconds during which multiple harvests can occur
     /// regardless if they are taking place before the harvest delay has elapsed.
     /// @dev Long harvest windows open the Vault up to profit distribution slowdown attacks.
@@ -124,7 +136,7 @@ contract Vault is ERC4626, Auth {
     /// @dev The Vault's harvestDelay must already be set before calling.
     function setHarvestWindow(uint128 newHarvestWindow) external requiresAuth {
         // A harvest window longer than the harvest delay doesn't make sense.
-        require(newHarvestWindow <= harvestDelay, "WINDOW_TOO_LONG");
+        if (newHarvestWindow > harvestDelay) revert WindowTooLong();
 
         // Update the harvest window.
         harvestWindow = newHarvestWindow;
@@ -139,10 +151,10 @@ contract Vault is ERC4626, Auth {
     /// it will be scheduled to take effect after the next harvest.
     function setHarvestDelay(uint64 newHarvestDelay) external requiresAuth {
         // A harvest delay of 0 makes harvests vulnerable to sandwich attacks.
-        require(newHarvestDelay != 0, "DELAY_CANNOT_BE_ZERO");
+        if (newHarvestDelay == 0) revert DelayCannotBeZero();
 
         // A harvest delay longer than 1 year doesn't make sense.
-        require(newHarvestDelay <= 365 days, "DELAY_TOO_LONG");
+        if (newHarvestDelay > 365 days) revert DelayTooLong();
 
         // If the harvest delay is 0, meaning it has not been set before:
         if (harvestDelay == 0) {
@@ -171,11 +183,14 @@ contract Vault is ERC4626, Auth {
     /// @param newTargetFloatPercent The new target float percentage.
     event TargetFloatPercentUpdated(address indexed user, uint256 newTargetFloatPercent);
 
+    /// @notice Thrown when the target float percentage is over 100%.
+    error TargetTooHigh();
+
     /// @notice Set a new target float percentage.
     /// @param newTargetFloatPercent The new target float percentage.
     function setTargetFloatPercent(uint256 newTargetFloatPercent) external requiresAuth {
         // A target float percentage over 100% doesn't make sense.
-        require(newTargetFloatPercent <= 1e18, "TARGET_TOO_HIGH");
+        if (newTargetFloatPercent > 1e18) revert TargetTooHigh();
 
         // Update the target float percentage.
         targetFloatPercent = newTargetFloatPercent;
@@ -196,12 +211,15 @@ contract Vault is ERC4626, Auth {
     /// @param newUnderlyingIsWETH Whether the Vault nows treats the underlying as WETH.
     event UnderlyingIsWETHUpdated(address indexed user, bool newUnderlyingIsWETH);
 
+    /// @notice Thrown if the underlying token's decimals does not match ETH if WETH is being set to true.
+    error WrongDecimals();
+
     /// @notice Sets whether the Vault treats the underlying as WETH.
     /// @param newUnderlyingIsWETH Whether the Vault should treat the underlying as WETH.
     /// @dev The underlying token must have 18 decimals, to match Ether's decimal scheme.
     function setUnderlyingIsWETH(bool newUnderlyingIsWETH) external requiresAuth {
         // Ensure the underlying token's decimals match ETH if is WETH being set to true.
-        require(!newUnderlyingIsWETH || UNDERLYING.decimals() == 18, "WRONG_DECIMALS");
+        if (newUnderlyingIsWETH && UNDERLYING.decimals() != 18) revert WrongDecimals();
 
         // Update whether the Vault treats the underlying as WETH.
         underlyingIsWETH = newUnderlyingIsWETH;
@@ -345,6 +363,9 @@ contract Vault is ERC4626, Auth {
     /// @param strategies The trusted strategies that were harvested.
     event Harvest(address indexed user, Strategy[] strategies);
 
+    /// @notice Thrown if the harvest is not in the harvest window.
+    error BadHarvestTime();
+
     /// @notice Harvest a set of trusted strategies.
     /// @param strategies The trusted strategies to harvest.
     /// @dev Will always revert if called outside of an active
@@ -357,7 +378,7 @@ contract Vault is ERC4626, Auth {
             lastHarvestWindowStart = uint64(block.timestamp);
         } else {
             // We know this harvest is not the first in the window so we need to ensure it's within it.
-            require(block.timestamp <= lastHarvestWindowStart + harvestWindow, "BAD_HARVEST_TIME");
+            if (block.timestamp > lastHarvestWindowStart + harvestWindow) revert BadHarvestTime();
         }
 
         // Get the Vault's current total strategy holdings.
@@ -376,7 +397,7 @@ contract Vault is ERC4626, Auth {
 
             // If an untrusted strategy could be harvested a malicious user could use
             // a fake strategy that over-reports holdings to manipulate the exchange rate.
-            require(getStrategyData[strategy].trusted, "UNTRUSTED_STRATEGY");
+            if (!getStrategyData[strategy].trusted) revert UntrustedStrategy();
 
             // Get the strategy's previous and current balance.
             uint256 balanceLastHarvest = getStrategyData[strategy].balance;
@@ -448,12 +469,21 @@ contract Vault is ERC4626, Auth {
     /// @param underlyingAmount The amount of underlying tokens that were withdrawn.
     event StrategyWithdrawal(address indexed user, Strategy indexed strategy, uint256 underlyingAmount);
 
+    /// @notice Thrown if the strategy is not trusted.
+    error UntrustedStrategy();
+
+    /// @notice Thrown if the deposit returns an error code.
+    error MintFailed();
+
+    /// @notice Thrown if the withdrawal returns an error code.
+    error RedeemFailed();
+
     /// @notice Deposit a specific amount of float into a trusted strategy.
     /// @param strategy The trusted strategy to deposit into.
     /// @param underlyingAmount The amount of underlying tokens in float to deposit.
     function depositIntoStrategy(Strategy strategy, uint256 underlyingAmount) external requiresAuth {
         // A strategy must be trusted before it can be deposited into.
-        require(getStrategyData[strategy].trusted, "UNTRUSTED_STRATEGY");
+        if (!getStrategyData[strategy].trusted) revert UntrustedStrategy();
 
         // Increase totalStrategyHoldings to account for the deposit.
         totalStrategyHoldings += underlyingAmount;
@@ -478,7 +508,7 @@ contract Vault is ERC4626, Auth {
             UNDERLYING.safeApprove(address(strategy), underlyingAmount);
 
             // Deposit into the strategy and revert if it returns an error code.
-            require(ERC20Strategy(address(strategy)).mint(underlyingAmount) == 0, "MINT_FAILED");
+            if (ERC20Strategy(address(strategy)).mint(underlyingAmount) != 0) revert MintFailed();
         }
     }
 
@@ -488,7 +518,7 @@ contract Vault is ERC4626, Auth {
     /// @dev Withdrawing from a strategy will not remove it from the withdrawal stack.
     function withdrawFromStrategy(Strategy strategy, uint256 underlyingAmount) external requiresAuth {
         // A strategy must be trusted before it can be withdrawn from.
-        require(getStrategyData[strategy].trusted, "UNTRUSTED_STRATEGY");
+        if (!getStrategyData[strategy].trusted) revert UntrustedStrategy();
 
         // Without this the next harvest would count the withdrawal as a loss.
         getStrategyData[strategy].balance -= underlyingAmount.safeCastTo248();
@@ -502,7 +532,7 @@ contract Vault is ERC4626, Auth {
         emit StrategyWithdrawal(msg.sender, strategy, underlyingAmount);
 
         // Withdraw from the strategy and revert if it returns an error code.
-        require(strategy.redeemUnderlying(underlyingAmount) == 0, "REDEEM_FAILED");
+        if (strategy.redeemUnderlying(underlyingAmount) != 0) revert RedeemFailed();
 
         // Wrap the withdrawn Ether into WETH if necessary.
         if (strategy.isCEther()) WETH(payable(address(UNDERLYING))).deposit{value: underlyingAmount}();
@@ -522,15 +552,16 @@ contract Vault is ERC4626, Auth {
     /// @param strategy The strategy that became untrusted.
     event StrategyDistrusted(address indexed user, Strategy indexed strategy);
 
+    /// @notice Thrown if the underlying token is wrong.
+    error WrongUnderlying();
+
     /// @notice Stores a strategy as trusted, enabling it to be harvested.
     /// @param strategy The strategy to make trusted.
     function trustStrategy(Strategy strategy) external requiresAuth {
         // Ensure the strategy accepts the correct underlying token.
         // If the strategy accepts ETH the Vault should accept WETH, it'll handle wrapping when necessary.
-        require(
-            strategy.isCEther() ? underlyingIsWETH : ERC20Strategy(address(strategy)).underlying() == UNDERLYING,
-            "WRONG_UNDERLYING"
-        );
+        if (strategy.isCEther() ? !underlyingIsWETH : ERC20Strategy(address(strategy)).underlying() != UNDERLYING)
+            revert WrongUnderlying();
 
         // Store the strategy as trusted.
         getStrategyData[strategy].trusted = true;
@@ -604,6 +635,12 @@ contract Vault is ERC4626, Auth {
         Strategy indexed newStrategy2
     );
 
+    /// @notice Thrown when strategy causes the stack exceed its limit.
+    error StackFull();
+
+    /// @notice Thrown when the new stack is larger than the maximum stack size.
+    error StackTooBig();
+
     /// @dev Withdraw a specific amount of underlying tokens from strategies in the withdrawal stack.
     /// @param underlyingAmount The amount of underlying tokens to pull into float.
     /// @dev Automatically removes depleted strategies from the withdrawal stack.
@@ -652,7 +689,7 @@ contract Vault is ERC4626, Auth {
                 emit StrategyWithdrawal(msg.sender, strategy, amountToPull);
 
                 // Withdraw from the strategy and revert if returns an error code.
-                require(strategy.redeemUnderlying(amountToPull) == 0, "REDEEM_FAILED");
+                if (strategy.redeemUnderlying(amountToPull) != 0) revert RedeemFailed();
 
                 // If we fully depleted the strategy:
                 if (strategyBalanceAfterWithdrawal == 0) {
@@ -686,7 +723,7 @@ contract Vault is ERC4626, Auth {
     /// filtered out when encountered at withdrawal time, not validated upfront.
     function pushToWithdrawalStack(Strategy strategy) external requiresAuth {
         // Ensure pushing the strategy will not cause the stack exceed its limit.
-        require(withdrawalStack.length < MAX_WITHDRAWAL_STACK_SIZE, "STACK_FULL");
+        if (withdrawalStack.length >= MAX_WITHDRAWAL_STACK_SIZE) revert StackFull();
 
         // Push the strategy to the front of the stack.
         withdrawalStack.push(strategy);
@@ -713,7 +750,7 @@ contract Vault is ERC4626, Auth {
     /// filtered out when encountered at withdrawal time, not validated upfront.
     function setWithdrawalStack(Strategy[] calldata newStack) external requiresAuth {
         // Ensure the new stack is not larger than the maximum stack size.
-        require(newStack.length <= MAX_WITHDRAWAL_STACK_SIZE, "STACK_TOO_BIG");
+        if (newStack.length > MAX_WITHDRAWAL_STACK_SIZE) revert StackTooBig();
 
         // Replace the withdrawal stack.
         withdrawalStack = newStack;
@@ -794,6 +831,9 @@ contract Vault is ERC4626, Auth {
     /// @param user The authorized user who triggered the initialization.
     event Initialized(address indexed user);
 
+    /// @notice Thrown when the vault is already initialized.
+    error AlreadyInitialized();
+
     /// @notice Whether the Vault has been initialized yet.
     /// @dev Can go from false to true, never from true to false.
     bool public isInitialized;
@@ -802,7 +842,7 @@ contract Vault is ERC4626, Auth {
     /// @dev All critical parameters must already be set before calling.
     function initialize() external requiresAuth {
         // Ensure the Vault has not already been initialized.
-        require(!isInitialized, "ALREADY_INITIALIZED");
+        if (isInitialized) revert AlreadyInitialized();
 
         // Mark the Vault as initialized.
         isInitialized = true;
